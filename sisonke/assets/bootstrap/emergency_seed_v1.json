@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-28T00:00:00.000Z",
+  "country": "ZW",
+  "emergencyContacts": [
+    {
+      "id": "seed-lifeline-zimbabwe",
+      "name": "Lifeline Zimbabwe",
+      "phoneNumber": "+263 292 62662",
+      "category": "crisis",
+      "description": "Immediate emotional support and crisis counselling.",
+      "country": "ZW",
+      "status": "published",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    },
+    {
+      "id": "seed-friendship-bench",
+      "name": "Friendship Bench",
+      "phoneNumber": "+263 8644 294 294",
+      "category": "mental-health",
+      "description": "Community mental health support and referral guidance.",
+      "country": "ZW",
+      "status": "published",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    },
+    {
+      "id": "seed-national-emergency",
+      "name": "National Emergency Services",
+      "phoneNumber": "999",
+      "category": "general",
+      "description": "Use this number when there is immediate danger or urgent medical need.",
+      "country": "ZW",
+      "status": "published",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    }
+  ],
+  "resources": [
+    {
+      "id": "seed-ground-yourself-now",
+      "title": "Ground Yourself Right Now",
+      "description": "A fast offline guide for moments of panic, overwhelm, or fear.",
+      "content": "Pause. Put both feet on the floor if you can. Take one slow breath in and one slow breath out. Name five things you can see, four things you can feel, three things you can hear, two things you can smell, and one thing you can taste. If you are in immediate danger, move toward a safer place and contact emergency support.",
+      "category": "emergency",
+      "tags": ["grounding", "panic", "offline"],
+      "language": "en",
+      "isPublished": true,
+      "isOfflineAvailable": true,
+      "readingTimeMinutes": 1,
+      "createdAt": "2026-04-28T00:00:00.000Z",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    },
+    {
+      "id": "seed-safety-next-steps",
+      "title": "If You Need Safety",
+      "description": "Simple steps for getting through the next few minutes safely.",
+      "content": "Move away from anything you could use to hurt yourself or someone else. Go to a public or safer space if possible. Contact someone you trust and say: I am not safe alone right now. If there is immediate danger, call emergency services. You deserve support before things get worse.",
+      "category": "emergency",
+      "tags": ["safety", "crisis", "support"],
+      "language": "en",
+      "isPublished": true,
+      "isOfflineAvailable": true,
+      "readingTimeMinutes": 1,
+      "createdAt": "2026-04-28T00:00:00.000Z",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    }
+  ],
+  "toolkit": {
+    "quickExitUrl": "https://www.google.com/search?q=weather+today",
+    "breathing": [
+      {
+        "id": "box-breathing",
+        "title": "Box Breathing",
+        "description": "Breathe in, hold, breathe out, hold. Four seconds each."
+      }
+    ],
+    "grounding": [
+      {
+        "id": "five-four-three-two-one",
+        "title": "5-4-3-2-1 Grounding",
+        "description": "Use your senses to come back to the present moment."
+      }
+    ]
+  }
+}

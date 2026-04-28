@@ -1,0 +1,15 @@
+.dart_tool
+.git
+.idea
+android/build
+backend/node_modules
+backend/dist
+build
+ios/Flutter/ephemeral
+linux/flutter/ephemeral
+macos/Flutter/ephemeral
+windows/flutter/ephemeral
+*.iml
+.env
+.env.*
+!/.env.production.example

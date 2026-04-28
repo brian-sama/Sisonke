@@ -2,22 +2,19 @@ import 'package:postgres/postgres.dart';
 import 'package:sisonke/app/core/constants/config.dart';
 
 class NeonService {
-  PostgreSQLConnection? _connection;
+  Connection? _connection;
 
   Future<void> connect() async {
     if (_connection != null) return;
 
-    final uri = Uri.parse(Config.neonConnectionString);
-    _connection = PostgreSQLConnection(
-      uri.host,
-      uri.port,
-      uri.pathSegments.isNotEmpty ? uri.pathSegments.first : 'neondb',
-      username: uri.userInfo.split(':').first,
-      password: uri.userInfo.split(':').last,
-      useSSL: true,
-    );
+    _connection = await Connection.openFromUrl(Config.neonConnectionString);
+  }
 
-    await _connection!.open();
+  Connection getConnection() {
+    if (_connection == null) {
+      throw Exception('Connection not initialized. Call connect() first.');
+    }
+    return _connection!;
   }
 
   Future<void> setAuthUid(String? uid) async {
@@ -31,13 +28,19 @@ class NeonService {
 
   Future<List<Map<String, dynamic>>> query(String sql, {Map<String, dynamic>? substitutionValues}) async {
     if (_connection == null) await connect();
-    final results = await _connection!.mappedResultsQuery(sql, substitutionValues: substitutionValues);
-    return results.map((row) => row.values.first).toList();
+    final results = await _connection!.execute(
+      Sql.named(sql),
+      parameters: substitutionValues,
+    );
+    return results.map((row) => row.toColumnMap()).toList();
   }
 
   Future<void> execute(String sql, {Map<String, dynamic>? substitutionValues}) async {
     if (_connection == null) await connect();
-    await _connection!.execute(sql, substitutionValues: substitutionValues);
+    await _connection!.execute(
+      Sql.named(sql),
+      parameters: substitutionValues,
+    );
   }
 
   Future<void> close() async {

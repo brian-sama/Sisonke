@@ -1,24 +1,24 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:sisonke/shared/models/user.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<firebase_auth.User?> get authStateChanges => _auth.authStateChanges();
 
-  Future<UserModel?> signInAnonymously() async {
+  Future<User?> signInAnonymously() async {
     try {
       final result = await _auth.signInAnonymously();
-      return UserModel.guest()..id = result.user?.uid;
+      return User.guest().copyWith(id: result.user?.uid);
     } catch (e) {
       throw Exception('Failed to sign in anonymously: $e');
     }
   }
 
-  Future<UserModel?> signInWithEmail(String email, String password) async {
+  Future<User?> signInWithEmail(String email, String password) async {
     try {
       final result = await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return UserModel(
+      return User(
         id: result.user?.uid,
         isGuest: false,
         displayName: result.user?.displayName,
@@ -29,10 +29,10 @@ class AuthService {
     }
   }
 
-  Future<UserModel?> signUpWithEmail(String email, String password) async {
+  Future<User?> signUpWithEmail(String email, String password) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      return UserModel(
+      return User(
         id: result.user?.uid,
         isGuest: false,
         displayName: result.user?.displayName,
@@ -47,10 +47,10 @@ class AuthService {
     await _auth.signOut();
   }
 
-  UserModel? getCurrentUser() {
+  User? getCurrentUser() {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) return null;
-    return UserModel(
+    return User(
       id: firebaseUser.uid,
       isGuest: firebaseUser.isAnonymous,
       displayName: firebaseUser.displayName,

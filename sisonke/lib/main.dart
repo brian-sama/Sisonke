@@ -1,13 +1,58 @@
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/app/core/services/local_database_service.dart';
+import 'package:sisonke/app/core/services/providers.dart';
 import 'package:sisonke/app/router/router.dart';
 import 'package:sisonke/app/theme/app_theme.dart';
+import 'package:sisonke/core/providers/app_providers.dart';
+import 'package:sisonke/core/services/api_service.dart';
+import 'package:sisonke/core/services/bootstrap_content_service.dart';
+import 'package:sisonke/core/services/public_content_sync_service.dart';
+import 'package:sisonke/l10n/app_localizations.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const ProviderScope(child: MyApp()));
+  await SentryFlutter.init(
+    (options) {
+      const dsn = String.fromEnvironment('SENTRY_DSN');
+      options.dsn = dsn;
+      options.tracesSampleRate = kReleaseMode ? 0.1 : 1.0;
+    },
+    appRunner: () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final bootstrapContentService = BootstrapContentService(sharedPreferences);
+      await bootstrapContentService.ensureSeeded();
+
+      final localDatabaseService = LocalDatabaseService();
+      try {
+        await localDatabaseService.init();
+      } catch (e, stackTrace) {
+        await Sentry.captureException(e, stackTrace: stackTrace);
+      }
+
+      PublicContentSyncService(
+        ApiService(),
+        bootstrapContentService,
+        sharedPreferences,
+      ).sync().catchError((Object e, StackTrace stackTrace) async {
+        if (kDebugMode) debugPrint('Public content sync skipped: $e');
+        await Sentry.captureException(e, stackTrace: stackTrace);
+      });
+
+      runApp(ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          localDatabaseServiceProvider.overrideWithValue(localDatabaseService),
+        ],
+        child: const MyApp(),
+      ));
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -19,7 +64,19 @@ class MyApp extends StatelessWidget {
       title: 'Sisonke',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       routerConfig: router,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('sn'),
+        Locale('nd'),
+      ],
     );
   }
 }

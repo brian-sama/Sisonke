@@ -2,13 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sisonke/features/auth/auth_service.dart';
 import 'package:sisonke/shared/models/user.dart';
 
-class AuthState extends StateNotifier<UserModel?> {
+class AuthState extends StateNotifier<User?> {
   final AuthService _authService;
 
   AuthState(this._authService) : super(null) {
     _authService.authStateChanges.listen((firebaseUser) {
       if (firebaseUser != null) {
-        state = UserModel(
+        state = User(
           id: firebaseUser.uid,
           isGuest: firebaseUser.isAnonymous,
           displayName: firebaseUser.displayName,
@@ -38,7 +38,9 @@ class AuthState extends StateNotifier<UserModel?> {
   }
 }
 
-final authStateProvider = StateNotifierProvider<AuthState, UserModel?>((ref) {
-  final authService = ref.watch(authServiceProvider);
+final firebaseAuthServiceProvider = Provider<AuthService>((ref) => AuthService());
+
+final authStateProvider = StateNotifierProvider<AuthState, User?>((ref) {
+  final authService = ref.watch(firebaseAuthServiceProvider);
   return AuthState(authService);
 });

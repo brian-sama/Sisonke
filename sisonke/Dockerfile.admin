@@ -1,0 +1,11 @@
+FROM ghcr.io/cirruslabs/flutter:stable AS build
+WORKDIR /app
+COPY pubspec.yaml pubspec.lock ./
+COPY third_party ./third_party
+RUN flutter pub get
+COPY . .
+ARG API_BASE_URL=https://sisonke.mmpzmne.co.zw/api
+RUN flutter build web --release --target=lib/admin_main.dart --dart-define=API_BASE_URL=${API_BASE_URL}
+
+FROM caddy:2-alpine
+COPY --from=build /app/build/web /usr/share/caddy

@@ -1,19 +1,162 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+  static const Color primary = Color(0xFF168AAD);
+  static const Color secondary = Color(0xFF7B61FF);
+  static const Color tertiary = Color(0xFFFF5A8A);
+  static const Color calmSurface = Color(0xFFF7F4FF);
+  static const Color ink = Color(0xFF14213D);
+  static const Color darkSurface = Color(0xFF10131C);
+  static const Color darkSurfaceHigh = Color(0xFF1A1D29);
+  static const Color darkInk = Color(0xFFEDEBFF);
+
   static ThemeData lightTheme = ThemeData(
     colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.blue,
+      seedColor: primary,
       brightness: Brightness.light,
+    ).copyWith(
+      primary: primary,
+      secondary: secondary,
+      tertiary: tertiary,
+      surface: Colors.white,
+      surfaceContainerHighest: const Color(0xFFEDE9FF),
+      error: const Color(0xFFBA1A1A),
     ),
+    scaffoldBackgroundColor: calmSurface,
+    textTheme: GoogleFonts.nunitoSansTextTheme(),
     useMaterial3: true,
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: Colors.white,
+      elevation: 12,
+      height: 74,
+      shadowColor: ink.withValues(alpha: 0.12),
+      indicatorColor: primary.withValues(alpha: 0.18),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 25,
+          color: states.contains(WidgetState.selected) ? primary : ink.withValues(alpha: 0.68),
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => GoogleFonts.nunitoSans(
+          fontSize: 12.5,
+          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
+          color: states.contains(WidgetState.selected) ? ink : ink.withValues(alpha: 0.72),
+        ),
+      ),
+    ),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        textStyle: GoogleFonts.nunitoSans(fontWeight: FontWeight.w800),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      foregroundColor: ink,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: TextStyle(
+        color: ink,
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFD8D3EA)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: primary, width: 2),
+      ),
+    ),
   );
 
   static ThemeData darkTheme = ThemeData(
     colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.blue,
+      seedColor: primary,
       brightness: Brightness.dark,
+    ).copyWith(
+      primary: const Color(0xFF6DD5F2),
+      secondary: const Color(0xFFC6BFFF),
+      tertiary: const Color(0xFFFFB1C8),
+      surface: darkSurfaceHigh,
+      surfaceContainerHighest: const Color(0xFF25293A),
+      onSurface: darkInk,
+      error: const Color(0xFFFFB4AB),
     ),
+    scaffoldBackgroundColor: darkSurface,
+    textTheme: GoogleFonts.nunitoSansTextTheme(ThemeData.dark().textTheme),
     useMaterial3: true,
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: darkSurfaceHigh,
+      elevation: 12,
+      height: 74,
+      shadowColor: Colors.black.withValues(alpha: 0.32),
+      indicatorColor: const Color(0xFF6DD5F2).withValues(alpha: 0.20),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 25,
+          color: states.contains(WidgetState.selected)
+              ? const Color(0xFF6DD5F2)
+              : darkInk.withValues(alpha: 0.70),
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => GoogleFonts.nunitoSans(
+          fontSize: 12.5,
+          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
+          color: states.contains(WidgetState.selected) ? darkInk : darkInk.withValues(alpha: 0.72),
+        ),
+      ),
+    ),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: darkSurfaceHigh,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        textStyle: GoogleFonts.nunitoSans(fontWeight: FontWeight.w800),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: darkSurfaceHigh,
+      foregroundColor: darkInk,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: TextStyle(
+        color: darkInk,
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFF1D2130),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFF353A4F)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFF6DD5F2), width: 2),
+      ),
+    ),
   );
 }

@@ -1,0 +1,16 @@
+{
+  "appTitle": "Sisonke",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "resources": "Resources",
+  "qa": "Q&A",
+  "checkIn": "Check-In",
+  "support": "Support",
+  "settings": "Settings",
+  "emergencyToolkit": "Emergency Toolkit",
+  "howAreYouFeeling": "How are you feeling?",
+  "moodHistory": "Mood History",
+  "myJournal": "My Journal",
+  "recoveryTracker": "Recovery Tracker"
+}
