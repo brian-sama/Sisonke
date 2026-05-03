@@ -43,7 +43,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sisonke}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sisonke}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      FRONTEND_URL: https://sisonke.mmpzmne.co.zw
+      FRONTEND_URL: https://sisonke.mmpzmne.co.zw,http://sisonke.mmpzmne.co.zw
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-300}
     expose:
@@ -54,7 +54,7 @@ services:
       context: .
       dockerfile: Dockerfile.admin
       args:
-        API_BASE_URL: https://sisonke.mmpzmne.co.zw/api
+        API_BASE_URL: /api
     restart: unless-stopped
     expose:
       - "80"

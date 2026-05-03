@@ -24,6 +24,9 @@ const authMiddleware = async (req, res, next) => {
         if (!user.length) {
             return res.status(401).json({ error: 'Invalid token' });
         }
+        if (user[0].isSuspended) {
+            return res.status(403).json({ error: 'Account suspended' });
+        }
         req.user = {
             id: user[0].id,
             email: user[0].email || undefined,
@@ -53,6 +56,8 @@ const optionalAuth = async (req, res, next) => {
         // Get user from database
         const user = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, decoded.userId)).limit(1);
         if (user.length) {
+            if (user[0].isSuspended)
+                return next();
             req.user = {
                 id: user[0].id,
                 email: user[0].email || undefined,

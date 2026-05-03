@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -10,25 +12,62 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   late PageController _pageController;
+  final _api = ApiService();
+  final _nickname = TextEditingController();
+  final _age = TextEditingController(text: '18');
+  final _location = TextEditingController();
+  var _gender = 'Prefer not to say';
+  var _persona = 'female';
+  var _pinEnabled = true;
+  var _biometricEnabled = false;
+  var _saving = false;
+  String? _error;
   int _currentPage = 0;
+  final _screeningAnswers = <String, bool>{
+    'overwhelmed': false,
+    'sleep': false,
+    'alone': false,
+    'lostInterest': false,
+    'unsafe': false,
+    'speakToSomeone': false,
+  };
 
   final List<OnboardingPage> pages = [
     OnboardingPage(
-      title: 'Welcome to Sisonke',
+      title: 'Name or nickname',
       description:
-          'Your private, safe space for mental health and wellness support',
-      icon: Icons.favorite,
+          'Choose what the app should call you. A nickname is okay.',
+      icon: Icons.badge_outlined,
     ),
     OnboardingPage(
-      title: 'Your Privacy Matters',
+      title: 'Age, gender, and location',
       description:
-          'All your data is encrypted and never shared without your consent',
-      icon: Icons.lock,
+          'This helps the backend place you in the right age group and show safer content.',
+      icon: Icons.person_outline_rounded,
     ),
     OnboardingPage(
-      title: 'Get Started',
-      description: 'Let\'s set up your personalized wellness journey',
-      icon: Icons.trending_up,
+      title: 'Consent agreement',
+      description:
+          'Private spaces stay private. Public posts are moderated for safety.',
+      icon: Icons.verified_user_outlined,
+    ),
+    OnboardingPage(
+      title: 'Safety PIN',
+      description:
+          'Set a PIN for mood logs, journal entries, screening answers, and counseling chats.',
+      icon: Icons.pin_outlined,
+    ),
+    OnboardingPage(
+      title: 'Gentle check-in',
+      description:
+          'Have you felt overwhelmed, struggled to sleep, felt alone, lost interest, felt unsafe, or wanted to speak to someone?',
+      icon: Icons.check_circle_outline_rounded,
+    ),
+    OnboardingPage(
+      title: 'Choose E-Friend',
+      description:
+          'Pick a male or female persona. Serious risk still goes to a counselor.',
+      icon: Icons.smart_toy_outlined,
     ),
   ];
 
@@ -41,6 +80,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _nickname.dispose();
+    _age.dispose();
+    _location.dispose();
     super.dispose();
   }
 
@@ -101,11 +143,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     SisonkeButton(
                       label: _currentPage == pages.length - 1
-                          ? 'Get Started'
+                          ? (_saving ? 'Saving...' : 'Get Started')
                           : 'Next',
+                      isLoading: _saving,
                       onPressed: () {
                         if (_currentPage == pages.length - 1) {
-                          // Navigate to next screen
+                          _finishOnboarding();
                         } else {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
@@ -147,9 +190,124 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 24),
+          _buildStepFields(),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildStepFields() {
+    switch (_currentPage) {
+      case 0:
+        return TextField(
+          controller: _nickname,
+          decoration: const InputDecoration(
+            labelText: 'Nickname',
+            prefixIcon: Icon(Icons.badge_outlined),
+          ),
+        );
+      case 1:
+        return Column(
+          children: [
+            TextField(
+              controller: _age,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Age', prefixIcon: Icon(Icons.cake_outlined)),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _gender,
+              decoration: const InputDecoration(labelText: 'Gender', prefixIcon: Icon(Icons.person_outline_rounded)),
+              items: const ['Female', 'Male', 'Non-binary', 'Prefer not to say']
+                  .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                  .toList(),
+              onChanged: (value) => setState(() => _gender = value ?? _gender),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _location,
+              decoration: const InputDecoration(labelText: 'Location', prefixIcon: Icon(Icons.location_on_outlined)),
+            ),
+          ],
+        );
+      case 2:
+        return const _ConsentPanel();
+      case 3:
+        return Column(
+          children: [
+            SwitchListTile(
+              value: _pinEnabled,
+              onChanged: (value) => setState(() => _pinEnabled = value),
+              title: const Text('Enable PIN lock'),
+            ),
+            SwitchListTile(
+              value: _biometricEnabled,
+              onChanged: (value) => setState(() => _biometricEnabled = value),
+              title: const Text('Enable biometric unlock'),
+            ),
+          ],
+        );
+      case 4:
+        return Column(
+          children: [
+            _CheckTile(label: 'Have you felt overwhelmed recently?', value: _screeningAnswers['overwhelmed']!, onChanged: (value) => _setAnswer('overwhelmed', value)),
+            _CheckTile(label: 'Have you struggled to sleep?', value: _screeningAnswers['sleep']!, onChanged: (value) => _setAnswer('sleep', value)),
+            _CheckTile(label: 'Have you felt alone or unsupported?', value: _screeningAnswers['alone']!, onChanged: (value) => _setAnswer('alone', value)),
+            _CheckTile(label: 'Have you lost interest in things you enjoy?', value: _screeningAnswers['lostInterest']!, onChanged: (value) => _setAnswer('lostInterest', value)),
+            _CheckTile(label: 'Have you felt unsafe or at risk?', value: _screeningAnswers['unsafe']!, onChanged: (value) => _setAnswer('unsafe', value)),
+            _CheckTile(label: 'Would you like to speak to someone?', value: _screeningAnswers['speakToSomeone']!, onChanged: (value) => _setAnswer('speakToSomeone', value)),
+          ],
+        );
+      case 5:
+        return SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'female', icon: Icon(Icons.face_3_rounded), label: Text('Female')),
+            ButtonSegment(value: 'male', icon: Icon(Icons.face_rounded), label: Text('Male')),
+          ],
+          selected: {_persona},
+          onSelectionChanged: (value) => setState(() => _persona = value.first),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  void _setAnswer(String key, bool value) {
+    setState(() => _screeningAnswers[key] = value);
+  }
+
+  Future<void> _finishOnboarding() async {
+    final age = int.tryParse(_age.text.trim()) ?? 18;
+    final nickname = _nickname.text.trim().isEmpty ? 'Friend' : _nickname.text.trim();
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await _api.saveOnboardingProfile(
+        nickname: nickname,
+        age: age,
+        gender: _gender,
+        location: _location.text.trim(),
+        chatbotPersona: _persona,
+        screeningAnswers: _screeningAnswers,
+        pinEnabled: _pinEnabled,
+        biometricEnabled: _biometricEnabled,
+      );
+      if (mounted) context.go('/home');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = 'Could not save your profile. Check that the backend is running.';
+      });
+    }
   }
 }
 
@@ -163,5 +321,45 @@ class OnboardingPage {
     required this.description,
     required this.icon,
   });
+}
+
+class _ConsentPanel extends StatelessWidget {
+  const _ConsentPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'By continuing, you agree that private spaces stay private, public posts go through moderation, and serious safety concerns may be escalated to authorized support roles.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckTile extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _CheckTile({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CheckboxListTile(
+      value: value,
+      onChanged: (checked) => onChanged(checked ?? false),
+      title: Text(label),
+      controlAffinity: ListTileControlAffinity.leading,
+    );
+  }
 }
 

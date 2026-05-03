@@ -7,7 +7,7 @@ export declare class ResourceService {
             title: string;
             description: string;
             content: string | null;
-            category: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide";
+            category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
             tags: string[] | null;
             authorId: string | null;
             imageUrl: string | null;
@@ -31,7 +31,7 @@ export declare class ResourceService {
         title: string;
         description: string;
         content: string | null;
-        category: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide";
+        category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
         tags: string[] | null;
         authorId: string | null;
         imageUrl: string | null;

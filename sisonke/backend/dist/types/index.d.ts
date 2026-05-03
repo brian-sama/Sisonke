@@ -40,7 +40,7 @@ export declare const CreateResourceSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     title: string;
     description: string;
-    category: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide";
+    category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
     language: string;
     status: "draft" | "review" | "published" | "archived";
     isOfflineAvailable: boolean;
@@ -51,7 +51,7 @@ export declare const CreateResourceSchema: z.ZodObject<{
 }, {
     title: string;
     description: string;
-    category: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide";
+    category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
     content?: string | undefined;
     tags?: string[] | undefined;
     imageUrl?: string | undefined;
@@ -75,7 +75,7 @@ export declare const UpdateResourceSchema: z.ZodObject<{
     title?: string | undefined;
     description?: string | undefined;
     content?: string | undefined;
-    category?: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     tags?: string[] | undefined;
     imageUrl?: string | undefined;
     readingTimeMinutes?: number | undefined;
@@ -86,7 +86,7 @@ export declare const UpdateResourceSchema: z.ZodObject<{
     title?: string | undefined;
     description?: string | undefined;
     content?: string | undefined;
-    category?: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     tags?: string[] | undefined;
     imageUrl?: string | undefined;
     readingTimeMinutes?: number | undefined;
@@ -102,12 +102,12 @@ export declare const CreateQuestionSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     title: string;
     description: string;
-    category: "mental-health" | "srhr" | "emergency" | "relationships" | "general";
+    category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
     deviceId?: string | undefined;
 }, {
     title: string;
     description: string;
-    category: "mental-health" | "srhr" | "emergency" | "relationships" | "general";
+    category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
     deviceId?: string | undefined;
 }>;
 export declare const CreateAnswerSchema: z.ZodObject<{
@@ -196,7 +196,7 @@ export declare const UpdateEmergencyContactSchema: z.ZodObject<{
     country?: string | undefined;
 }>;
 export declare const AnalyticsEventSchema: z.ZodObject<{
-    event: z.ZodEnum<["app_opened", "resource_viewed", "resource_saved", "emergency_opened", "category_opened", "sync_completed", "sync_failed"]>;
+    event: z.ZodEnum<["app_opened", "resource_viewed", "resource_saved", "emergency_opened", "category_opened", "chatbot_session_started", "counselor_escalated", "community_post_submitted", "mood_logged", "sync_completed", "sync_failed"]>;
     resourceId: z.ZodOptional<z.ZodString>;
     category: z.ZodOptional<z.ZodString>;
     platform: z.ZodOptional<z.ZodString>;
@@ -204,7 +204,7 @@ export declare const AnalyticsEventSchema: z.ZodObject<{
     locale: z.ZodOptional<z.ZodString>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnion<[z.ZodString, z.ZodNumber, z.ZodBoolean, z.ZodNull]>>>;
 }, "strip", z.ZodTypeAny, {
-    event: "app_opened" | "resource_viewed" | "resource_saved" | "emergency_opened" | "category_opened" | "sync_completed" | "sync_failed";
+    event: "app_opened" | "resource_viewed" | "resource_saved" | "emergency_opened" | "category_opened" | "chatbot_session_started" | "counselor_escalated" | "community_post_submitted" | "mood_logged" | "sync_completed" | "sync_failed";
     category?: string | undefined;
     resourceId?: string | undefined;
     platform?: string | undefined;
@@ -212,13 +212,114 @@ export declare const AnalyticsEventSchema: z.ZodObject<{
     locale?: string | undefined;
     metadata?: Record<string, string | number | boolean | null> | undefined;
 }, {
-    event: "app_opened" | "resource_viewed" | "resource_saved" | "emergency_opened" | "category_opened" | "sync_completed" | "sync_failed";
+    event: "app_opened" | "resource_viewed" | "resource_saved" | "emergency_opened" | "category_opened" | "chatbot_session_started" | "counselor_escalated" | "community_post_submitted" | "mood_logged" | "sync_completed" | "sync_failed";
     category?: string | undefined;
     resourceId?: string | undefined;
     platform?: string | undefined;
     appVersion?: string | undefined;
     locale?: string | undefined;
     metadata?: Record<string, string | number | boolean | null> | undefined;
+}>;
+export declare const OnboardingProfileSchema: z.ZodObject<{
+    nickname: z.ZodString;
+    dateOfBirth: z.ZodOptional<z.ZodDate>;
+    age: z.ZodOptional<z.ZodNumber>;
+    gender: z.ZodOptional<z.ZodString>;
+    location: z.ZodOptional<z.ZodString>;
+    consentAccepted: z.ZodBoolean;
+    pinEnabled: z.ZodDefault<z.ZodBoolean>;
+    biometricEnabled: z.ZodDefault<z.ZodBoolean>;
+    autoLockMinutes: z.ZodDefault<z.ZodNumber>;
+    hideJournalPreview: z.ZodDefault<z.ZodBoolean>;
+    chatbotPersona: z.ZodDefault<z.ZodEnum<["male", "female"]>>;
+    screeningAnswers: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodBoolean>>;
+}, "strip", z.ZodTypeAny, {
+    nickname: string;
+    chatbotPersona: "male" | "female";
+    screeningAnswers: Record<string, boolean>;
+    pinEnabled: boolean;
+    biometricEnabled: boolean;
+    autoLockMinutes: number;
+    hideJournalPreview: boolean;
+    consentAccepted: boolean;
+    dateOfBirth?: Date | undefined;
+    gender?: string | undefined;
+    location?: string | undefined;
+    age?: number | undefined;
+}, {
+    nickname: string;
+    consentAccepted: boolean;
+    dateOfBirth?: Date | undefined;
+    gender?: string | undefined;
+    location?: string | undefined;
+    chatbotPersona?: "male" | "female" | undefined;
+    screeningAnswers?: Record<string, boolean> | undefined;
+    pinEnabled?: boolean | undefined;
+    biometricEnabled?: boolean | undefined;
+    autoLockMinutes?: number | undefined;
+    hideJournalPreview?: boolean | undefined;
+    age?: number | undefined;
+}>;
+export declare const ChatbotMessageSchema: z.ZodObject<{
+    sessionId: z.ZodOptional<z.ZodString>;
+    persona: z.ZodDefault<z.ZodEnum<["male", "female"]>>;
+    message: z.ZodString;
+    deviceId: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    persona: "male" | "female";
+    message: string;
+    deviceId?: string | undefined;
+    sessionId?: string | undefined;
+}, {
+    message: string;
+    deviceId?: string | undefined;
+    persona?: "male" | "female" | undefined;
+    sessionId?: string | undefined;
+}>;
+export declare const CounselorRequestSchema: z.ZodObject<{
+    issueCategory: z.ZodString;
+    summary: z.ZodOptional<z.ZodString>;
+    riskLevel: z.ZodDefault<z.ZodEnum<["low", "medium", "high"]>>;
+}, "strip", z.ZodTypeAny, {
+    riskLevel: "low" | "medium" | "high";
+    issueCategory: string;
+    summary?: string | undefined;
+}, {
+    issueCategory: string;
+    riskLevel?: "low" | "medium" | "high" | undefined;
+    summary?: string | undefined;
+}>;
+export declare const CommunityPostSchema: z.ZodObject<{
+    ageGroup: z.ZodEnum<["13-15", "16-17", "18-24", "25+"]>;
+    content: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    ageGroup: "13-15" | "16-17" | "18-24" | "25+";
+    content: string;
+}, {
+    ageGroup: "13-15" | "16-17" | "18-24" | "25+";
+    content: string;
+}>;
+export declare const CmsContentSchema: z.ZodObject<{
+    title: z.ZodString;
+    body: z.ZodString;
+    contentType: z.ZodEnum<["article", "srhr", "event", "helpline", "faq", "video", "daily-prompt", "announcement"]>;
+    category: z.ZodEnum<["Mental Health", "SRHR", "Substance Abuse", "Relationships", "Self-Care", "Youth Opportunities", "Emergency Support"]>;
+    mediaUrl: z.ZodOptional<z.ZodString>;
+    status: z.ZodDefault<z.ZodEnum<["draft", "review", "published", "archived"]>>;
+}, "strip", z.ZodTypeAny, {
+    title: string;
+    category: "Mental Health" | "SRHR" | "Substance Abuse" | "Relationships" | "Self-Care" | "Youth Opportunities" | "Emergency Support";
+    status: "draft" | "review" | "published" | "archived";
+    body: string;
+    contentType: "article" | "srhr" | "event" | "helpline" | "faq" | "video" | "daily-prompt" | "announcement";
+    mediaUrl?: string | undefined;
+}, {
+    title: string;
+    category: "Mental Health" | "SRHR" | "Substance Abuse" | "Relationships" | "Self-Care" | "Youth Opportunities" | "Emergency Support";
+    body: string;
+    contentType: "article" | "srhr" | "event" | "helpline" | "faq" | "video" | "daily-prompt" | "announcement";
+    status?: "draft" | "review" | "published" | "archived" | undefined;
+    mediaUrl?: string | undefined;
 }>;
 export declare const CreateMoodCheckinSchema: z.ZodObject<{
     mood: z.ZodEnum<["great", "okay", "low", "anxious", "angry", "overwhelmed"]>;
@@ -227,13 +328,13 @@ export declare const CreateMoodCheckinSchema: z.ZodObject<{
     tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     deviceId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    mood: "great" | "okay" | "low" | "anxious" | "angry" | "overwhelmed";
+    mood: "low" | "great" | "okay" | "anxious" | "angry" | "overwhelmed";
     energyLevel: number;
     deviceId?: string | undefined;
     tags?: string[] | undefined;
     note?: string | undefined;
 }, {
-    mood: "great" | "okay" | "low" | "anxious" | "angry" | "overwhelmed";
+    mood: "low" | "great" | "okay" | "anxious" | "angry" | "overwhelmed";
     energyLevel: number;
     deviceId?: string | undefined;
     tags?: string[] | undefined;
@@ -267,11 +368,11 @@ export declare const ResourceQuerySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     limit: number;
     offset: number;
-    category?: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     language?: string | undefined;
     search?: string | undefined;
 }, {
-    category?: "mental-health" | "srhr" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     language?: string | undefined;
     search?: string | undefined;
     limit?: number | undefined;
@@ -285,10 +386,10 @@ export declare const QuestionQuerySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     limit: number;
     offset: number;
-    category?: "mental-health" | "srhr" | "emergency" | "relationships" | "general" | undefined;
+    category?: "emergency" | "srhr" | "mental-health" | "relationships" | "general" | undefined;
     answered?: boolean | undefined;
 }, {
-    category?: "mental-health" | "srhr" | "emergency" | "relationships" | "general" | undefined;
+    category?: "emergency" | "srhr" | "mental-health" | "relationships" | "general" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
     answered?: boolean | undefined;
@@ -304,6 +405,11 @@ export type CreateReportInput = z.infer<typeof CreateReportSchema>;
 export type CreateEmergencyContactInput = z.infer<typeof CreateEmergencyContactSchema>;
 export type UpdateEmergencyContactInput = z.infer<typeof UpdateEmergencyContactSchema>;
 export type AnalyticsEventInput = z.infer<typeof AnalyticsEventSchema>;
+export type OnboardingProfileInput = z.infer<typeof OnboardingProfileSchema>;
+export type ChatbotMessageInput = z.infer<typeof ChatbotMessageSchema>;
+export type CounselorRequestInput = z.infer<typeof CounselorRequestSchema>;
+export type CommunityPostInput = z.infer<typeof CommunityPostSchema>;
+export type CmsContentInput = z.infer<typeof CmsContentSchema>;
 export type CreateMoodCheckinInput = z.infer<typeof CreateMoodCheckinSchema>;
 export type CreateJournalEntryInput = z.infer<typeof CreateJournalEntrySchema>;
 export type ResourceQuery = z.infer<typeof ResourceQuerySchema>;

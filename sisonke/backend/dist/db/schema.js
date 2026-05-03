@@ -1,9 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.users = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.userRoleEnum = void 0;
+exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.users = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.ageGroupEnum = exports.userRoleEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Enums
-exports.userRoleEnum = (0, pg_core_1.pgEnum)('user_role', ['guest', 'user', 'admin']);
+exports.userRoleEnum = (0, pg_core_1.pgEnum)('user_role', ['guest', 'user', 'counselor', 'moderator', 'admin']);
+exports.ageGroupEnum = (0, pg_core_1.pgEnum)('age_group', ['13-15', '16-17', '18-24', '25+']);
+exports.chatbotPersonaEnum = (0, pg_core_1.pgEnum)('chatbot_persona', ['male', 'female']);
+exports.riskLevelEnum = (0, pg_core_1.pgEnum)('risk_level', ['low', 'medium', 'high']);
+exports.counselorCaseStatusEnum = (0, pg_core_1.pgEnum)('counselor_case_status', ['requested', 'assigned', 'live', 'follow-up', 'resolved', 'emergency']);
+exports.communityPostStatusEnum = (0, pg_core_1.pgEnum)('community_post_status', ['pending', 'approved', 'removed']);
+exports.cmsContentTypeEnum = (0, pg_core_1.pgEnum)('cms_content_type', ['article', 'srhr', 'event', 'helpline', 'faq', 'video', 'daily-prompt', 'announcement']);
 exports.resourceCategoryEnum = (0, pg_core_1.pgEnum)('resource_category', [
     'mental-health',
     'srhr',
@@ -27,6 +33,10 @@ exports.analyticsEventEnum = (0, pg_core_1.pgEnum)('analytics_event', [
     'resource_saved',
     'emergency_opened',
     'category_opened',
+    'chatbot_session_started',
+    'counselor_escalated',
+    'community_post_submitted',
+    'mood_logged',
     'sync_completed',
     'sync_failed'
 ]);
@@ -38,9 +48,30 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     role: (0, exports.userRoleEnum)('role').default('guest'),
     deviceId: (0, pg_core_1.varchar)('device_id', { length: 255 }).unique(),
     isGuest: (0, pg_core_1.boolean)('is_guest').default(true),
+    isSuspended: (0, pg_core_1.boolean)('is_suspended').default(false),
+    suspensionReason: (0, pg_core_1.text)('suspension_reason'),
+    suspendedAt: (0, pg_core_1.timestamp)('suspended_at'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at'),
     lastActiveAt: (0, pg_core_1.timestamp)('last_active_at').defaultNow(),
+});
+exports.userProfiles = (0, pg_core_1.pgTable)('user_profiles', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    nickname: (0, pg_core_1.varchar)('nickname', { length: 120 }).notNull(),
+    dateOfBirth: (0, pg_core_1.timestamp)('date_of_birth'),
+    ageGroup: (0, exports.ageGroupEnum)('age_group').notNull(),
+    gender: (0, pg_core_1.varchar)('gender', { length: 80 }),
+    location: (0, pg_core_1.varchar)('location', { length: 120 }),
+    consentAcceptedAt: (0, pg_core_1.timestamp)('consent_accepted_at'),
+    chatbotPersona: (0, exports.chatbotPersonaEnum)('chatbot_persona').default('female'),
+    screeningAnswers: (0, pg_core_1.jsonb)('screening_answers'),
+    pinEnabled: (0, pg_core_1.boolean)('pin_enabled').default(false),
+    biometricEnabled: (0, pg_core_1.boolean)('biometric_enabled').default(false),
+    autoLockMinutes: (0, pg_core_1.integer)('auto_lock_minutes').default(5),
+    hideJournalPreview: (0, pg_core_1.boolean)('hide_journal_preview').default(true),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at'),
 });
 // Resources (articles, guides, etc.)
 exports.resources = (0, pg_core_1.pgTable)('resources', {
@@ -166,5 +197,98 @@ exports.journalEntries = (0, pg_core_1.pgTable)('journal_entries', {
     entryDate: (0, pg_core_1.timestamp)('entry_date').defaultNow(),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at'),
+});
+exports.chatbotSessions = (0, pg_core_1.pgTable)('chatbot_sessions', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }),
+    deviceId: (0, pg_core_1.varchar)('device_id', { length: 255 }),
+    persona: (0, exports.chatbotPersonaEnum)('persona').notNull(),
+    riskLevel: (0, exports.riskLevelEnum)('risk_level').default('low'),
+    escalatedCaseId: (0, pg_core_1.uuid)('escalated_case_id'),
+    summary: (0, pg_core_1.text)('summary'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at'),
+});
+exports.chatbotMessages = (0, pg_core_1.pgTable)('chatbot_messages', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    sessionId: (0, pg_core_1.uuid)('session_id').references(() => exports.chatbotSessions.id, { onDelete: 'cascade' }).notNull(),
+    sender: (0, pg_core_1.varchar)('sender', { length: 20 }).notNull(),
+    content: (0, pg_core_1.text)('content').notNull(),
+    riskLevel: (0, exports.riskLevelEnum)('risk_level').default('low'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+exports.counselorCases = (0, pg_core_1.pgTable)('counselor_cases', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }),
+    counselorId: (0, pg_core_1.uuid)('counselor_id').references(() => exports.users.id),
+    issueCategory: (0, pg_core_1.varchar)('issue_category', { length: 120 }).notNull(),
+    status: (0, exports.counselorCaseStatusEnum)('status').default('requested').notNull(),
+    riskLevel: (0, exports.riskLevelEnum)('risk_level').default('medium').notNull(),
+    source: (0, pg_core_1.varchar)('source', { length: 40 }).default('mobile'),
+    summary: (0, pg_core_1.text)('summary'),
+    followUpAt: (0, pg_core_1.timestamp)('follow_up_at'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at'),
+    resolvedAt: (0, pg_core_1.timestamp)('resolved_at'),
+});
+exports.counselingMessages = (0, pg_core_1.pgTable)('counseling_messages', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    caseId: (0, pg_core_1.uuid)('case_id').references(() => exports.counselorCases.id, { onDelete: 'cascade' }).notNull(),
+    senderUserId: (0, pg_core_1.uuid)('sender_user_id').references(() => exports.users.id),
+    senderRole: (0, pg_core_1.varchar)('sender_role', { length: 30 }).notNull(),
+    content: (0, pg_core_1.text)('content').notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+exports.counselorNotes = (0, pg_core_1.pgTable)('counselor_notes', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    caseId: (0, pg_core_1.uuid)('case_id').references(() => exports.counselorCases.id, { onDelete: 'cascade' }).notNull(),
+    counselorId: (0, pg_core_1.uuid)('counselor_id').references(() => exports.users.id).notNull(),
+    note: (0, pg_core_1.text)('note').notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+exports.communityPosts = (0, pg_core_1.pgTable)('community_posts', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'set null' }),
+    ageGroup: (0, exports.ageGroupEnum)('age_group').notNull(),
+    content: (0, pg_core_1.text)('content').notNull(),
+    status: (0, exports.communityPostStatusEnum)('status').default('pending').notNull(),
+    moderationReason: (0, pg_core_1.text)('moderation_reason'),
+    reportCount: (0, pg_core_1.integer)('report_count').default(0),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+    reviewedAt: (0, pg_core_1.timestamp)('reviewed_at'),
+    reviewedBy: (0, pg_core_1.uuid)('reviewed_by').references(() => exports.users.id),
+    removedAt: (0, pg_core_1.timestamp)('removed_at'),
+});
+exports.cmsContent = (0, pg_core_1.pgTable)('cms_content', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    title: (0, pg_core_1.varchar)('title', { length: 255 }).notNull(),
+    body: (0, pg_core_1.text)('body').notNull(),
+    contentType: (0, exports.cmsContentTypeEnum)('content_type').notNull(),
+    category: (0, pg_core_1.varchar)('category', { length: 80 }).notNull(),
+    mediaUrl: (0, pg_core_1.varchar)('media_url', { length: 255 }),
+    status: (0, exports.contentStatusEnum)('status').default('draft').notNull(),
+    createdBy: (0, pg_core_1.uuid)('created_by').references(() => exports.users.id),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at'),
+    publishedAt: (0, pg_core_1.timestamp)('published_at'),
+});
+exports.notifications = (0, pg_core_1.pgTable)('notifications', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }),
+    channel: (0, pg_core_1.varchar)('channel', { length: 40 }).notNull(),
+    title: (0, pg_core_1.varchar)('title', { length: 180 }).notNull(),
+    body: (0, pg_core_1.text)('body').notNull(),
+    metadata: (0, pg_core_1.jsonb)('metadata'),
+    readAt: (0, pg_core_1.timestamp)('read_at'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+exports.securityLogs = (0, pg_core_1.pgTable)('security_logs', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'set null' }),
+    event: (0, pg_core_1.varchar)('event', { length: 120 }).notNull(),
+    ipAddress: (0, pg_core_1.varchar)('ip_address', { length: 80 }),
+    userAgent: (0, pg_core_1.text)('user_agent'),
+    metadata: (0, pg_core_1.jsonb)('metadata'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
 });
 //# sourceMappingURL=schema.js.map

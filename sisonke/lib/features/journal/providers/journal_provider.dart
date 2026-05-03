@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sisonke/shared/models/journal.dart';
-import 'package:sisonke/app/core/services/local_database_service.dart';
-import 'package:sisonke/app/core/services/providers.dart';
+import 'package:sisonke/core/services/local_database_service.dart';
+import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/features/journal/services/journal_encryption_service.dart';
 import 'package:sisonke/features/mood_tracker/providers/mood_provider.dart';
 import 'package:uuid/uuid.dart';

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminApi {
@@ -8,10 +9,7 @@ class AdminApi {
 
   AdminApi(this._prefs)
       : _dio = Dio(BaseOptions(
-          baseUrl: const String.fromEnvironment(
-            'API_BASE_URL',
-            defaultValue: 'https://sisonke.mmpzmne.co.zw/api',
-          ),
+          baseUrl: _adminApiBaseUrl,
           connectTimeout: const Duration(seconds: 20),
           receiveTimeout: const Duration(seconds: 20),
           headers: const {'Content-Type': 'application/json'},
@@ -25,6 +23,11 @@ class AdminApi {
         handler.next(options);
       },
     ));
+  }
+
+  static String get _adminApiBaseUrl {
+    const configured = String.fromEnvironment('API_BASE_URL');
+    return configured.isNotEmpty ? configured : AppConstants.devApiBaseUrl;
   }
 
   bool get isAuthenticated => (_prefs.getString(_tokenKey) ?? '').isNotEmpty;
@@ -92,5 +95,83 @@ class AdminApi {
     } else {
       await _dio.put('/admin/emergency-contacts/$id', data: payload);
     }
+  }
+
+  Future<List<Map<String, dynamic>>> counselorCases() async {
+    final response = await _dio.get('/admin/counselor-cases');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<void> updateCounselorCaseStatus(String id, String status) async {
+    await _dio.post('/admin/counselor-cases/$id/status', data: {'status': status});
+  }
+
+  Future<void> addCounselorNote(String id, String note) async {
+    await _dio.post('/admin/counselor-cases/$id/notes', data: {'note': note});
+  }
+
+  Future<List<Map<String, dynamic>>> communityPosts() async {
+    final response = await _dio.get('/admin/community-posts');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<void> moderateCommunityPost(String id, String status, {String? reason}) async {
+    final data = <String, dynamic>{'status': status};
+    if (reason != null) data['reason'] = reason;
+    await _dio.post('/admin/community-posts/$id/moderate', data: data);
+  }
+
+  Future<List<Map<String, dynamic>>> reports() async {
+    final response = await _dio.get('/admin/reports');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<void> updateReportStatus(String id, String status) async {
+    await _dio.post('/admin/reports/$id/status', data: {'status': status});
+  }
+
+  Future<List<Map<String, dynamic>>> cmsContent() async {
+    final response = await _dio.get('/admin/cms-content');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<void> createCmsContent(Map<String, dynamic> payload) async {
+    await _dio.post('/admin/cms-content', data: payload);
+  }
+
+  Future<void> saveCmsContent(Map<String, dynamic> payload, {String? id}) async {
+    if (id == null) {
+      await _dio.post('/admin/cms-content', data: payload);
+    } else {
+      await _dio.put('/admin/cms-content/$id', data: payload);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> users() async {
+    final response = await _dio.get('/admin/users');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<void> setUserSuspension(String id, bool suspended, {String? reason}) async {
+    final data = <String, dynamic>{'suspended': suspended};
+    if (reason != null) data['reason'] = reason;
+    await _dio.post('/admin/users/$id/suspension', data: data);
+  }
+
+  Future<List<Map<String, dynamic>>> securityLogs() async {
+    final response = await _dio.get('/admin/security-logs');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 }

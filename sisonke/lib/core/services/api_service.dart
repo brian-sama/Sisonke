@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
@@ -160,6 +161,20 @@ class ApiService {
     } catch (e) {
       return null;
     }
+  }
+
+  Future<void> ensureGuestSession() async {
+    final token = await _secureStorage.read(key: AppConstants.tokenKey);
+    if (token != null && token.isNotEmpty) return;
+
+    var deviceId = await _secureStorage.read(key: AppConstants.deviceIdKey);
+    if (deviceId == null || deviceId.length < 10) {
+      final suffix = Random.secure().nextInt(1 << 32).toRadixString(16);
+      deviceId = 'device-${DateTime.now().millisecondsSinceEpoch}-$suffix';
+      await _secureStorage.write(key: AppConstants.deviceIdKey, value: deviceId);
+    }
+
+    await createGuestSession(deviceId);
   }
 
   // Resource methods
@@ -379,6 +394,166 @@ class ApiService {
       });
     } on DioException {
       // Analytics must never block app workflows.
+    }
+  }
+
+  Future<Map<String, dynamic>> sendChatbotMessage({
+    required String message,
+    required String persona,
+    String? sessionId,
+    String? deviceId,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'message': message,
+        'persona': persona,
+      };
+      if (sessionId != null) payload['sessionId'] = sessionId;
+      if (deviceId != null) payload['deviceId'] = deviceId;
+
+      final response = await _dio.post('/chatbot/message', data: payload);
+
+      if (response.data['success']) {
+        return Map<String, dynamic>.from(response.data['data'] as Map);
+      } else {
+        throw ApiException(response.data['error'] ?? 'Chatbot request failed');
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> saveOnboardingProfile({
+    required String nickname,
+    required int age,
+    required String gender,
+    required String location,
+    required String chatbotPersona,
+    required Map<String, bool> screeningAnswers,
+    bool pinEnabled = true,
+    bool biometricEnabled = false,
+    int autoLockMinutes = 5,
+    bool hideJournalPreview = true,
+  }) async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.put('/profiles/me', data: {
+        'nickname': nickname,
+        'age': age,
+        'gender': gender,
+        'location': location,
+        'consentAccepted': true,
+        'pinEnabled': pinEnabled,
+        'biometricEnabled': biometricEnabled,
+        'autoLockMinutes': autoLockMinutes,
+        'hideJournalPreview': hideJournalPreview,
+        'chatbotPersona': chatbotPersona,
+        'screeningAnswers': screeningAnswers,
+      });
+
+      if (response.data['success']) {
+        return Map<String, dynamic>.from(response.data['data'] as Map);
+      }
+      throw ApiException(response.data['error'] ?? 'Profile save failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getProfile() async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.get('/profiles/me');
+      if (response.data['success']) {
+        final data = response.data['data'];
+        return data == null ? null : Map<String, dynamic>.from(data as Map);
+      }
+      throw ApiException(response.data['error'] ?? 'Profile load failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateSafetySettings({
+    required bool pinEnabled,
+    required bool biometricEnabled,
+    required int autoLockMinutes,
+    required bool hideJournalPreview,
+  }) async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.patch('/profiles/me/safety', data: {
+        'pinEnabled': pinEnabled,
+        'biometricEnabled': biometricEnabled,
+        'autoLockMinutes': autoLockMinutes,
+        'hideJournalPreview': hideJournalPreview,
+      });
+
+      if (response.data['success']) {
+        return Map<String, dynamic>.from(response.data['data'] as Map);
+      }
+      throw ApiException(response.data['error'] ?? 'Safety settings save failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> requestCounselor({
+    required String issueCategory,
+    String? summary,
+    String riskLevel = 'medium',
+  }) async {
+    await ensureGuestSession();
+    try {
+      final data = <String, dynamic>{
+        'issueCategory': issueCategory,
+        'riskLevel': riskLevel,
+      };
+      if (summary != null && summary.trim().isNotEmpty) {
+        data['summary'] = summary.trim();
+      }
+
+      final response = await _dio.post('/counselor/requests', data: data);
+      if (response.data['success']) {
+        return Map<String, dynamic>.from(response.data['data'] as Map);
+      }
+      throw ApiException(response.data['error'] ?? 'Counselor request failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCommunityPosts({required String ageGroup}) async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.get('/community/posts', queryParameters: {'ageGroup': ageGroup});
+      if (response.data['success']) {
+        return (response.data['data'] as List<dynamic>)
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
+      }
+      throw ApiException(response.data['error'] ?? 'Community feed failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> submitCommunityPost({
+    required String ageGroup,
+    required String content,
+  }) async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.post('/community/posts', data: {
+        'ageGroup': ageGroup,
+        'content': content,
+      });
+      if (response.data['success']) {
+        return Map<String, dynamic>.from(response.data['data'] as Map);
+      }
+      throw ApiException(response.data['error'] ?? 'Community post failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 

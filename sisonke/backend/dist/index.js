@@ -19,6 +19,10 @@ const health_1 = __importDefault(require("./routes/health"));
 const admin_1 = __importDefault(require("./routes/admin"));
 const sync_1 = __importDefault(require("./routes/sync"));
 const analytics_1 = __importDefault(require("./routes/analytics"));
+const profiles_1 = __importDefault(require("./routes/profiles"));
+const chatbot_1 = __importDefault(require("./routes/chatbot"));
+const counselor_1 = __importDefault(require("./routes/counselor"));
+const community_1 = __importDefault(require("./routes/community"));
 // Load environment variables
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
@@ -64,6 +68,10 @@ app.use('/api/questions', questions_1.default);
 app.use('/api/emergency', emergency_1.default);
 app.use('/api/sync', sync_1.default);
 app.use('/api/analytics', analytics_1.default);
+app.use('/api/profiles', profiles_1.default);
+app.use('/api/chatbot', chatbot_1.default);
+app.use('/api/counselor', counselor_1.default);
+app.use('/api/community', community_1.default);
 app.use('/api/admin', admin_1.default);
 // Root endpoint
 app.get('/', (req, res) => {
@@ -80,6 +88,10 @@ app.get('/', (req, res) => {
             emergency: '/api/emergency',
             sync: '/api/sync',
             analytics: '/api/analytics',
+            profiles: '/api/profiles',
+            chatbot: '/api/chatbot',
+            counselor: '/api/counselor',
+            community: '/api/community',
             admin: '/api/admin',
         },
         documentation: 'https://github.com/sisonke/api-docs',

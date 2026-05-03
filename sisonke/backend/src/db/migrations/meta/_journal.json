@@ -8,6 +8,20 @@
       "when": 1777378798168,
       "tag": "0000_gray_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1777795200000,
+      "tag": "0001_connected_systems",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777798800000,
+      "tag": "0002_admin_controls",
+      "breakpoints": true
     }
   ]
 }

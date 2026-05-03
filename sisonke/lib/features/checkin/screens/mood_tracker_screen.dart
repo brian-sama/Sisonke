@@ -5,7 +5,7 @@ import 'package:sisonke/shared/models/mood.dart';
 import 'package:sisonke/features/mood_tracker/providers/mood_provider.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/features/checkin/screens/mood_checkin_screen.dart';
-import 'package:sisonke/app/core/services/providers.dart';
+import 'package:sisonke/core/services/providers.dart';
 
 class MoodTrackerScreen extends ConsumerStatefulWidget {
   const MoodTrackerScreen({super.key});

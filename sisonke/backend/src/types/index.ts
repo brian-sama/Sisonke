@@ -75,6 +75,10 @@ export const AnalyticsEventSchema = z.object({
     'resource_saved',
     'emergency_opened',
     'category_opened',
+    'chatbot_session_started',
+    'counselor_escalated',
+    'community_post_submitted',
+    'mood_logged',
     'sync_completed',
     'sync_failed',
   ]),
@@ -84,6 +88,56 @@ export const AnalyticsEventSchema = z.object({
   appVersion: z.string().max(40).optional(),
   locale: z.string().max(10).optional(),
   metadata: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+});
+
+export const OnboardingProfileSchema = z.object({
+  nickname: z.string().min(1).max(120),
+  dateOfBirth: z.coerce.date().optional(),
+  age: z.number().int().min(13).max(120).optional(),
+  gender: z.string().max(80).optional(),
+  location: z.string().max(120).optional(),
+  consentAccepted: z.boolean(),
+  pinEnabled: z.boolean().default(true),
+  biometricEnabled: z.boolean().default(false),
+  autoLockMinutes: z.number().int().min(1).max(60).default(5),
+  hideJournalPreview: z.boolean().default(true),
+  chatbotPersona: z.enum(['male', 'female']).default('female'),
+  screeningAnswers: z.record(z.boolean()).default({}),
+});
+
+export const ChatbotMessageSchema = z.object({
+  sessionId: z.string().uuid().optional(),
+  persona: z.enum(['male', 'female']).default('female'),
+  message: z.string().min(1).max(2000),
+  deviceId: z.string().optional(),
+});
+
+export const CounselorRequestSchema = z.object({
+  issueCategory: z.string().min(1).max(120),
+  summary: z.string().max(2000).optional(),
+  riskLevel: z.enum(['low', 'medium', 'high']).default('medium'),
+});
+
+export const CommunityPostSchema = z.object({
+  ageGroup: z.enum(['13-15', '16-17', '18-24', '25+']),
+  content: z.string().min(1).max(1200),
+});
+
+export const CmsContentSchema = z.object({
+  title: z.string().min(1).max(255),
+  body: z.string().min(1),
+  contentType: z.enum(['article', 'srhr', 'event', 'helpline', 'faq', 'video', 'daily-prompt', 'announcement']),
+  category: z.enum([
+    'Mental Health',
+    'SRHR',
+    'Substance Abuse',
+    'Relationships',
+    'Self-Care',
+    'Youth Opportunities',
+    'Emergency Support',
+  ]),
+  mediaUrl: z.string().url().optional(),
+  status: z.enum(['draft', 'review', 'published', 'archived']).default('draft'),
 });
 
 // Mood check-in schemas
@@ -132,6 +186,11 @@ export type CreateReportInput = z.infer<typeof CreateReportSchema>;
 export type CreateEmergencyContactInput = z.infer<typeof CreateEmergencyContactSchema>;
 export type UpdateEmergencyContactInput = z.infer<typeof UpdateEmergencyContactSchema>;
 export type AnalyticsEventInput = z.infer<typeof AnalyticsEventSchema>;
+export type OnboardingProfileInput = z.infer<typeof OnboardingProfileSchema>;
+export type ChatbotMessageInput = z.infer<typeof ChatbotMessageSchema>;
+export type CounselorRequestInput = z.infer<typeof CounselorRequestSchema>;
+export type CommunityPostInput = z.infer<typeof CommunityPostSchema>;
+export type CmsContentInput = z.infer<typeof CmsContentSchema>;
 export type CreateMoodCheckinInput = z.infer<typeof CreateMoodCheckinSchema>;
 export type CreateJournalEntryInput = z.infer<typeof CreateJournalEntrySchema>;
 export type ResourceQuery = z.infer<typeof ResourceQuerySchema>;

@@ -6,7 +6,19 @@ class AppConstants {
     const configured = String.fromEnvironment('API_BASE_URL');
     if (configured.isNotEmpty) return configured;
     if (kReleaseMode) return 'https://sisonke.mmpzmne.co.zw/api';
-    return 'http://localhost:3001/api';
+    return devApiBaseUrl;
+  }
+
+  static String get devApiBaseUrl {
+    if (kIsWeb) return 'http://localhost:3001/api';
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'http://10.0.2.2:3001/api',
+      TargetPlatform.iOS ||
+      TargetPlatform.macOS ||
+      TargetPlatform.linux ||
+      TargetPlatform.windows ||
+      TargetPlatform.fuchsia => 'http://localhost:3001/api',
+    };
   }
 
   static const String tokenKey = 'auth_token';

@@ -1,0 +1,1 @@
+{"version":3,"file":"riskService.d.ts","sourceRoot":"","sources":["../../src/services/riskService.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,SAAS,GAAG,KAAK,GAAG,QAAQ,GAAG,MAAM,CAAC;AAyBlD,wBAAgB,eAAe,CAAC,OAAO,EAAE,MAAM,GAAG,SAAS,CAK1D;AAED,wBAAgB,YAAY,CAAC,OAAO,EAAE,MAAM,EAAE,SAAS,EAAE,SAAS,EAAE,OAAO,EAAE,MAAM,GAAG,QAAQ;;;EAqB7F"}

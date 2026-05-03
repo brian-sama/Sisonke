@@ -23,11 +23,29 @@ class HomeScreen extends ConsumerWidget {
         foregroundColor: ink,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton.filledTonal(
               icon: const Icon(Icons.notifications_none_rounded),
               tooltip: 'Notifications',
               onPressed: () => context.push('/notifications'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: PopupMenuButton<String>(
+              tooltip: 'Profile menu',
+              icon: const CircleAvatar(
+                radius: 18,
+                backgroundColor: Color(0xFFE7FAFA),
+                child: Icon(Icons.person_rounded, color: teal),
+              ),
+              onSelected: (value) => context.push(value),
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: '/profile-safety', child: Text('Profile & Safety')),
+                PopupMenuItem(value: '/settings', child: Text('Settings')),
+                PopupMenuItem(value: '/resources', child: Text('Resources / Learn')),
+                PopupMenuItem(value: '/emergency', child: Text('Emergency Support')),
+              ],
             ),
           ),
         ],
@@ -79,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'What do you need right now?',
+                      'Your private support space',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 27,
@@ -102,7 +120,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Quick actions',
+                'Start here',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: ink,
                   fontWeight: FontWeight.w900,
@@ -118,37 +136,60 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisSpacing: 12,
                 children: [
                   _QuickActionCard(
-                    icon: Icons.favorite_rounded,
-                    label: 'Daily check-in',
-                    caption: 'Mood, energy, notes',
-                    accentColor: coral,
-                    backgroundColor: const Color(0xFFFFEEF0),
-                    onTap: () => context.push('/check-in'),
-                  ),
-                  _QuickActionCard(
-                    icon: Icons.forum_rounded,
-                    label: 'Ask anonymously',
-                    caption: 'No judgement here',
+                    icon: Icons.smart_toy_rounded,
+                    label: 'E-Friend',
+                    caption: 'Chat with safety routing',
                     accentColor: violet,
                     backgroundColor: const Color(0xFFF0EDFF),
-                    onTap: () => context.push('/qa/ask'),
+                    onTap: () => context.go('/e-friend'),
                   ),
                   _QuickActionCard(
-                    icon: Icons.air_rounded,
-                    label: 'Breathing',
-                    caption: 'Reset in minutes',
+                    icon: Icons.favorite_rounded,
+                    label: 'Check-In',
+                    caption: 'Mood, journal, recovery',
+                    accentColor: coral,
+                    backgroundColor: const Color(0xFFFFEEF0),
+                    onTap: () => context.go('/check-in'),
+                  ),
+                  _QuickActionCard(
+                    icon: Icons.groups_rounded,
+                    label: 'Community',
+                    caption: 'Age-gated moderated feed',
                     accentColor: teal,
                     backgroundColor: const Color(0xFFE7FAFA),
-                    onTap: () => context.push('/breathing'),
+                    onTap: () => context.go('/community'),
                   ),
                   _QuickActionCard(
-                    icon: Icons.shield_rounded,
-                    label: 'Safety plan',
-                    caption: 'Keep it close',
+                    icon: Icons.support_agent_rounded,
+                    label: 'Counselor',
+                    caption: 'Request human support',
                     accentColor: const Color(0xFFE7A500),
                     backgroundColor: const Color(0xFFFFF6D8),
-                    onTap: () => context.push('/safety-plan'),
+                    onTap: () => context.push('/talk-to-counselor'),
                   ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Main sections',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: ink,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _SectionList(
+                sections: [
+                  _SectionItem(Icons.home_rounded, 'Home', '/home'),
+                  _SectionItem(Icons.mood_rounded, 'Mood Tracker', '/mood-tracker'),
+                  _SectionItem(Icons.edit_note_rounded, 'Private Journal', '/private-journal'),
+                  _SectionItem(Icons.smart_toy_rounded, 'E-Friend Chatbot', '/e-friend'),
+                  _SectionItem(Icons.support_agent_rounded, 'Talk to a Counselor', '/talk-to-counselor'),
+                  _SectionItem(Icons.groups_rounded, 'Community Feed', '/community'),
+                  _SectionItem(Icons.menu_book_rounded, 'Resources / Learn', '/resources'),
+                  _SectionItem(Icons.forum_rounded, 'Anonymous Q&A', '/qa'),
+                  _SectionItem(Icons.shield_rounded, 'Emergency Toolkit', '/emergency'),
+                  _SectionItem(Icons.admin_panel_settings_rounded, 'Profile & Safety Settings', '/profile-safety'),
                 ],
               ),
               const SizedBox(height: 24),
@@ -213,6 +254,42 @@ class HomeScreen extends ConsumerWidget {
       ),
       floatingActionButton: EmergencyHelpButton(
         onPressed: () => context.push('/emergency'),
+      ),
+    );
+  }
+}
+
+class _SectionItem {
+  final IconData icon;
+  final String label;
+  final String route;
+
+  const _SectionItem(this.icon, this.label, this.route);
+}
+
+class _SectionList extends StatelessWidget {
+  final List<_SectionItem> sections;
+
+  const _SectionList({required this.sections});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFECE8FF)),
+      ),
+      child: Column(
+        children: sections.map((section) {
+          return ListTile(
+            leading: Icon(section.icon),
+            title: Text(section.label),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push(section.route),
+          );
+        }).toList(),
       ),
     );
   }

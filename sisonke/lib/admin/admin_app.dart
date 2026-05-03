@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'admin_api.dart';
+import 'package:sisonke/core/services/chat_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SisonkeAdminApp extends StatefulWidget {
   const SisonkeAdminApp({super.key});
@@ -76,8 +78,13 @@ class _AdminShellState extends State<AdminShell> {
 
     final pages = [
       AdminOverviewScreen(api: widget.api),
+      AdminCounselorScreen(api: widget.api),
+      AdminCommunityModerationScreen(api: widget.api),
+      AdminCmsScreen(api: widget.api),
       AdminResourcesScreen(api: widget.api),
       AdminEmergencyContactsScreen(api: widget.api),
+      AdminAnalyticsScreen(api: widget.api),
+      AdminUsersSecurityScreen(api: widget.api),
     ];
 
     return Scaffold(
@@ -96,9 +103,24 @@ class _AdminShellState extends State<AdminShell> {
             ),
             destinations: const [
               NavigationRailDestination(
-                icon: Icon(Icons.analytics_outlined),
-                selectedIcon: Icon(Icons.analytics_rounded),
-                label: Text('Overview'),
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard_rounded),
+                label: Text('Dashboard'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.priority_high_outlined),
+                selectedIcon: Icon(Icons.priority_high_rounded),
+                label: Text('Risk Alerts'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.groups_outlined),
+                selectedIcon: Icon(Icons.groups_rounded),
+                label: Text('Moderation'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.web_stories_outlined),
+                selectedIcon: Icon(Icons.web_stories_rounded),
+                label: Text('CMS'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.menu_book_outlined),
@@ -109,6 +131,16 @@ class _AdminShellState extends State<AdminShell> {
                 icon: Icon(Icons.health_and_safety_outlined),
                 selectedIcon: Icon(Icons.health_and_safety_rounded),
                 label: Text('Emergency'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.query_stats_outlined),
+                selectedIcon: Icon(Icons.query_stats_rounded),
+                label: Text('Analytics'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.admin_panel_settings_outlined),
+                selectedIcon: Icon(Icons.admin_panel_settings_rounded),
+                label: Text('Security'),
               ),
             ],
           ),
@@ -148,8 +180,13 @@ class _AdminTopBar extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              'Sisonke Admin',
+              'Sisonke Operations',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(width: 12),
+            Chip(
+              avatar: Icon(Icons.health_and_safety_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+              label: const Text('Safety dashboard'),
             ),
             const Spacer(),
             FilledButton.tonalIcon(
@@ -249,6 +286,483 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 }
 
+class AdminCounselorScreen extends ConsumerStatefulWidget {
+  final AdminApi api;
+
+  const AdminCounselorScreen({super.key, required this.api});
+
+  @override
+  ConsumerState<AdminCounselorScreen> createState() => _AdminCounselorScreenState();
+}
+
+class _AdminCounselorScreenState extends ConsumerState<AdminCounselorScreen> {
+  late Future<List<Map<String, dynamic>>> _future = widget.api.counselorCases();
+
+  @override
+  Widget build(BuildContext context) {
+    return _AdminTablePage(
+      title: 'Counselor dashboard',
+      actionLabel: 'Refresh',
+      onAdd: () => setState(() => _future = widget.api.counselorCases()),
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          return DataTable(
+            columns: const [
+              DataColumn(label: Text('Issue')),
+              DataColumn(label: Text('Risk')),
+              DataColumn(label: Text('Status')),
+              DataColumn(label: Text('Actions')),
+            ],
+            rows: snapshot.data!.map((item) {
+              final id = item['id'] as String;
+              return DataRow(cells: [
+                DataCell(Text('${item['issueCategory'] ?? item['issue_category']}')),
+                DataCell(Chip(label: Text('${item['riskLevel'] ?? item['risk_level']}'))),
+                DataCell(Text('${item['status']}')),
+                DataCell(Row(
+                  children: [
+                    IconButton(onPressed: () => _openChat(item), icon: const Icon(Icons.chat_rounded), tooltip: 'Live chat'),
+                    IconButton(onPressed: () => _setStatus(id, 'live'), icon: const Icon(Icons.check_circle_outline_rounded), tooltip: 'Accept case'),
+                    IconButton(onPressed: () => _setStatus(id, 'emergency'), icon: const Icon(Icons.priority_high_rounded), tooltip: 'Escalate emergency'),
+                    IconButton(onPressed: () => _setStatus(id, 'follow-up'), icon: const Icon(Icons.event_available_rounded), tooltip: 'Schedule follow-up'),
+                    IconButton(onPressed: () => _addNote(id), icon: const Icon(Icons.note_add_rounded), tooltip: 'Add private note'),
+                    IconButton(onPressed: () => _setStatus(id, 'resolved'), icon: const Icon(Icons.check_circle_rounded), tooltip: 'Mark resolved'),
+                  ],
+                )),
+              ]);
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _setStatus(String id, String status) async {
+    await widget.api.updateCounselorCaseStatus(id, status);
+    setState(() => _future = widget.api.counselorCases());
+  }
+
+  Future<void> _addNote(String id) async {
+    final controller = TextEditingController();
+    final note = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Private counselor note'),
+        content: TextField(
+          controller: controller,
+          minLines: 4,
+          maxLines: 8,
+          decoration: const InputDecoration(labelText: 'Note'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (note == null || note.trim().isEmpty) return;
+    await widget.api.addCounselorNote(id, note.trim());
+  }
+
+  Future<void> _openChat(Map<String, dynamic> item) async {
+    final id = item['id'] as String;
+    final category = '${item['issueCategory'] ?? item['issue_category'] ?? 'Support'}';
+    
+    // Ensure case is at least 'assigned' or 'live' before chatting
+    if (item['status'] == 'requested') {
+      await _setStatus(id, 'assigned');
+    }
+
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog.fullscreen(
+        child: _AdminLiveChatView(caseId: id, title: category),
+      ),
+    );
+  }
+}
+
+class _AdminLiveChatView extends ConsumerStatefulWidget {
+  final String caseId;
+  final String title;
+
+  const _AdminLiveChatView({required this.caseId, required this.title});
+
+  @override
+  ConsumerState<_AdminLiveChatView> createState() => _AdminLiveChatViewState();
+}
+
+class _AdminLiveChatViewState extends ConsumerState<_AdminLiveChatView> {
+  final _messageController = TextEditingController();
+  final List<Map<String, dynamic>> _messages = [];
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _connect();
+  }
+
+  Future<void> _connect() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('admin_token');
+    // Extract user ID from token or assume admin for now (ideally passed from API)
+    _userId = 'admin'; 
+
+    if (token != null && mounted) {
+      final chatService = ref.read(chatServiceProvider);
+      chatService.connect(token);
+      chatService.joinCase(widget.caseId);
+
+      chatService.messages.listen((msg) {
+        if (msg['caseId'] == widget.caseId && mounted) {
+          setState(() => _messages.add(msg));
+        }
+      });
+    }
+  }
+
+  void _send() {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    ref.read(chatServiceProvider).sendMessage(widget.caseId, text);
+    setState(() {
+      _messages.add({
+        'content': text,
+        'senderId': _userId,
+        'senderRole': 'counselor',
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      _messageController.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Live Support: ${widget.title}'),
+        leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(24),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                final isMe = msg['senderRole'] == 'counselor' || msg['senderRole'] == 'admin';
+                return Align(
+                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isMe ? Colors.blue.shade100 : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        Text(msg['content']),
+                        const SizedBox(height: 4),
+                        Text(
+                          isMe ? 'You' : 'User',
+                          style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(hintText: 'Type reply...', border: OutlineInputBorder()),
+                    onSubmitted: (_) => _send(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton.filled(onPressed: _send, icon: const Icon(Icons.send_rounded)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminCommunityModerationScreen extends StatefulWidget {
+  final AdminApi api;
+
+  const AdminCommunityModerationScreen({super.key, required this.api});
+
+  @override
+  State<AdminCommunityModerationScreen> createState() => _AdminCommunityModerationScreenState();
+}
+
+class _AdminCommunityModerationScreenState extends State<AdminCommunityModerationScreen> {
+  late Future<List<Map<String, dynamic>>> _future = widget.api.communityPosts();
+  late Future<List<Map<String, dynamic>>> _reportsFuture = widget.api.reports();
+
+  @override
+  Widget build(BuildContext context) {
+    return _AdminTablePage(
+      title: 'Community moderation',
+      actionLabel: 'Refresh',
+      onAdd: () => setState(() => _future = widget.api.communityPosts()),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              return DataTable(
+                columns: const [
+                  DataColumn(label: Text('Age group')),
+                  DataColumn(label: Text('Post')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: snapshot.data!.map((item) {
+                  final id = item['id'] as String;
+                  return DataRow(cells: [
+                    DataCell(Text('${item['ageGroup'] ?? item['age_group']}')),
+                    DataCell(SizedBox(width: 360, child: Text('${item['content']}', maxLines: 2, overflow: TextOverflow.ellipsis))),
+                    DataCell(Chip(label: Text('${item['status']}'))),
+                    DataCell(Row(
+                      children: [
+                        IconButton(onPressed: () => _moderate(id, 'approved'), icon: const Icon(Icons.check_rounded), tooltip: 'Approve'),
+                        IconButton(onPressed: () => _moderate(id, 'removed'), icon: const Icon(Icons.delete_outline_rounded), tooltip: 'Remove'),
+                      ],
+                    )),
+                  ]);
+                }).toList(),
+              );
+            },
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Reports queue', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+          ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _reportsFuture,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              return DataTable(
+                columns: const [
+                  DataColumn(label: Text('Type')),
+                  DataColumn(label: Text('Reason')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: snapshot.data!.map((item) {
+                  final id = item['id'] as String;
+                  return DataRow(cells: [
+                    DataCell(Text('${item['type']}')),
+                    DataCell(SizedBox(width: 300, child: Text('${item['reason']}', overflow: TextOverflow.ellipsis))),
+                    DataCell(Chip(label: Text('${item['status']}'))),
+                    DataCell(Row(
+                      children: [
+                        IconButton(onPressed: () => _setReport(id, 'resolved'), icon: const Icon(Icons.task_alt_rounded), tooltip: 'Resolve'),
+                        IconButton(onPressed: () => _setReport(id, 'dismissed'), icon: const Icon(Icons.block_rounded), tooltip: 'Dismiss'),
+                      ],
+                    )),
+                  ]);
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _moderate(String id, String status) async {
+    await widget.api.moderateCommunityPost(id, status, reason: status == 'removed' ? 'Removed by moderator' : null);
+    setState(() => _future = widget.api.communityPosts());
+  }
+
+  Future<void> _setReport(String id, String status) async {
+    await widget.api.updateReportStatus(id, status);
+    setState(() => _reportsFuture = widget.api.reports());
+  }
+}
+
+class AdminCmsScreen extends StatefulWidget {
+  final AdminApi api;
+
+  const AdminCmsScreen({super.key, required this.api});
+
+  @override
+  State<AdminCmsScreen> createState() => _AdminCmsScreenState();
+}
+
+class _AdminCmsScreenState extends State<AdminCmsScreen> {
+  late Future<List<Map<String, dynamic>>> _future = widget.api.cmsContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return _AdminTablePage(
+      title: 'Content management',
+      actionLabel: 'New content',
+      onAdd: _openEditor,
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          return DataTable(
+            columns: const [
+              DataColumn(label: Text('Title')),
+              DataColumn(label: Text('Type')),
+              DataColumn(label: Text('Category')),
+              DataColumn(label: Text('Status')),
+              DataColumn(label: Text('Actions')),
+            ],
+            rows: snapshot.data!.map((item) {
+              return DataRow(cells: [
+                DataCell(Text('${item['title']}')),
+                DataCell(Text('${item['contentType'] ?? item['content_type']}')),
+                DataCell(Text('${item['category']}')),
+                DataCell(Chip(label: Text('${item['status']}'))),
+                DataCell(Row(
+                  children: [
+                    IconButton(onPressed: () => _openEditor(item: item), icon: const Icon(Icons.edit_rounded), tooltip: 'Edit'),
+                    IconButton(onPressed: () => _publish(item), icon: const Icon(Icons.publish_rounded), tooltip: 'Publish'),
+                    IconButton(onPressed: () => _archive(item), icon: const Icon(Icons.archive_rounded), tooltip: 'Archive'),
+                  ],
+                )),
+              ]);
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openEditor({Map<String, dynamic>? item}) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _CmsEditor(api: widget.api, item: item),
+    );
+    if (saved == true) setState(() => _future = widget.api.cmsContent());
+  }
+
+  Future<void> _publish(Map<String, dynamic> item) async {
+    await widget.api.saveCmsContent({'status': 'published'}, id: item['id'] as String);
+    setState(() => _future = widget.api.cmsContent());
+  }
+
+  Future<void> _archive(Map<String, dynamic> item) async {
+    await widget.api.saveCmsContent({'status': 'archived'}, id: item['id'] as String);
+    setState(() => _future = widget.api.cmsContent());
+  }
+}
+
+class _CmsEditor extends StatefulWidget {
+  final AdminApi api;
+  final Map<String, dynamic>? item;
+
+  const _CmsEditor({required this.api, this.item});
+
+  @override
+  State<_CmsEditor> createState() => _CmsEditorState();
+}
+
+class _CmsEditorState extends State<_CmsEditor> {
+  late final _title = TextEditingController(text: widget.item?['title'] as String?);
+  late final _body = TextEditingController(text: widget.item?['body'] as String?);
+  var _contentType = 'article';
+  var _category = 'Mental Health';
+  var _status = 'draft';
+
+  @override
+  void initState() {
+    super.initState();
+    _contentType = widget.item?['contentType'] as String? ?? widget.item?['content_type'] as String? ?? _contentType;
+    _category = widget.item?['category'] as String? ?? _category;
+    _status = widget.item?['status'] as String? ?? _status;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.item == null ? 'New CMS content' : 'Edit CMS content'),
+      content: SizedBox(
+        width: 640,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(controller: _title, decoration: const InputDecoration(labelText: 'Title')),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _contentType,
+                decoration: const InputDecoration(labelText: 'Content type'),
+                items: const ['article', 'srhr', 'event', 'helpline', 'faq', 'video', 'daily-prompt', 'announcement']
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                    .toList(),
+                onChanged: (value) => setState(() => _contentType = value ?? _contentType),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _category,
+                decoration: const InputDecoration(labelText: 'Category'),
+                items: const ['Mental Health', 'SRHR', 'Substance Abuse', 'Relationships', 'Self-Care', 'Youth Opportunities', 'Emergency Support']
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                    .toList(),
+                onChanged: (value) => setState(() => _category = value ?? _category),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _status,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: const ['draft', 'review', 'published', 'archived']
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                    .toList(),
+                onChanged: (value) => setState(() => _status = value ?? _status),
+              ),
+              const SizedBox(height: 12),
+              TextField(controller: _body, minLines: 8, maxLines: 14, decoration: const InputDecoration(labelText: 'Body')),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+        FilledButton(onPressed: _save, child: const Text('Save')),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    await widget.api.saveCmsContent({
+      'title': _title.text,
+      'body': _body.text,
+      'contentType': _contentType,
+      'category': _category,
+      'status': _status,
+    }, id: widget.item?['id'] as String?);
+    if (mounted) Navigator.pop(context, true);
+  }
+}
+
 class AdminOverviewScreen extends StatelessWidget {
   final AdminApi api;
 
@@ -264,7 +778,9 @@ class AdminOverviewScreen extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text('Analytics overview', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+            Text('Operations dashboard', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+            const SizedBox(height: 8),
+            const Text('A safety-first view of content, support activity, and platform health.'),
             const SizedBox(height: 20),
             Wrap(
               spacing: 16,
@@ -279,6 +795,188 @@ class AdminOverviewScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class AdminAnalyticsScreen extends StatelessWidget {
+  final AdminApi api;
+
+  const AdminAnalyticsScreen({super.key, required this.api});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: api.analytics(days: 30),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final data = snapshot.data!;
+        return ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text('Safe analytics', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+            const SizedBox(height: 8),
+            const Text('Aggregated only. No journals, private notes, counseling details, or raw chatbot conversations.'),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _MetricCard(title: 'Events', value: '${data['total'] ?? 0}', icon: Icons.query_stats_rounded),
+                _MetricCard(title: 'Chatbot sessions', value: '${data['chatbotSessions'] ?? 0}', icon: Icons.smart_toy_rounded),
+                _MetricCard(title: 'Escalations', value: '${data['counselorEscalations'] ?? 0}', icon: Icons.support_agent_rounded),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _AnalyticsMap(title: 'Age ranges', values: Map<String, dynamic>.from((data['ageRangeDistribution'] as Map?) ?? {})),
+            _AnalyticsMap(title: 'Gender distribution', values: Map<String, dynamic>.from((data['genderDistribution'] as Map?) ?? {})),
+            _AnalyticsMap(title: 'Mood trends', values: Map<String, dynamic>.from((data['moodTrendsByMood'] as Map?) ?? {})),
+            _AnalyticsMap(title: 'Issue categories', values: Map<String, dynamic>.from((data['issueCategories'] as Map?) ?? {})),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class AdminUsersSecurityScreen extends StatefulWidget {
+  final AdminApi api;
+
+  const AdminUsersSecurityScreen({super.key, required this.api});
+
+  @override
+  State<AdminUsersSecurityScreen> createState() => _AdminUsersSecurityScreenState();
+}
+
+class _AdminUsersSecurityScreenState extends State<AdminUsersSecurityScreen> {
+  late Future<List<Map<String, dynamic>>> _usersFuture = widget.api.users();
+  late Future<List<Map<String, dynamic>>> _logsFuture = widget.api.securityLogs();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Row(
+          children: [
+            Text('Users & security', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+            const Spacer(),
+            FilledButton.icon(
+              onPressed: () => setState(() {
+                _usersFuture = widget.api.users();
+                _logsFuture = widget.api.securityLogs();
+              }),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Refresh'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Card(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _usersFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator());
+                return DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Role')),
+                    DataColumn(label: Text('Email/device')),
+                    DataColumn(label: Text('Suspended')),
+                    DataColumn(label: Text('Actions')),
+                  ],
+                  rows: snapshot.data!.map((item) {
+                    final id = item['id'] as String;
+                    final suspended = item['isSuspended'] == true || item['is_suspended'] == true;
+                    return DataRow(cells: [
+                      DataCell(Text('${item['role']}')),
+                      DataCell(Text('${item['email'] ?? item['id']}')),
+                      DataCell(Chip(label: Text(suspended ? 'Yes' : 'No'))),
+                      DataCell(IconButton(
+                        onPressed: () => _setSuspension(id, !suspended),
+                        icon: Icon(suspended ? Icons.lock_open_rounded : Icons.block_rounded),
+                        tooltip: suspended ? 'Unsuspend' : 'Suspend',
+                      )),
+                    ]);
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text('Security logs', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+        const SizedBox(height: 12),
+        Card(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _logsFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator());
+                return DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Event')),
+                    DataColumn(label: Text('IP')),
+                    DataColumn(label: Text('When')),
+                  ],
+                  rows: snapshot.data!.map((item) {
+                    return DataRow(cells: [
+                      DataCell(Text('${item['event']}')),
+                      DataCell(Text('${item['ipAddress'] ?? item['ip_address'] ?? ''}')),
+                      DataCell(Text('${item['createdAt'] ?? item['created_at'] ?? ''}')),
+                    ]);
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _setSuspension(String id, bool suspended) async {
+    await widget.api.setUserSuspension(id, suspended, reason: suspended ? 'Suspended from admin dashboard' : null);
+    setState(() {
+      _usersFuture = widget.api.users();
+      _logsFuture = widget.api.securityLogs();
+    });
+  }
+}
+
+class _AnalyticsMap extends StatelessWidget {
+  final String title;
+  final Map<String, dynamic> values;
+
+  const _AnalyticsMap({required this.title, required this.values});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 10),
+            if (values.isEmpty)
+              const Text('No data yet')
+            else
+              ...values.entries.map((entry) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(entry.key)),
+                        Text('${entry.value}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  )),
+          ],
+        ),
+      ),
     );
   }
 }

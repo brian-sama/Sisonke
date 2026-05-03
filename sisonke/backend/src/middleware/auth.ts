@@ -37,6 +37,10 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       return res.status(401).json({ error: 'Invalid token' });
     }
 
+    if (user[0].isSuspended) {
+      return res.status(403).json({ error: 'Account suspended' });
+    }
+
     req.user = {
       id: user[0].id,
       email: user[0].email || undefined,
@@ -72,6 +76,7 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
     const user = await db.select().from(users).where(eq(users.id, decoded.userId)).limit(1);
     
     if (user.length) {
+      if (user[0].isSuspended) return next();
       req.user = {
         id: user[0].id,
         email: user[0].email || undefined,

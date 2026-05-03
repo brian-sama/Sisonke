@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:sisonke/features/journal/providers/journal_provider.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/features/checkin/screens/journal_entry_screen.dart';
-import 'package:sisonke/app/core/services/providers.dart';
+import 'package:sisonke/core/services/providers.dart';
 
 class JournalScreen extends ConsumerStatefulWidget {
   const JournalScreen({super.key});

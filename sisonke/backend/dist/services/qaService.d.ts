@@ -6,7 +6,7 @@ export declare class QAService {
         updatedAt: Date | null;
         title: string;
         description: string;
-        category: "mental-health" | "srhr" | "emergency" | "relationships" | "general";
+        category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
         viewCount: number | null;
@@ -35,7 +35,7 @@ export declare class QAService {
         updatedAt: Date | null;
         title: string;
         description: string;
-        category: "mental-health" | "srhr" | "emergency" | "relationships" | "general";
+        category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
         viewCount: number | null;
@@ -58,7 +58,7 @@ export declare class QAService {
         updatedAt: Date | null;
         title: string;
         description: string;
-        category: "mental-health" | "srhr" | "emergency" | "relationships" | "general";
+        category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
         viewCount: number | null;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QuestionQuerySchema = exports.ResourceQuerySchema = exports.CreateJournalEntrySchema = exports.CreateMoodCheckinSchema = exports.AnalyticsEventSchema = exports.UpdateEmergencyContactSchema = exports.CreateEmergencyContactSchema = exports.CreateReportSchema = exports.CreateAnswerSchema = exports.CreateQuestionSchema = exports.UpdateResourceSchema = exports.CreateResourceSchema = exports.GuestSessionSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
+exports.QuestionQuerySchema = exports.ResourceQuerySchema = exports.CreateJournalEntrySchema = exports.CreateMoodCheckinSchema = exports.CmsContentSchema = exports.CommunityPostSchema = exports.CounselorRequestSchema = exports.ChatbotMessageSchema = exports.OnboardingProfileSchema = exports.AnalyticsEventSchema = exports.UpdateEmergencyContactSchema = exports.CreateEmergencyContactSchema = exports.CreateReportSchema = exports.CreateAnswerSchema = exports.CreateQuestionSchema = exports.UpdateResourceSchema = exports.CreateResourceSchema = exports.GuestSessionSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
 const zod_1 = require("zod");
 // Auth schemas
 exports.LoginSchema = zod_1.z.object({
@@ -67,6 +67,10 @@ exports.AnalyticsEventSchema = zod_1.z.object({
         'resource_saved',
         'emergency_opened',
         'category_opened',
+        'chatbot_session_started',
+        'counselor_escalated',
+        'community_post_submitted',
+        'mood_logged',
         'sync_completed',
         'sync_failed',
     ]),
@@ -76,6 +80,51 @@ exports.AnalyticsEventSchema = zod_1.z.object({
     appVersion: zod_1.z.string().max(40).optional(),
     locale: zod_1.z.string().max(10).optional(),
     metadata: zod_1.z.record(zod_1.z.union([zod_1.z.string(), zod_1.z.number(), zod_1.z.boolean(), zod_1.z.null()])).optional(),
+});
+exports.OnboardingProfileSchema = zod_1.z.object({
+    nickname: zod_1.z.string().min(1).max(120),
+    dateOfBirth: zod_1.z.coerce.date().optional(),
+    age: zod_1.z.number().int().min(13).max(120).optional(),
+    gender: zod_1.z.string().max(80).optional(),
+    location: zod_1.z.string().max(120).optional(),
+    consentAccepted: zod_1.z.boolean(),
+    pinEnabled: zod_1.z.boolean().default(true),
+    biometricEnabled: zod_1.z.boolean().default(false),
+    autoLockMinutes: zod_1.z.number().int().min(1).max(60).default(5),
+    hideJournalPreview: zod_1.z.boolean().default(true),
+    chatbotPersona: zod_1.z.enum(['male', 'female']).default('female'),
+    screeningAnswers: zod_1.z.record(zod_1.z.boolean()).default({}),
+});
+exports.ChatbotMessageSchema = zod_1.z.object({
+    sessionId: zod_1.z.string().uuid().optional(),
+    persona: zod_1.z.enum(['male', 'female']).default('female'),
+    message: zod_1.z.string().min(1).max(2000),
+    deviceId: zod_1.z.string().optional(),
+});
+exports.CounselorRequestSchema = zod_1.z.object({
+    issueCategory: zod_1.z.string().min(1).max(120),
+    summary: zod_1.z.string().max(2000).optional(),
+    riskLevel: zod_1.z.enum(['low', 'medium', 'high']).default('medium'),
+});
+exports.CommunityPostSchema = zod_1.z.object({
+    ageGroup: zod_1.z.enum(['13-15', '16-17', '18-24', '25+']),
+    content: zod_1.z.string().min(1).max(1200),
+});
+exports.CmsContentSchema = zod_1.z.object({
+    title: zod_1.z.string().min(1).max(255),
+    body: zod_1.z.string().min(1),
+    contentType: zod_1.z.enum(['article', 'srhr', 'event', 'helpline', 'faq', 'video', 'daily-prompt', 'announcement']),
+    category: zod_1.z.enum([
+        'Mental Health',
+        'SRHR',
+        'Substance Abuse',
+        'Relationships',
+        'Self-Care',
+        'Youth Opportunities',
+        'Emergency Support',
+    ]),
+    mediaUrl: zod_1.z.string().url().optional(),
+    status: zod_1.z.enum(['draft', 'review', 'published', 'archived']).default('draft'),
 });
 // Mood check-in schemas
 exports.CreateMoodCheckinSchema = zod_1.z.object({
