@@ -9,6 +9,7 @@ class SisonkeButton extends StatelessWidget {
   final bool isLoading;
   final bool isEnabled;
   final EdgeInsets padding;
+  final bool isFullWidth;
 
   const SisonkeButton({
     Key? key,
@@ -19,10 +20,12 @@ class SisonkeButton extends StatelessWidget {
     this.isLoading = false,
     this.isEnabled = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    this.isFullWidth = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    Widget button;
     Widget buttonContent = isLoading
         ? const SizedBox(
             width: 20,
@@ -45,32 +48,35 @@ class SisonkeButton extends StatelessWidget {
 
     switch (buttonType) {
       case ButtonType.primary:
-        return FilledButton(
+        button = FilledButton(
           onPressed: isEnabled && !isLoading ? onPressed : null,
           style: FilledButton.styleFrom(
             padding: padding,
           ),
           child: buttonContent,
         );
+        break;
 
       case ButtonType.secondary:
-        return FilledButton.tonal(
+        button = FilledButton.tonal(
           onPressed: isEnabled && !isLoading ? onPressed : null,
           style: FilledButton.styleFrom(padding: padding),
           child: buttonContent,
         );
+        break;
 
       case ButtonType.text:
-        return TextButton(
+        button = TextButton(
           onPressed: isEnabled && !isLoading ? onPressed : null,
           style: TextButton.styleFrom(
             padding: padding,
           ),
           child: buttonContent,
         );
+        break;
 
       case ButtonType.danger:
-        return FilledButton(
+        button = FilledButton(
           onPressed: isEnabled && !isLoading ? onPressed : null,
           style: FilledButton.styleFrom(
             padding: padding,
@@ -79,7 +85,10 @@ class SisonkeButton extends StatelessWidget {
           ),
           child: buttonContent,
         );
+        break;
     }
+
+    return isFullWidth ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
 
