@@ -24,7 +24,10 @@ class AppTheme {
       error: const Color(0xFFBA1A1A),
     ),
     scaffoldBackgroundColor: calmSurface,
-    textTheme: GoogleFonts.nunitoSansTextTheme(),
+    textTheme: GoogleFonts.nunitoSansTextTheme().apply(
+      bodyColor: ink,
+      displayColor: ink,
+    ),
     useMaterial3: true,
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Colors.white,
@@ -98,7 +101,10 @@ class AppTheme {
       error: const Color(0xFFFFB4AB),
     ),
     scaffoldBackgroundColor: darkSurface,
-    textTheme: GoogleFonts.nunitoSansTextTheme(ThemeData.dark().textTheme),
+    textTheme: GoogleFonts.nunitoSansTextTheme(ThemeData.dark().textTheme).apply(
+      bodyColor: darkInk,
+      displayColor: darkInk,
+    ),
     useMaterial3: true,
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: darkSurfaceHigh,

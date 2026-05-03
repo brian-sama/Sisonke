@@ -8,19 +8,20 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const ink = Color(0xFF14213D);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     const coral = Color(0xFFFF5A5F);
     const teal = Color(0xFF00A6A6);
     const lemon = Color(0xFFFFC857);
     const violet = Color(0xFF7B61FF);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: SisonkeAppBar(
         title: 'Sisonke',
         showBackButton: false,
-        backgroundColor: Colors.white,
-        foregroundColor: ink,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
@@ -34,10 +35,10 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 8),
             child: PopupMenuButton<String>(
               tooltip: 'Profile menu',
-              icon: const CircleAvatar(
+              icon: CircleAvatar(
                 radius: 18,
-                backgroundColor: Color(0xFFE7FAFA),
-                child: Icon(Icons.person_rounded, color: teal),
+                backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                child: Icon(Icons.person_rounded, color: colorScheme.primary),
               ),
               onSelected: (value) => context.push(value),
               itemBuilder: (context) => const [
@@ -121,8 +122,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               Text(
                 'Start here',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: ink,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -172,8 +172,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               Text(
                 'Main sections',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: ink,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -198,8 +197,7 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Featured resources',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: ink,
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -219,9 +217,9 @@ class HomeScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFE7E2FF)),
+                  border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   children: [
@@ -238,8 +236,7 @@ class HomeScreen extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         'Private by design. Use Quick Exit any time you need privacy.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: ink,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           height: 1.25,
                           fontWeight: FontWeight.w600,
                         ),
@@ -274,12 +271,13 @@ class _SectionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFFECE8FF)),
+        side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: sections.map((section) {
@@ -306,10 +304,11 @@ class _FeaturedResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Color(0xFF14213D);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Material(
-      color: Colors.white,
+      color: colorScheme.surface,
       elevation: 0,
       borderRadius: BorderRadius.circular(24),
       child: InkWell(
@@ -319,10 +318,10 @@ class _FeaturedResourceCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFECE8FF)),
+            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
-                color: ink.withValues(alpha: 0.06),
+                color: colorScheme.shadow.withValues(alpha: 0.06),
                 blurRadius: 22,
                 offset: const Offset(0, 12),
               ),
@@ -342,10 +341,10 @@ class _FeaturedResourceCard extends StatelessWidget {
                       color: accentColor.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Feelings 101',
                       style: TextStyle(
-                        color: ink,
+                        color: colorScheme.onSurface,
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
@@ -355,7 +354,7 @@ class _FeaturedResourceCard extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.bookmark_border_rounded),
                     tooltip: 'Save',
-                    color: ink,
+                    color: colorScheme.onSurface,
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Saved to bookmarks')),
@@ -367,16 +366,15 @@ class _FeaturedResourceCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 'Understanding your emotions',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: ink,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'A quick guide to naming what you feel and choosing your next gentle step.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: ink.withValues(alpha: 0.72),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.72),
                   height: 1.35,
                 ),
               ),
@@ -388,8 +386,8 @@ class _FeaturedResourceCard extends StatelessWidget {
                     icon: const Icon(Icons.arrow_forward_rounded, size: 18),
                     label: const Text('Read'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: ink,
-                      foregroundColor: Colors.white,
+                      backgroundColor: colorScheme.onSurface,
+                      foregroundColor: colorScheme.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -398,8 +396,8 @@ class _FeaturedResourceCard extends StatelessWidget {
                   const SizedBox(width: 10),
                   Text(
                     '3 min',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: ink.withValues(alpha: 0.55),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.55),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -432,7 +430,8 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Color(0xFF14213D);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Material(
       color: backgroundColor,
@@ -444,7 +443,7 @@ class _QuickActionCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
+            border: Border.all(color: colorScheme.surface.withValues(alpha: 0.9)),
             boxShadow: [
               BoxShadow(
                 color: accentColor.withValues(alpha: 0.14),
@@ -460,7 +459,7 @@ class _QuickActionCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(icon, size: 24, color: accentColor),
@@ -470,8 +469,8 @@ class _QuickActionCard extends StatelessWidget {
                 label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: ink,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w900,
                   height: 1.1,
                 ),
@@ -481,8 +480,8 @@ class _QuickActionCard extends StatelessWidget {
                 caption,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: ink.withValues(alpha: 0.58),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.58),
                   fontWeight: FontWeight.w600,
                 ),
               ),

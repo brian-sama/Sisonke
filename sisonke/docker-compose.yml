@@ -20,6 +20,17 @@ services:
       ollama:
         condition: service_started
 
+  frontend:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./backend/public:/usr/share/nginx/html
+    # Note: We will need to build the flutter web and move it to backend/public 
+    # OR create a dedicated Dockerfile for the frontend.
+
+
   db:
     image: postgres:15-alpine
     restart: always
