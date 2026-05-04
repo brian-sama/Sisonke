@@ -61,17 +61,7 @@ router.get('/analytics/health', asyncHandler(async (_req, res) => {
 }));
 
 router.get('/overview', asyncHandler(async (_req, res) => {
-  const [
-    [userCount],
-    [resourceCount],
-    [contactCount],
-    [questionCount],
-    [caseCount],
-    [sessionCount],
-    [pendingPostsCount],
-    [highRiskCasesCount],
-    latestEvents
-  ] = await Promise.all([
+  const results = await Promise.all([
     db.select({ value: count() }).from(users),
     db.select({ value: count() }).from(resources).where(isNull(resources.deletedAt)),
     db.select({ value: count() }).from(emergencyContacts).where(isNull(emergencyContacts.deletedAt)),
@@ -83,19 +73,29 @@ router.get('/overview', asyncHandler(async (_req, res) => {
     db.select().from(analyticsEvents).orderBy(desc(analyticsEvents.occurredAt)).limit(10),
   ]);
 
+  const userCount = Number(results[0][0]?.value ?? 0);
+  const resourceCount = Number(results[1][0]?.value ?? 0);
+  const contactCount = Number(results[2][0]?.value ?? 0);
+  const questionCount = Number(results[3][0]?.value ?? 0);
+  const caseCount = Number(results[4][0]?.value ?? 0);
+  const sessionCount = Number(results[5][0]?.value ?? 0);
+  const pendingPostsCount = Number(results[6][0]?.value ?? 0);
+  const highRiskCasesCount = Number(results[7][0]?.value ?? 0);
+  const latestEvents = results[8];
+
   res.json({
     success: true,
     data: {
-      users: { total: userCount.value },
-      resources: { total: resourceCount.value },
-      emergencyContacts: { total: contactCount.value },
-      questions: { total: questionCount.value },
+      users: { total: userCount },
+      resources: { total: resourceCount },
+      emergencyContacts: { total: contactCount },
+      questions: { total: questionCount },
       counselorCases: { 
-        total: caseCount.value, 
-        highRisk: highRiskCasesCount.value 
+        total: caseCount, 
+        highRisk: highRiskCasesCount 
       },
-      chatbotSessions: { total: sessionCount.value },
-      communityPosts: { pending: pendingPostsCount.value },
+      chatbotSessions: { total: sessionCount },
+      communityPosts: { pending: pendingPostsCount },
       latestEvents
     },
   });

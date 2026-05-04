@@ -34,7 +34,7 @@ router.get('/analytics/health', (0, errorHandler_1.asyncHandler)(async (_req, re
     res.json({ success: true, data: stats });
 }));
 router.get('/overview', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
-    const [[userCount], [resourceCount], [contactCount], [questionCount], [caseCount], [sessionCount], [pendingPostsCount], [highRiskCasesCount], latestEvents] = await Promise.all([
+    const results = await Promise.all([
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.users),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.resources).where((0, drizzle_orm_1.isNull)(schema_1.resources.deletedAt)),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.emergencyContacts).where((0, drizzle_orm_1.isNull)(schema_1.emergencyContacts.deletedAt)),
@@ -45,19 +45,28 @@ router.get('/overview', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.riskLevel, 'high')),
         db_1.db.select().from(schema_1.analyticsEvents).orderBy((0, drizzle_orm_1.desc)(schema_1.analyticsEvents.occurredAt)).limit(10),
     ]);
+    const userCount = Number(results[0][0]?.value ?? 0);
+    const resourceCount = Number(results[1][0]?.value ?? 0);
+    const contactCount = Number(results[2][0]?.value ?? 0);
+    const questionCount = Number(results[3][0]?.value ?? 0);
+    const caseCount = Number(results[4][0]?.value ?? 0);
+    const sessionCount = Number(results[5][0]?.value ?? 0);
+    const pendingPostsCount = Number(results[6][0]?.value ?? 0);
+    const highRiskCasesCount = Number(results[7][0]?.value ?? 0);
+    const latestEvents = results[8];
     res.json({
         success: true,
         data: {
-            users: { total: userCount.value },
-            resources: { total: resourceCount.value },
-            emergencyContacts: { total: contactCount.value },
-            questions: { total: questionCount.value },
+            users: { total: userCount },
+            resources: { total: resourceCount },
+            emergencyContacts: { total: contactCount },
+            questions: { total: questionCount },
             counselorCases: {
-                total: caseCount.value,
-                highRisk: highRiskCasesCount.value
+                total: caseCount,
+                highRisk: highRiskCasesCount
             },
-            chatbotSessions: { total: sessionCount.value },
-            communityPosts: { pending: pendingPostsCount.value },
+            chatbotSessions: { total: sessionCount },
+            communityPosts: { pending: pendingPostsCount },
             latestEvents
         },
     });

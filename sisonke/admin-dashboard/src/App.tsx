@@ -251,7 +251,16 @@ const SisonkeLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
 // --- Pages ---
 
 const Home = () => {
-  const [stats, setStats] = useState<any>(null);
+  const emptyStats = {
+    totalUsers: 0,
+    guestSessions: 0,
+    chatbotSessions: 0,
+    highRiskEscalations: 0,
+    counselorCasesWaiting: 0,
+    communityPostsPending: 0,
+  };
+  const [stats, setStats] = useState<any>(emptyStats);
+  const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -264,8 +273,13 @@ const Home = () => {
         counselorCasesWaiting: data.counselorCases?.waiting ?? data.counselorCases?.total ?? 0,
         communityPostsPending: data.communityPosts?.pending ?? 0,
       });
+      setLoadError('');
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((error) => {
+      setStats(emptyStats);
+      setLoadError(error instanceof Error ? error.message : 'Could not load the latest numbers.');
+      setLoading(false);
+    });
   }, []);
 
   if (loading) return (
@@ -288,6 +302,11 @@ const Home = () => {
 
   return (
     <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
+      {loadError && (
+        <div className="p-4 bg-amber-50 border border-amber-100 text-amber-800 rounded-2xl font-bold">
+          We could not load the latest numbers yet. The page is still usable.
+        </div>
+      )}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
