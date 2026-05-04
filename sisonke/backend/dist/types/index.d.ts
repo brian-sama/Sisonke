@@ -271,20 +271,20 @@ export declare const AnalyticsEventSchema: z.ZodObject<{
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnion<[z.ZodString, z.ZodNumber, z.ZodBoolean, z.ZodNull]>>>;
 }, "strip", z.ZodTypeAny, {
     event: "app_opened" | "resource_viewed" | "resource_saved" | "emergency_opened" | "category_opened" | "chatbot_session_started" | "counselor_escalated" | "community_post_submitted" | "mood_logged" | "sync_completed" | "sync_failed";
+    metadata?: Record<string, string | number | boolean | null> | undefined;
     category?: string | undefined;
     resourceId?: string | undefined;
     platform?: string | undefined;
     appVersion?: string | undefined;
     locale?: string | undefined;
-    metadata?: Record<string, string | number | boolean | null> | undefined;
 }, {
     event: "app_opened" | "resource_viewed" | "resource_saved" | "emergency_opened" | "category_opened" | "chatbot_session_started" | "counselor_escalated" | "community_post_submitted" | "mood_logged" | "sync_completed" | "sync_failed";
+    metadata?: Record<string, string | number | boolean | null> | undefined;
     category?: string | undefined;
     resourceId?: string | undefined;
     platform?: string | undefined;
     appVersion?: string | undefined;
     locale?: string | undefined;
-    metadata?: Record<string, string | number | boolean | null> | undefined;
 }>;
 export declare const OnboardingProfileSchema: z.ZodObject<{
     nickname: z.ZodString;

@@ -7,9 +7,21 @@ export declare class SocketService {
     private static io;
     static init(server: HttpServer): void;
     /**
+     * Broadcast an event to all staff (counselors and admins)
+     */
+    static notifyStaff(event: string, data: any): void;
+    /**
      * Send an alert to all counselors (e.g. for new high-risk cases)
      */
     static notifyCounselors(event: string, data: any): void;
+    /**
+     * Send an alert specifically to admins
+     */
+    static notifyAdmins(event: string, data: any): void;
+    /**
+     * Broadcast dashboard updates to all connected staff (admins/counselors)
+     */
+    static broadcastDashboardUpdate(data: any): void;
     /**
      * Send a direct notification to a specific user
      */

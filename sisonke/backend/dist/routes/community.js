@@ -8,6 +8,7 @@ const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
 const types_1 = require("../types");
 const riskService_1 = require("../services/riskService");
+const socketService_1 = require("../services/socketService");
 const router = (0, express_1.Router)();
 const blockedTerms = ['suicide', 'kill myself', 'rape', 'abuse', 'violence'];
 router.get('/posts', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(async (req, res) => {
@@ -35,6 +36,7 @@ router.post('/posts', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(as
         status: blocked || riskLevel !== 'low' ? 'pending' : 'pending',
         moderationReason: blocked ? 'Safety review required' : undefined,
     }).returning();
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'created' });
     await db_1.db.insert(schema_1.analyticsEvents).values({
         event: 'community_post_submitted',
         category: input.ageGroup,
@@ -59,6 +61,7 @@ router.post('/reports', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(
         description: req.body.description,
         reporterDeviceId: req.user.deviceId,
     }).returning();
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'report', action: 'created' });
     res.status(201).json({ success: true, data: report });
 }));
 exports.default = router;

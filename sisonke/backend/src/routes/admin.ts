@@ -16,6 +16,7 @@ import {
   securityLogs,
   userProfiles,
   users,
+  auditLogs,
 } from '../db/schema';
 import { authMiddleware, adminOnly, hasRole, superAdminOnly } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -58,6 +59,8 @@ router.get('/analytics/health', asyncHandler(async (_req, res) => {
 
   res.json({ success: true, data: stats });
 }));
+
+router.get('/overview', asyncHandler(async (_req, res) => {
   const [
     [userCount],
     [resourceCount],

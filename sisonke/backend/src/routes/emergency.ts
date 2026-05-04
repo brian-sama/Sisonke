@@ -39,7 +39,7 @@ router.get('/contacts', asyncHandler(async (req, res) => {
       country: c.country,
       is_active: c.isActive,
       status: c.status,
-      created_at: c.createdAt.toISOString(),
+      created_at: c.createdAt ? c.createdAt.toISOString() : new Date().toISOString(),
     })).filter((dbContact) => !seededContacts.some((seeded) => seeded.phone_number === dbContact.phone_number && seeded.name === dbContact.name)),
   ];
   

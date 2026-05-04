@@ -38,10 +38,15 @@ class SocketService {
             const roles = Array.isArray(user.roles) ? user.roles : [user.role];
             // Users join their own private room for notifications
             socket.join(`user:${user.id}`);
-            // Counselors join a shared room to receive new request alerts
-            if (roles.includes('counselor') || roles.includes('admin') || roles.includes('super-admin')) {
+            // Staff join shared rooms
+            const isStaff = roles.includes('counselor') || roles.includes('admin') || roles.includes('super-admin');
+            const isAdmin = roles.includes('admin') || roles.includes('super-admin');
+            if (isStaff)
+                socket.join('staff');
+            if (isAdmin)
+                socket.join('admins');
+            if (roles.includes('counselor'))
                 socket.join('counselors');
-            }
             // Join a specific case room
             socket.on('join_case', (caseId) => {
                 socket.join(`case:${caseId}`);
@@ -68,11 +73,35 @@ class SocketService {
         });
     }
     /**
+     * Broadcast an event to all staff (counselors and admins)
+     */
+    static notifyStaff(event, data) {
+        if (this.io) {
+            this.io.to('staff').emit(event, data);
+        }
+    }
+    /**
      * Send an alert to all counselors (e.g. for new high-risk cases)
      */
     static notifyCounselors(event, data) {
         if (this.io) {
             this.io.to('counselors').emit(event, data);
+        }
+    }
+    /**
+     * Send an alert specifically to admins
+     */
+    static notifyAdmins(event, data) {
+        if (this.io) {
+            this.io.to('admins').emit(event, data);
+        }
+    }
+    /**
+     * Broadcast dashboard updates to all connected staff (admins/counselors)
+     */
+    static broadcastDashboardUpdate(data) {
+        if (this.io) {
+            this.io.to('staff').emit('dashboard:update', data);
         }
     }
     /**

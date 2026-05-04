@@ -16,20 +16,32 @@ router.get('/contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.emergencyContacts.isActive, true), (0, drizzle_orm_1.eq)(schema_1.emergencyContacts.status, 'published')))
         .orderBy(schema_1.emergencyContacts.category, schema_1.emergencyContacts.name);
     const seededContacts = zimbabweRagKnowledge_1.zimbabweEmergencyContacts.map((contact) => ({
-        ...contact,
+        id: contact.id,
+        name: contact.name,
+        phone_number: contact.phoneNumber,
+        category: contact.category,
+        description: contact.description,
+        country: contact.country,
+        is_active: true,
         status: 'published',
-        isActive: true,
-        createdAt: null,
-        updatedAt: null,
-        publishedAt: null,
-        deletedAt: null,
+        created_at: new Date().toISOString(),
     }));
-    const contacts = [
+    const allContacts = [
         ...seededContacts,
-        ...dbContacts.filter((dbContact) => !seededContacts.some((seeded) => seeded.phoneNumber === dbContact.phoneNumber && seeded.name === dbContact.name)),
+        ...dbContacts.map(c => ({
+            id: c.id,
+            name: c.name,
+            phone_number: c.phoneNumber,
+            category: c.category,
+            description: c.description,
+            country: c.country,
+            is_active: c.isActive,
+            status: c.status,
+            created_at: c.createdAt ? c.createdAt.toISOString() : new Date().toISOString(),
+        })).filter((dbContact) => !seededContacts.some((seeded) => seeded.phone_number === dbContact.phone_number && seeded.name === dbContact.name)),
     ];
     // Group by category
-    const groupedContacts = contacts.reduce((acc, contact) => {
+    const groupedContacts = allContacts.reduce((acc, contact) => {
         if (!acc[contact.category]) {
             acc[contact.category] = [];
         }
@@ -40,7 +52,7 @@ router.get('/contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         success: true,
         data: {
             contacts: groupedContacts,
-            total: contacts.length,
+            total: allContacts.length,
             last_updated: new Date().toISOString(),
         },
     });

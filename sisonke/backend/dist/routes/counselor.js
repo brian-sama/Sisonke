@@ -7,6 +7,7 @@ const schema_1 = require("../db/schema");
 const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
 const types_1 = require("../types");
+const socketService_1 = require("../services/socketService");
 const router = (0, express_1.Router)();
 router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.CounselorRequestSchema.parse(req.body);
@@ -25,6 +26,7 @@ router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)
         source: 'mobile',
         updatedAt: new Date(),
     }).returning();
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'created' });
     res.status(201).json({
         success: true,
         data: {
@@ -88,6 +90,7 @@ router.post('/cases/:id/status', (0, errorHandler_1.asyncHandler)(async (req, re
         resolvedAt: status === 'resolved' ? new Date() : undefined,
         updatedAt: new Date(),
     }).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).returning();
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'status_updated' });
     res.json({ success: true, data: updated });
 }));
 exports.default = router;

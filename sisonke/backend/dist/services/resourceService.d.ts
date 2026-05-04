@@ -5,6 +5,7 @@ export declare class ResourceService {
             id: string;
             createdAt: Date | null;
             updatedAt: Date | null;
+            deletedAt: Date | null;
             title: string;
             content: string | null;
             category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
@@ -19,7 +20,6 @@ export declare class ResourceService {
             viewCount: number | null;
             downloadCount: number | null;
             publishedAt: Date | null;
-            deletedAt: Date | null;
         }[];
         total: number;
         hasMore: boolean;
@@ -29,6 +29,7 @@ export declare class ResourceService {
         id: string;
         createdAt: Date | null;
         updatedAt: Date | null;
+        deletedAt: Date | null;
         title: string;
         content: string | null;
         category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
@@ -43,7 +44,6 @@ export declare class ResourceService {
         viewCount: number | null;
         downloadCount: number | null;
         publishedAt: Date | null;
-        deletedAt: Date | null;
     } | null>;
     static incrementViews(id: string): Promise<void>;
 }

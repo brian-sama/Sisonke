@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
 const drizzle_orm_1 = require("drizzle-orm");
 const db_1 = require("../db");
 const schema_1 = require("../db/schema");
@@ -11,6 +10,8 @@ const riskService_1 = require("../services/riskService");
 const ollamaService_1 = require("../services/ollamaService");
 const geminiService_1 = require("../services/geminiService");
 const ragService_1 = require("../services/ragService");
+const socketService_1 = require("../services/socketService");
+const express_1 = require("express");
 const router = (0, express_1.Router)();
 router.use(auth_1.optionalAuth);
 router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
@@ -32,6 +33,16 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     if (!session) {
         return res.status(404).json({ success: false, error: 'Chat session not found.' });
     }
+    // Fetch history BEFORE inserting current message to keep history clean for the AI
+    const history = await db_1.db
+        .select()
+        .from(schema_1.chatbotMessages)
+        .where((0, drizzle_orm_1.eq)(schema_1.chatbotMessages.sessionId, session.id))
+        .orderBy((0, drizzle_orm_1.desc)(schema_1.chatbotMessages.createdAt))
+        .limit(5);
+    const formattedHistory = history
+        .reverse()
+        .map(m => ({ sender: m.sender, content: m.content }));
     await db_1.db.insert(schema_1.chatbotMessages).values({
         sessionId: session.id,
         sender: 'user',
@@ -42,12 +53,14 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const fallbackReply = (0, riskService_1.safeBotReply)(input.message, riskLevel, input.persona);
     const localReply = await (0, ollamaService_1.generateLocalChatReply)({
         message: input.message,
+        history: formattedHistory,
         persona: input.persona,
         riskLevel,
         approvedContext,
     });
     const geminiReply = await (0, geminiService_1.generateGeminiFallback)({
         message: input.message,
+        history: formattedHistory,
         persona: input.persona,
         riskLevel,
         approvedContext,
@@ -74,6 +87,7 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             .set({ escalatedCaseId: caseId, updatedAt: new Date() })
             .where((0, drizzle_orm_1.eq)(schema_1.chatbotSessions.id, session.id));
         await db_1.db.insert(schema_1.analyticsEvents).values({ event: 'counselor_escalated', category: 'chatbot', metadata: { riskLevel } });
+        socketService_1.SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'escalated' });
     }
     await db_1.db.insert(schema_1.chatbotMessages).values({
         sessionId: session.id,
@@ -86,6 +100,7 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         category: riskLevel,
         metadata: { persona: input.persona },
     });
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'chatbot_session', action: 'created' });
     res.json({
         success: true,
         data: {

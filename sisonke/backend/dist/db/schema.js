@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.users = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.ageGroupEnum = exports.userRoleEnum = void 0;
+exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.auditLogs = exports.users = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.ageGroupEnum = exports.userRoleEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Enums
 exports.userRoleEnum = (0, pg_core_1.pgEnum)('user_role', ['guest', 'user', 'counselor', 'moderator', 'admin']);
@@ -55,7 +55,17 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     mustChangePassword: (0, pg_core_1.boolean)('must_change_password').default(false),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at'),
+    deletedAt: (0, pg_core_1.timestamp)('deleted_at'),
     lastActiveAt: (0, pg_core_1.timestamp)('last_active_at').defaultNow(),
+});
+exports.auditLogs = (0, pg_core_1.pgTable)('audit_logs', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    actorId: (0, pg_core_1.uuid)('actor_id').references(() => exports.users.id, { onDelete: 'set null' }),
+    action: (0, pg_core_1.varchar)('action', { length: 120 }).notNull(),
+    entityType: (0, pg_core_1.varchar)('entity_type', { length: 50 }), // 'user', 'resource', 'post', etc.
+    entityId: (0, pg_core_1.uuid)('entity_id'),
+    metadata: (0, pg_core_1.jsonb)('metadata'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
 });
 exports.userProfiles = (0, pg_core_1.pgTable)('user_profiles', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
