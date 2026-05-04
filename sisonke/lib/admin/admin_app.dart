@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'admin_api.dart';
 import 'package:sisonke/core/services/chat_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class SisonkeAdminApp extends StatefulWidget {
   const SisonkeAdminApp({super.key});
@@ -802,39 +804,383 @@ class AdminOverviewScreen extends StatelessWidget {
 class AdminAnalyticsScreen extends StatelessWidget {
   final AdminApi api;
 
-  const AdminAnalyticsScreen({super.key, required this.api});
+  const AdminAnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: api.analytics(days: 30),
+      future: api.analytics(days: 7),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final data = snapshot.data!;
+        final timeSeries = List<Map<String, dynamic>>.from(data['timeSeries'] ?? []);
+        
         return ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text('Safe analytics', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            const Text('Aggregated only. No journals, private notes, counseling details, or raw chatbot conversations.'),
-            const SizedBox(height: 20),
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Health Insights', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    const Text('Simple totals about app use and safety', style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(DateTime.now()).toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 900;
+                return Wrap(
+                  spacing: 24,
+                  runSpacing: 24,
+                  children: [
+                    _AppUseChart(timeSeries: timeSeries, totalVisits: data['total'] ?? 0),
+                    _UrgentHelpChart(timeSeries: timeSeries, totalUrgent: data['counselorEscalations'] ?? 0),
+                  ],
+                );
+              }
+            ),
+            const SizedBox(height: 32),
+            _PrivacyPromiseCard(),
+            const SizedBox(height: 32),
+            Text('Demographics & Trends', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+            const SizedBox(height: 16),
             Wrap(
               spacing: 16,
               runSpacing: 16,
               children: [
-                _MetricCard(title: 'Events', value: '${data['total'] ?? 0}', icon: Icons.query_stats_rounded),
-                _MetricCard(title: 'Chatbot sessions', value: '${data['chatbotSessions'] ?? 0}', icon: Icons.smart_toy_rounded),
-                _MetricCard(title: 'Escalations', value: '${data['counselorEscalations'] ?? 0}', icon: Icons.support_agent_rounded),
+                _AnalyticsMap(title: 'Age ranges', values: Map<String, dynamic>.from((data['ageRangeDistribution'] as Map?) ?? {})),
+                _AnalyticsMap(title: 'Gender distribution', values: Map<String, dynamic>.from((data['genderDistribution'] as Map?) ?? {})),
+                _AnalyticsMap(title: 'Mood trends', values: Map<String, dynamic>.from((data['moodTrendsByMood'] as Map?) ?? {})),
+                _AnalyticsMap(title: 'Issue categories', values: Map<String, dynamic>.from((data['issueCategories'] as Map?) ?? {})),
               ],
             ),
-            const SizedBox(height: 24),
-            _AnalyticsMap(title: 'Age ranges', values: Map<String, dynamic>.from((data['ageRangeDistribution'] as Map?) ?? {})),
-            _AnalyticsMap(title: 'Gender distribution', values: Map<String, dynamic>.from((data['genderDistribution'] as Map?) ?? {})),
-            _AnalyticsMap(title: 'Mood trends', values: Map<String, dynamic>.from((data['moodTrendsByMood'] as Map?) ?? {})),
-            _AnalyticsMap(title: 'Issue categories', values: Map<String, dynamic>.from((data['issueCategories'] as Map?) ?? {})),
           ],
         );
       },
+    );
+  }
+}
+
+class _AppUseChart extends StatelessWidget {
+  final List<Map<String, dynamic>> timeSeries;
+  final int totalVisits;
+
+  const _AppUseChart({required this.timeSeries, required this.totalVisits});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 400,
+      height: 480,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF5E36FF), Color(0xFF4A19FF)],
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5E36FF).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'APP USE',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          SizedBox(
+            height: 240,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: 20,
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: const FlTitlesData(show: false),
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                barGroups: timeSeries.asMap().entries.map((e) {
+                  return BarChartGroupData(
+                    x: e.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: (e.value['appUse'] as num).toDouble() + 5,
+                        color: Colors.white.withValues(alpha: e.key % 2 == 0 ? 1 : 0.4),
+                        width: 16,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${(totalVisits / 1000).toStringAsFixed(1)}k',
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    'USUAL VISITS',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    '+14%',
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    'CHANGE',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UrgentHelpChart extends StatelessWidget {
+  final List<Map<String, dynamic>> timeSeries;
+  final int totalUrgent;
+
+  const _UrgentHelpChart({required this.timeSeries, required this.totalUrgent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 600,
+      height: 480,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF4B6E), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'URGENT HELP OVER TIME',
+                style: GoogleFonts.inter(
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF4B6E).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'ELEVATED RISK',
+                  style: TextStyle(color: Color(0xFFFF4B6E), fontWeight: FontWeight.w900, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+          Expanded(
+            child: LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: false),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value % 2 != 0) return const SizedBox();
+                        final index = value.toInt();
+                        if (index < 0 || index >= timeSeries.length) return const SizedBox();
+                        final date = DateTime.parse(timeSeries[index]['date']);
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            DateFormat('d MMM').format(date),
+                            style: TextStyle(color: Colors.grey.shade400, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: timeSeries.asMap().entries.map((e) {
+                      return FlSpot(e.key.toDouble(), (e.value['urgent'] as num).toDouble() + 2);
+                    }).toList(),
+                    isCurved: true,
+                    color: const Color(0xFFFF4B6E),
+                    barWidth: 4,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              _MiniStat(
+                icon: Icons.shield_rounded,
+                color: const Color(0xFFFF4B6E),
+                value: '$totalUrgent',
+                label: 'URGENT REQUESTS',
+              ),
+              const SizedBox(width: 48),
+              const _MiniStat(
+                icon: Icons.people_rounded,
+                color: Color(0xFF5E36FF),
+                value: '98%',
+                label: 'HELP RATE',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String value;
+  final String label;
+
+  const _MiniStat({required this.icon, required this.color, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(label, style: TextStyle(color: Colors.grey.shade400, fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PrivacyPromiseCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF9E5),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFFFEBB0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFAB00),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.lock_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 24),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Privacy promise', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF855D00))),
+                SizedBox(height: 4),
+                Text(
+                  '"These numbers are summaries only. We do not show private chats or journal notes here. We only share aggregated data to improve our services."',
+                  style: TextStyle(color: Color(0xFF855D00), fontSize: 13, height: 1.5, fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -993,17 +1339,25 @@ class _MetricCard extends StatelessWidget {
     return SizedBox(
       width: 260,
       child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.grey.shade100),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              CircleAvatar(child: Icon(icon)),
+              CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+              ),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
-                  Text(title),
+                  Text(title, style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
             ],

@@ -84,7 +84,7 @@ class HomeScreen extends ConsumerWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Text(

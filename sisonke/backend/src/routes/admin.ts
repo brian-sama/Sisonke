@@ -213,10 +213,29 @@ router.get('/analytics', asyncHandler(async (req, res) => {
     acc[event.event] = (acc[event.event] || 0) + 1;
     return acc;
   }, {});
-  const byCategory = rows.reduce<Record<string, number>>((acc, event) => {
-    if (event.category) acc[event.category] = (acc[event.category] || 0) + 1;
-    return acc;
-  }, {});
+
+  // Time Series Aggregation
+  const timeSeries: Record<string, { appUse: number; urgent: number }> = {};
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    timeSeries[d] = { appUse: 0, urgent: 0 };
+  }
+
+  rows.forEach((event) => {
+    const d = event.occurredAt.toISOString().split('T')[0];
+    if (timeSeries[d]) timeSeries[d].appUse++;
+  });
+
+  cases.forEach((c) => {
+    const d = c.createdAt.toISOString().split('T')[0];
+    if (timeSeries[d] && (c.riskLevel === 'high' || c.status === 'emergency')) {
+      timeSeries[d].urgent++;
+    }
+  });
+
+  const timeSeriesList = Object.entries(timeSeries)
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const countByKey = <T>(items: T[], picker: (item: T) => string | null | undefined) =>
     items.reduce<Record<string, number>>((acc, item) => {
@@ -230,7 +249,7 @@ router.get('/analytics', asyncHandler(async (req, res) => {
     data: {
       total: rows.length,
       byEvent,
-      byCategory,
+      timeSeries: timeSeriesList,
       ageRangeDistribution: countByKey(profiles, (profile) => profile.ageGroup),
       genderDistribution: countByKey(profiles, (profile) => profile.gender || 'unspecified'),
       moodTrendsByMood: countByKey(moodRows, (mood) => mood.mood),
