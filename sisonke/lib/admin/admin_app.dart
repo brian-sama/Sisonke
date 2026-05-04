@@ -804,7 +804,7 @@ class AdminOverviewScreen extends StatelessWidget {
 class AdminAnalyticsScreen extends StatelessWidget {
   final AdminApi api;
 
-  const AdminAnalyticsScreen({super.key});
+  const AdminAnalyticsScreen({super.key, required this.api});
 
   @override
   Widget build(BuildContext context) {
@@ -846,7 +846,6 @@ class AdminAnalyticsScreen extends StatelessWidget {
             const SizedBox(height: 32),
             LayoutBuilder(
               builder: (context, constraints) {
-                final isWide = constraints.maxWidth > 900;
                 return Wrap(
                   spacing: 24,
                   runSpacing: 24,
