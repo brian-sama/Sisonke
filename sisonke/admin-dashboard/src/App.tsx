@@ -140,9 +140,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
         )} 
         onClick={onClose}
       />
-      <motion.aside 
+      <motion.aside
         initial={false}
-        animate={{ x: isOpen ? 0 : -300 }}
         className={cn(
           "fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-zinc-100 z-50 lg:translate-x-0 transition-transform shadow-2xl lg:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -1336,7 +1335,7 @@ const AdminLayout = ({ children, title, logout, user }: any) => {
   return (
     <div className="min-h-screen bg-white">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-64 min-h-screen flex flex-col">
+      <div className="lg:pl-72 min-h-screen flex flex-col">
         <TopBar title={title} user={user} onLogout={logout} onMenuOpen={() => setSidebarOpen(true)} />
         <main className="flex-1 bg-zinc-50/10">
           <AnimatePresence mode="wait">
