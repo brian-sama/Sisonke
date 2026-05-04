@@ -222,14 +222,18 @@ router.get('/analytics', asyncHandler(async (req, res) => {
   }
 
   rows.forEach((event) => {
-    const d = event.occurredAt.toISOString().split('T')[0];
-    if (timeSeries[d]) timeSeries[d].appUse++;
+    if (event.occurredAt) {
+      const d = event.occurredAt.toISOString().split('T')[0];
+      if (timeSeries[d]) timeSeries[d].appUse++;
+    }
   });
 
   cases.forEach((c) => {
-    const d = c.createdAt.toISOString().split('T')[0];
-    if (timeSeries[d] && (c.riskLevel === 'high' || c.status === 'emergency')) {
-      timeSeries[d].urgent++;
+    if (c.createdAt) {
+      const d = c.createdAt.toISOString().split('T')[0];
+      if (timeSeries[d] && (c.riskLevel === 'high' || c.status === 'emergency')) {
+        timeSeries[d].urgent++;
+      }
     }
   });
 
