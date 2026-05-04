@@ -248,6 +248,29 @@ const SisonkeLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
   <img src="/sisonke-logo.png" alt="Sisonke" className={cn("rounded-2xl object-cover shadow-lg", className)} />
 );
 
+const dayLabel = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+const timeAgo = (value?: string) => {
+  if (!value) return 'recently';
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+};
+
+const emptyChart = (days = 7) => Array.from({ length: days }, (_, index) => {
+  const date = new Date(Date.now() - (days - index - 1) * 24 * 60 * 60 * 1000);
+  const iso = date.toISOString().split('T')[0];
+  return { date: iso, name: dayLabel(iso), appUse: 0, urgent: 0 };
+});
+
 // --- Pages ---
 
 const Home = () => {
@@ -260,11 +283,15 @@ const Home = () => {
     communityPostsPending: 0,
   };
   const [stats, setStats] = useState<any>(emptyStats);
+  const [activity, setActivity] = useState<any[]>(emptyChart(7));
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch('/api/admin/overview').then(data => {
+    Promise.all([
+      apiFetch('/api/admin/overview'),
+      apiFetch('/api/admin/analytics?days=7').catch(() => null),
+    ]).then(([data, analytics]) => {
       setStats({
         totalUsers: data.users?.total ?? 0,
         guestSessions: data.users?.guests ?? 0,
@@ -273,6 +300,13 @@ const Home = () => {
         counselorCasesWaiting: data.counselorCases?.waiting ?? data.counselorCases?.total ?? 0,
         communityPostsPending: data.communityPosts?.pending ?? 0,
       });
+      const series = Array.isArray(analytics?.timeSeries) ? analytics.timeSeries : [];
+      setActivity(series.length ? series.map((item: any) => ({
+        ...item,
+        name: dayLabel(item.date),
+        appUse: Number(item.appUse || 0),
+        urgent: Number(item.urgent || 0),
+      })) : emptyChart(7));
       setLoadError('');
       setLoading(false);
     }).catch((error) => {
@@ -294,10 +328,10 @@ const Home = () => {
   const cards = [
     { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { title: 'Guest visits', value: stats.guestSessions, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: 'AI chat Sessions', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'AI chats', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
     { title: 'Urgent alerts', value: stats.highRiskEscalations, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { title: 'Cases Pending', value: stats.counselorCasesWaiting, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { title: 'Posts to Moderate', value: stats.communityPostsPending, icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
+    { title: 'Open cases', value: stats.counselorCasesWaiting, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { title: 'Posts waiting', value: stats.communityPostsPending, icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];
 
   return (
@@ -322,7 +356,6 @@ const Home = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <h3 className="text-4xl font-display font-black text-zinc-900 tracking-tight">{Number(card.value || 0).toLocaleString()}</h3>
-              <span className="text-xs font-bold text-emerald-500">+12%</span>
             </div>
           </Card>
         ))}
@@ -339,28 +372,19 @@ const Home = () => {
                </div>
                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                  <div className="w-3 h-3 rounded-full bg-blue-400" />
-                 AI chat
+                 App use
                </div>
             </div>
           </div>
           <div className="h-[320px]">
              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[
-                  { name: 'Mon', apps: 400, chatbot: 240 },
-                  { name: 'Tue', apps: 300, chatbot: 139 },
-                  { name: 'Wed', apps: 200, chatbot: 980 },
-                  { name: 'Thu', apps: 278, chatbot: 390 },
-                  { name: 'Fri', apps: 189, chatbot: 480 },
-                  { name: 'Sat', apps: 239, chatbot: 380 },
-                  { name: 'Sun', apps: 349, chatbot: 430 },
-                ]}>
+                <BarChart data={activity}>
                   <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
                   <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
                   <Tooltip 
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Bar dataKey="apps" fill="#6366f1" radius={[8, 8, 0, 0]} maxBarSize={32} />
-                  <Bar dataKey="chatbot" fill="#60a5fa" radius={[8, 8, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="appUse" fill="#6366f1" radius={[8, 8, 0, 0]} maxBarSize={32} />
                 </BarChart>
              </ResponsiveContainer>
           </div>
@@ -370,12 +394,7 @@ const Home = () => {
           <h3 className="text-xl font-display font-bold mb-8">Urgent help requests</h3>
           <div className="h-[320px]">
              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={[
-                  { name: 'Week 1', alerts: 4 },
-                  { name: 'Week 2', alerts: 7 },
-                  { name: 'Week 3', alerts: 2 },
-                  { name: 'Week 4', alerts: 12 },
-                ]}>
+                <LineChart data={activity}>
                   <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
                   <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
                   <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
@@ -387,7 +406,7 @@ const Home = () => {
                   </defs>
                   <Line 
                     type="monotone" 
-                    dataKey="alerts" 
+                    dataKey="urgent" 
                     stroke="#f43f5e" 
                     strokeWidth={4} 
                     dot={{ r: 6, fill: '#f43f5e', strokeWidth: 3, stroke: '#fff' }} 
@@ -404,14 +423,17 @@ const Home = () => {
 
 const EmergencyContacts = () => {
   const [contacts, setContacts] = useState<any[]>([]);
+  const [editingContact, setEditingContact] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
+  const loadContacts = () => apiFetch('/api/admin/emergency-contacts').then(data => {
+    setContacts(Array.isArray(data) ? data : []);
+    setLoading(false);
+  });
+
   useEffect(() => {
-    apiFetch('/api/admin/emergency-contacts').then(data => {
-      setContacts(Array.isArray(data) ? data : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    loadContacts().catch(() => setLoading(false));
   }, []);
 
   const filtered = contacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
@@ -429,10 +451,44 @@ const EmergencyContacts = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+        <button
+          onClick={() => setEditingContact({ name: '', phoneNumber: '', category: 'crisis', description: '', isActive: true, status: 'published', country: 'ZW' })}
+          className="flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+        >
           <Plus size={20} strokeWidth={3} /> Add contact
         </button>
       </div>
+
+      {editingContact && (
+        <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input className="px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="Name" value={editingContact.name} onChange={e => setEditingContact({ ...editingContact, name: e.target.value })} />
+            <input className="px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="Phone" value={editingContact.phoneNumber} onChange={e => setEditingContact({ ...editingContact, phoneNumber: e.target.value })} />
+            <input className="px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="Type" value={editingContact.category} onChange={e => setEditingContact({ ...editingContact, category: e.target.value })} />
+            <label className="flex items-center gap-3 px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold">
+              <input type="checkbox" className="accent-indigo-600" checked={editingContact.isActive} onChange={e => setEditingContact({ ...editingContact, isActive: e.target.checked })} />
+              Contact is on
+            </label>
+            <textarea className="md:col-span-2 px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="What this contact helps with" value={editingContact.description || ''} onChange={e => setEditingContact({ ...editingContact, description: e.target.value })} />
+          </div>
+          <div className="flex justify-end gap-3 mt-5">
+            <button onClick={() => setEditingContact(null)} className="px-5 py-3 bg-zinc-100 rounded-2xl font-bold">Cancel</button>
+            <button
+              onClick={async () => {
+                await apiFetch(editingContact.id ? `/api/admin/emergency-contacts/${editingContact.id}` : '/api/admin/emergency-contacts', {
+                  method: editingContact.id ? 'PUT' : 'POST',
+                  body: JSON.stringify(editingContact),
+                });
+                setEditingContact(null);
+                await loadContacts();
+              }}
+              className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black"
+            >
+              Save contact
+            </button>
+          </div>
+        </Card>
+      )}
 
       <Card>
         <div className="overflow-x-auto">
@@ -462,19 +518,16 @@ const EmergencyContacts = () => {
                   <td className="px-8 py-6">
                     <div className={cn(
                       "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter",
-                      contact.isOn ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"
+                      contact.isActive ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"
                     )}>
-                      <div className={cn("w-1.5 h-1.5 rounded-full", contact.isOn ? "bg-emerald-500 animate-pulse" : "bg-zinc-400")} />
-                      {contact.isOn ? 'On' : 'Off'}
+                      <div className={cn("w-1.5 h-1.5 rounded-full", contact.isActive ? "bg-emerald-500 animate-pulse" : "bg-zinc-400")} />
+                      {contact.isActive ? 'On' : 'Off'}
                     </div>
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2.5 text-zinc-400 hover:text-indigo-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-zinc-100 transition-all">
+                      <button onClick={() => setEditingContact(contact)} className="p-2.5 text-zinc-400 hover:text-indigo-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-zinc-100 transition-all">
                         <Edit2 size={18} />
-                      </button>
-                      <button className="p-2.5 text-zinc-400 hover:text-rose-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-zinc-100 transition-all">
-                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -505,7 +558,7 @@ const ResourcesCMS = () => {
              <p className="text-zinc-500 font-medium">Manage wellness guides and resources for Zimbabwe youth</p>
            </div>
            <button onClick={() => setEditing({ title: '', content: '', category: 'wellness', isPublished: false })} className="flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
-             <Plus size={20} strokeWidth={3} /> Create Resource
+              <Plus size={20} strokeWidth={3} /> Add resource
            </button>
         </div>
         
@@ -551,17 +604,17 @@ const ResourcesCMS = () => {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
               <Card className="p-10 space-y-10 sticky top-24 border-indigo-100 ring-4 ring-indigo-50 shadow-2xl">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-black text-2xl tracking-tight">{editing.id ? 'Refine' : 'Compose'}</h3>
+                    <h3 className="font-display font-black text-2xl tracking-tight">{editing.id ? 'Edit resource' : 'Add resource'}</h3>
                   <button onClick={() => setEditing(null)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-rose-600 transition-colors"><X size={18} strokeWidth={3} /></button>
                 </div>
                 
                 <div className="space-y-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Resource Title</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Title</label>
                     <input autoFocus value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl font-display font-bold text-lg focus:ring-4 focus:ring-indigo-100 outline-none transition-all" placeholder="Enter a catchy title..." />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Markdown Fabric</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Content</label>
                     <textarea 
                       rows={12} 
                       value={editing.content} 
@@ -571,7 +624,7 @@ const ResourcesCMS = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Pillar</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Topic</label>
                       <select value={editing.category} onChange={e => setEditing({...editing, category: e.target.value})} className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl font-bold text-sm focus:ring-4 focus:ring-indigo-100 outline-none">
                         <option value="mental-health">🧠 Mental Health</option>
                         <option value="srhr">🩸 SRHR</option>
@@ -588,7 +641,7 @@ const ResourcesCMS = () => {
                         )}
                       >
                         {editing.isPublished ? <Check size={14} strokeWidth={4} /> : <div className="w-3.5 h-3.5 border-2 border-zinc-300 rounded-sm" />}
-                        {editing.isPublished ? 'Published' : 'Draft Mode'}
+                        {editing.isPublished ? 'Published' : 'Draft'}
                       </button>
                     </div>
                   </div>
@@ -603,7 +656,7 @@ const ResourcesCMS = () => {
                           category: editing.category,
                           status: editing.isPublished ? 'published' : 'draft',
                           language: editing.language || 'en',
-                          isOffAvailable: true,
+                          isOfflineAvailable: true,
                         }),
                       });
                       const data = await apiFetch('/api/admin/resources');
@@ -612,7 +665,7 @@ const ResourcesCMS = () => {
                     }}
                     className="w-full py-5 bg-zinc-900 text-white rounded-3xl font-display font-bold text-lg shadow-xl shadow-zinc-900/20 active:scale-95 transition-all"
                   >
-                    Save Resource & Notify Youth
+                    Save resource
                   </button>
                 </div>
               </Card>
@@ -622,8 +675,8 @@ const ResourcesCMS = () => {
               <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center mb-6">
                 <BookOpen className="text-zinc-200" size={32} />
               </div>
-              <h4 className="text-xl font-display font-bold text-zinc-300 mb-2">Editor Inactive</h4>
-              <p className="text-zinc-400 text-sm max-w-[200px]">Select a card to refine content or tap '+' to build a new wellness guide.</p>
+              <h4 className="text-xl font-display font-bold text-zinc-300 mb-2">No resource selected</h4>
+              <p className="text-zinc-400 text-sm max-w-[200px]">Choose a resource to edit, or add a new one.</p>
             </div>
           )}
         </AnimatePresence>
@@ -644,9 +697,8 @@ const FAQBank = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
         <div className="relative z-10">
           <h3 className="text-4xl font-display font-black text-white leading-tight">Saved answers</h3>
-          <p className="text-indigo-100 font-medium mt-1">High-quality, vetted answers for AI & Youth</p>
+          <p className="text-indigo-100 font-medium mt-1">High-quality, checked answers for young people</p>
         </div>
-        <button className="relative z-10 px-8 py-4 bg-white text-indigo-600 rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-105 transition-transform active:scale-95">Add answer</button>
       </div>
       
       <div className="space-y-6">
@@ -818,8 +870,9 @@ const SafetyRules = () => {
 
 const CounselorCases = () => {
     const [cases, setCases] = useState<any[]>([]);
+    const loadCases = () => apiFetch('/api/admin/counselor-cases').then(data => setCases(Array.isArray(data) ? data : []));
     useEffect(() => {
-      apiFetch('/api/admin/counselor-cases').then(data => setCases(Array.isArray(data) ? data : []));
+      loadCases();
     }, []);
 
     return (
@@ -827,8 +880,8 @@ const CounselorCases = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
            <h3 className="text-3xl font-display font-black text-zinc-900">Open support requests</h3>
            <div className="flex gap-3">
-              <div className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-sm font-bold flex items-center gap-2">
-                <Activity size={18} /> 4 On Counselors
+               <div className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-sm font-bold flex items-center gap-2">
+                <Activity size={18} /> {cases.length} open
               </div>
            </div>
         </div>
@@ -860,17 +913,29 @@ const CounselorCases = () => {
                     <h4 className="text-2xl font-display font-black text-zinc-900 line-clamp-1">{c.summary}</h4>
                     <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
                       <Clock size={14} strokeWidth={3} />
-                      Waiting {Math.floor(Math.random() * 20) + 5}m
+                      Opened {timeAgo(c.createdAt)}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                   <select className="px-6 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-100 outline-none">
-                     <option>No helper yet</option>
-                     <option>Dr. Mutambo</option>
-                     <option>Sarah (On)</option>
+                   <select
+                     value={c.status}
+                     onChange={async (event) => {
+                       await apiFetch(`/api/admin/counselor-cases/${c.id}/status`, {
+                         method: 'POST',
+                         body: JSON.stringify({ status: event.target.value }),
+                       });
+                       await loadCases();
+                     }}
+                     className="px-6 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-100 outline-none"
+                   >
+                     <option value="requested">New</option>
+                     <option value="assigned">Assigned</option>
+                     <option value="live">In progress</option>
+                     <option value="follow-up">Follow up</option>
+                     <option value="resolved">Done</option>
+                     <option value="emergency">Emergency</option>
                    </select>
-                   <button className="px-8 py-3.5 bg-zinc-900 text-white rounded-2xl font-display font-bold text-sm shadow-xl shadow-zinc-900/10 hover:-translate-y-1 active:translate-y-0 transition-transform">Open</button>
                 </div>
               </Card>
             </motion.div>
@@ -878,6 +943,81 @@ const CounselorCases = () => {
         </div>
       </div>
     );
+};
+
+const CommunityPosts = () => {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [message, setMessage] = useState('');
+
+  const loadPosts = () => apiFetch('/api/admin/community-posts').then(data => setPosts(Array.isArray(data) ? data : []));
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const reviewPost = async (id: string, status: 'approved' | 'removed') => {
+    setMessage('');
+    await apiFetch(`/api/admin/community-posts/${id}/moderate`, {
+      method: 'POST',
+      body: JSON.stringify({ status, reason: status === 'removed' ? 'Removed by admin review' : undefined }),
+    });
+    setMessage(status === 'approved' ? 'Post approved.' : 'Post removed.');
+    await loadPosts();
+  };
+
+  const pending = posts.filter(post => post.status === 'pending');
+
+  return (
+    <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-3xl font-display font-black text-zinc-900">Community Posts</h3>
+          <p className="text-zinc-500 font-medium">Review posts before they appear to young people.</p>
+        </div>
+        <div className="px-5 py-3 bg-indigo-50 text-indigo-700 rounded-2xl font-black">
+          {pending.length} waiting
+        </div>
+      </div>
+
+      {message && <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl font-bold">{message}</div>}
+
+      <div className="grid gap-5">
+        {posts.length === 0 && (
+          <Card className="p-10 text-center text-zinc-500 font-bold">
+            No community posts yet.
+          </Card>
+        )}
+        {posts.map(post => (
+          <Card key={post.id} className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-zinc-100 rounded-xl text-xs font-black text-zinc-600">{post.ageGroup || 'Age not set'}</span>
+                  <span className={cn(
+                    "px-3 py-1 rounded-xl text-xs font-black",
+                    post.status === 'pending' ? "bg-amber-100 text-amber-700" :
+                    post.status === 'approved' ? "bg-emerald-100 text-emerald-700" :
+                    "bg-rose-100 text-rose-700"
+                  )}>
+                    {post.status}
+                  </span>
+                  <span className="px-3 py-1 bg-zinc-50 rounded-xl text-xs font-bold text-zinc-400">{timeAgo(post.createdAt)}</span>
+                </div>
+                <p className="text-lg text-zinc-800 leading-relaxed">{post.content}</p>
+                {post.moderationReason && <p className="text-sm text-rose-600 font-bold">{post.moderationReason}</p>}
+              </div>
+              {post.status === 'pending' && (
+                <div className="flex gap-3 shrink-0">
+                  <button onClick={() => reviewPost(post.id, 'approved')} className="px-5 py-3 bg-emerald-600 text-white rounded-2xl font-black">Approve</button>
+                  <button onClick={() => reviewPost(post.id, 'removed')} className="px-5 py-3 bg-rose-600 text-white rounded-2xl font-black">Remove</button>
+                </div>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const roleOptions = [
@@ -1050,39 +1190,50 @@ const People = () => {
 };
 
 const Reports = () => {
-  const [data, setData] = useState<any>(null);
+  const [summary, setSummary] = useState<any>(null);
+  const [error, setError] = useState('');
+
   useEffect(() => {
-    apiFetch('/api/admin/analytics?days=30').then((summary) => {
-      const byEvent = summary.byEvent || {};
-      const highRisk = summary.counselorEscalations || 0;
-      setData({
-        appOpens: [byEvent.app_opened || 0, 4, 7, 9, 6, 8, 10],
-        resourceViews: [byEvent.resource_viewed || 0, 3, 4, 5, 7, 8, 9],
-        highRiskEvents: [highRisk, 1, 0, 2, 1, 3, highRisk],
+    apiFetch('/api/admin/analytics?days=30')
+      .then((data) => {
+        const series = Array.isArray(data.timeSeries) ? data.timeSeries : [];
+        setSummary({
+          ...data,
+          timeSeries: series.length ? series.map((item: any) => ({
+            ...item,
+            name: dayLabel(item.date),
+            appUse: Number(item.appUse || 0),
+            urgent: Number(item.urgent || 0),
+          })) : emptyChart(30),
+        });
+        setError('');
+      })
+      .catch((err) => {
+        setSummary({ total: 0, counselorEscalations: 0, chatbotSessions: 0, timeSeries: emptyChart(30), issueCategories: {}, moodTrendsByMood: {} });
+        setError(err instanceof Error ? err.message : 'Could not load reports.');
       });
-    });
   }, []);
 
-  if (!data) return null;
+  if (!summary) return null;
 
-  const chartData = data.appOpens.map((val: number, i: number) => ({
-    name: `${i + 1} May`,
-    opens: val,
-    views: data.resourceViews[i],
-    risk: data.highRiskEvents[i]
-  }));
+  const chartData = summary.timeSeries;
+  const totalAppUse = Number(summary.total || 0);
+  const urgentRequests = Number(summary.counselorEscalations || 0);
+  const helpRate = totalAppUse > 0 ? Math.round((urgentRequests / totalAppUse) * 100) : 0;
+  const issueEntries = Object.entries(summary.issueCategories || {});
+  const moodEntries = Object.entries(summary.moodTrendsByMood || {});
 
   return (
     <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
-            <h3 className="text-3xl font-display font-black text-zinc-900">Health Insights</h3>
-            <p className="text-zinc-500 font-medium">Simple totals about app use and safety</p>
+            <h3 className="text-3xl font-display font-black text-zinc-900">Reports</h3>
+            <p className="text-zinc-500 font-medium">Real totals from the last 30 days.</p>
           </div>
-          <div className="flex gap-2">
-             <button className="px-6 py-3 bg-white border border-zinc-100 rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm">May 2026</button>
-          </div>
+          <div className="px-6 py-3 bg-white border border-zinc-100 rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm">Last 30 days</div>
        </div>
+
+       {error && <div className="p-4 bg-amber-50 border border-amber-100 text-amber-800 rounded-2xl font-bold">{error}</div>}
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <Card className="p-10 bg-indigo-600 text-white border-none shadow-2xl shadow-indigo-100">
@@ -1092,19 +1243,20 @@ const Reports = () => {
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                  <BarChart data={chartData}>
-                    <Bar dataKey="opens" fill="#fff" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="views" fill="rgba(255,255,255,0.2)" radius={[6, 6, 0, 0]} />
+                    <XAxis dataKey="name" hide />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                    <Bar dataKey="appUse" fill="#fff" radius={[6, 6, 0, 0]} />
                  </BarChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-8 pt-8 border-t border-white/10 flex justify-between">
                <div className="flex flex-col">
-                 <span className="text-2xl font-display font-black">2.4k</span>
-                 <span className="text-[10px] font-bold uppercase opacity-60">Usual visits</span>
+                 <span className="text-2xl font-display font-black">{totalAppUse.toLocaleString()}</span>
+                 <span className="text-[10px] font-bold uppercase opacity-60">Tracked actions</span>
                </div>
                <div className="flex flex-col items-end">
-                 <span className="text-2xl font-display font-black">+14%</span>
-                 <span className="text-[10px] font-bold uppercase opacity-60">Change</span>
+                 <span className="text-2xl font-display font-black">{Number(summary.chatbotSessions || 0).toLocaleString()}</span>
+                 <span className="text-[10px] font-bold uppercase opacity-60">AI chats</span>
                </div>
             </div>
          </Card>
@@ -1114,30 +1266,24 @@ const Reports = () => {
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
                 <AlertTriangle size={12} strokeWidth={3} className="text-rose-500" /> Urgent help over time
               </h4>
-              <div className="text-[10px] font-black uppercase text-rose-500 bg-rose-50 px-3 py-1 rounded-full">Elevated Risk</div>
+              <div className="text-[10px] font-black uppercase text-rose-500 bg-rose-50 px-3 py-1 rounded-full">{urgentRequests} urgent</div>
             </div>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                  <LineChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
                     <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} tick={{ fill: '#94a3b8' }} />
                     <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                    <Line type="monotone" dataKey="risk" stroke="#f43f5e" strokeWidth={5} dot={{ r: 6, fill: '#f43f5e', stroke: '#fff', strokeWidth: 3 }} />
+                    <Line type="monotone" dataKey="urgent" stroke="#f43f5e" strokeWidth={5} dot={{ r: 5, fill: '#f43f5e', stroke: '#fff', strokeWidth: 2 }} />
                  </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-8 flex justify-center gap-12">
+            <div className="mt-8 flex flex-wrap justify-center gap-8">
                <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
                     <ShieldAlert size={20} strokeWidth={3} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-display font-black text-xl leading-none">42</span>
+                    <span className="font-display font-black text-xl leading-none">{urgentRequests.toLocaleString()}</span>
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Urgent requests</span>
                   </div>
                </div>
@@ -1146,23 +1292,39 @@ const Reports = () => {
                     <UserCheck size={20} strokeWidth={3} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-display font-black text-xl leading-none">98%</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Help rate</span>
+                    <span className="font-display font-black text-xl leading-none">{helpRate}%</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Urgent share</span>
                   </div>
                </div>
             </div>
          </Card>
        </div>
+
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="p-8">
+          <h4 className="text-xl font-display font-black mb-5">Support topics</h4>
+          <div className="space-y-3">
+            {issueEntries.length === 0 && <p className="text-zinc-500 font-bold">No support topics recorded yet.</p>}
+            {issueEntries.map(([name, value]) => <div key={name} className="flex justify-between border-b border-zinc-100 pb-2"><span className="font-bold text-zinc-700">{name}</span><span className="font-black">{Number(value).toLocaleString()}</span></div>)}
+          </div>
+        </Card>
+        <Card className="p-8">
+          <h4 className="text-xl font-display font-black mb-5">Mood check-ins</h4>
+          <div className="space-y-3">
+            {moodEntries.length === 0 && <p className="text-zinc-500 font-bold">No mood check-ins recorded yet.</p>}
+            {moodEntries.map(([name, value]) => <div key={name} className="flex justify-between border-b border-zinc-100 pb-2"><span className="font-bold text-zinc-700">{name}</span><span className="font-black">{Number(value).toLocaleString()}</span></div>)}
+          </div>
+        </Card>
+       </div>
        
-       <div className="bg-amber-100/50 backdrop-blur-sm border-2 border-dashed border-amber-200 p-10 rounded-[3rem] flex gap-8 items-start relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-700" />
-          <div className="w-16 h-16 bg-amber-500 rounded-3xl shrink-0 flex items-center justify-center text-white shadow-xl shadow-amber-200 animate-pulse">
+       <div className="bg-amber-100/50 border-2 border-dashed border-amber-200 p-10 rounded-[3rem] flex gap-8 items-start">
+          <div className="w-16 h-16 bg-amber-500 rounded-3xl shrink-0 flex items-center justify-center text-white shadow-xl shadow-amber-200">
             <Lock size={32} strokeWidth={2.5} />
           </div>
           <div>
             <h5 className="text-2xl font-display font-black text-amber-900 mb-2 tracking-tight">Privacy promise</h5>
-            <p className="text-lg text-amber-800 leading-relaxed max-w-4xl opacity-80 font-medium italic">
-              "These numbers are summaries only. We do not show private chats or journal notes here. We only share personal details when safety support truly needs it."
+            <p className="text-lg text-amber-800 leading-relaxed max-w-4xl opacity-80 font-medium">
+              These numbers are summaries only. We do not show private chats or journal notes here. We only share personal details when safety support truly needs it.
             </p>
           </div>
        </div>
@@ -1207,9 +1369,6 @@ const Settings = () => (
              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Location</label>
              <div className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold text-zinc-600">Bulawayo</div>
            </div>
-        </div>
-        <div className="pt-4 flex justify-end">
-           <button className="px-10 py-4 bg-indigo-600 text-white rounded-3xl font-display font-black tracking-widest uppercase text-xs shadow-xl shadow-indigo-200">Review settings</button>
         </div>
       </section>
     </div>
@@ -1397,7 +1556,7 @@ export default function App() {
         <Route path="/safety" element={<AdminLayout title="Safety Rules" user={user} logout={logout}><SafetyRules /></AdminLayout>} />
         <Route path="/cases" element={<AdminLayout title="Support Requests" user={user} logout={logout}><CounselorCases /></AdminLayout>} />
         <Route path="/users" element={<AdminLayout title="People" user={user} logout={logout}><People /></AdminLayout>} />
-        <Route path="/moderation" element={<AdminLayout title="Community Posts" user={user} logout={logout}><div className="p-8 text-zinc-500">Community post review is coming soon.</div></AdminLayout>} />
+        <Route path="/moderation" element={<AdminLayout title="Community Posts" user={user} logout={logout}><CommunityPosts /></AdminLayout>} />
         <Route path="/analytics" element={<AdminLayout title="Reports" user={user} logout={logout}><Reports /></AdminLayout>} />
         <Route path="/settings" element={<AdminLayout title="Settings" user={user} logout={logout}><Settings /></AdminLayout>} />
         <Route path="*" element={<Navigate to="/" replace />} />

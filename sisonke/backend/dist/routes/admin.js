@@ -13,7 +13,6 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const types_1 = require("../types");
 const riskService_1 = require("../services/riskService");
 const zimbabweRagKnowledge_1 = require("../data/zimbabweRagKnowledge");
-const auditService_1 = require("../services/auditService");
 const socketService_1 = require("../services/socketService");
 const router = (0, express_1.Router)();
 router.use(auth_1.authMiddleware, auth_1.adminOnly);
@@ -75,16 +74,21 @@ router.get('/community-posts', (0, errorHandler_1.asyncHandler)(async (_req, res
     const rows = await db_1.db
         .select()
         .from(schema_1.communityPosts)
-        .orderBy((0, drizzle_orm_1.desc)(schema_1.communityPosts.createdAt));
+        .orderBy((0, drizzle_orm_1.desc)(schema_1.communityPosts.createdAt))
+        .limit(100);
     res.json({ success: true, data: rows });
 }));
 router.post('/community-posts/:id/moderate', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { status, reason } = req.body;
+    const status = String(req.body.status || '');
+    if (!['approved', 'removed'].includes(status)) {
+        return res.status(400).json({ success: false, error: 'Status must be approved or removed.' });
+    }
     const [updated] = await db_1.db.update(schema_1.communityPosts).set({
-        status,
-        moderationReason: reason,
+        status: status,
+        moderationReason: req.body.reason,
         reviewedAt: new Date(),
         reviewedBy: req.user.id,
+        removedAt: status === 'removed' ? new Date() : undefined,
     }).where((0, drizzle_orm_1.eq)(schema_1.communityPosts.id, req.params.id)).returning();
     if (!updated)
         return res.status(404).json({ success: false, error: 'Post not found' });
@@ -95,13 +99,17 @@ router.get('/reports', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db
         .select()
         .from(schema_1.reports)
-        .orderBy((0, drizzle_orm_1.desc)(schema_1.reports.createdAt));
+        .orderBy((0, drizzle_orm_1.desc)(schema_1.reports.createdAt))
+        .limit(100);
     res.json({ success: true, data: rows });
 }));
 router.post('/reports/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { status } = req.body;
+    const status = String(req.body.status || '');
+    if (!['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
+        return res.status(400).json({ success: false, error: 'Invalid report status' });
+    }
     const [updated] = await db_1.db.update(schema_1.reports).set({
-        status,
+        status: status,
         reviewedAt: new Date(),
         reviewedBy: req.user.id,
     }).where((0, drizzle_orm_1.eq)(schema_1.reports.id, req.params.id)).returning();
@@ -297,44 +305,6 @@ router.post('/counselor-cases/:id/notes', (0, errorHandler_1.asyncHandler)(async
         metadata: { caseId: req.params.id },
     });
     res.status(201).json({ success: true });
-}));
-router.get('/community-posts', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
-    const rows = await db_1.db
-        .select()
-        .from(schema_1.communityPosts)
-        .orderBy((0, drizzle_orm_1.desc)(schema_1.communityPosts.createdAt))
-        .limit(100);
-    res.json({ success: true, data: rows });
-}));
-router.post('/community-posts/:id/moderate', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const status = String(req.body.status || '');
-    if (!['approved', 'removed'].includes(status)) {
-        return res.status(400).json({ success: false, error: 'Status must be approved or removed.' });
-    }
-    const [updated] = await db_1.db.update(schema_1.communityPosts).set({
-        status: status,
-        moderationReason: req.body.reason,
-        reviewedAt: new Date(),
-        reviewedBy: req.user.id,
-        removedAt: status === 'removed' ? new Date() : undefined,
-    }).where((0, drizzle_orm_1.eq)(schema_1.communityPosts.id, req.params.id)).returning();
-    res.json({ success: true, data: updated });
-}));
-router.get('/reports', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
-    const rows = await db_1.db.select().from(schema_1.reports).orderBy((0, drizzle_orm_1.desc)(schema_1.reports.createdAt)).limit(100);
-    res.json({ success: true, data: rows });
-}));
-router.post('/reports/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const status = String(req.body.status || '');
-    if (!['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
-        return res.status(400).json({ success: false, error: 'Invalid report status' });
-    }
-    const [updated] = await db_1.db.update(schema_1.reports).set({
-        status: status,
-        reviewedAt: new Date(),
-        reviewedBy: req.user.id,
-    }).where((0, drizzle_orm_1.eq)(schema_1.reports.id, req.params.id)).returning();
-    res.json({ success: true, data: updated });
 }));
 router.get('/cms-content', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.cmsContent).orderBy((0, drizzle_orm_1.desc)(schema_1.cmsContent.createdAt)).limit(100);
@@ -589,82 +559,6 @@ router.post('/users/:id/suspension', (0, errorHandler_1.asyncHandler)(async (req
         metadata: { targetUserId: req.params.id },
     });
     res.json({ success: true, data: updated });
-}));
-router.get('/counselor-cases', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
-    const rows = await db_1.db
-        .select()
-        .from(schema_1.counselorCases)
-        .orderBy((0, drizzle_orm_1.desc)(schema_1.counselorCases.createdAt));
-    res.json({ success: true, data: rows });
-}));
-router.post('/counselor-cases/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { status } = req.body;
-    const [updated] = await db_1.db.update(schema_1.counselorCases).set({
-        status,
-        updatedAt: new Date(),
-        resolvedAt: status === 'resolved' ? new Date() : undefined,
-    }).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).returning();
-    if (!updated)
-        return res.status(404).json({ success: false, error: 'Case not found' });
-    await auditService_1.AuditService.log({
-        action: 'case_status_updated',
-        actorId: req.user.id,
-        entityType: 'counselor_case',
-        entityId: updated.id,
-        metadata: { status }
-    });
-    res.json({ success: true, data: updated });
-}));
-router.post('/counselor-cases/:id/notes', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { note } = req.body;
-    const [created] = await db_1.db.insert(schema_1.securityLogs).values({
-        userId: req.user.id,
-        event: 'counselor_note_added',
-        metadata: { caseId: req.params.id, notePreview: note.substring(0, 50) }
-    }).returning();
-    res.status(201).json({ success: true, data: created });
-}));
-router.get('/analytics', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const days = parseInt(req.query.days) || 30;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    const [timeSeriesRaw, ageDist, genderDist, moodDist, issueDist] = await Promise.all([
-        db_1.db.select({
-            date: (0, drizzle_orm_1.sql) `DATE(${schema_1.analyticsEvents.occurredAt})`,
-            appUse: (0, drizzle_orm_1.count)(schema_1.analyticsEvents.id),
-            urgent: (0, drizzle_orm_1.sql) `CAST(COUNT(CASE WHEN ${schema_1.analyticsEvents.event} = 'counselor_escalated' THEN 1 END) AS INTEGER)`
-        })
-            .from(schema_1.analyticsEvents)
-            .where((0, drizzle_orm_1.gte)(schema_1.analyticsEvents.occurredAt, startDate))
-            .groupBy((0, drizzle_orm_1.sql) `DATE(${schema_1.analyticsEvents.occurredAt})`)
-            .orderBy((0, drizzle_orm_1.sql) `DATE(${schema_1.analyticsEvents.occurredAt})`),
-        db_1.db.select({ category: schema_1.userProfiles.ageGroup, count: (0, drizzle_orm_1.count)() })
-            .from(schema_1.userProfiles)
-            .groupBy(schema_1.userProfiles.ageGroup),
-        db_1.db.select({ category: schema_1.userProfiles.gender, count: (0, drizzle_orm_1.count)() })
-            .from(schema_1.userProfiles)
-            .groupBy(schema_1.userProfiles.gender),
-        db_1.db.select({ category: schema_1.moodCheckins.mood, count: (0, drizzle_orm_1.count)() })
-            .from(schema_1.moodCheckins)
-            .groupBy(schema_1.moodCheckins.mood),
-        db_1.db.select({ category: schema_1.counselorCases.issueCategory, count: (0, drizzle_orm_1.count)() })
-            .from(schema_1.counselorCases)
-            .groupBy(schema_1.counselorCases.issueCategory),
-    ]);
-    // Fill in missing days with zeros if needed for a smooth chart
-    const timeSeries = timeSeriesRaw;
-    res.json({
-        success: true,
-        data: {
-            timeSeries,
-            ageRangeDistribution: Object.fromEntries(ageDist.map(d => [d.category, d.count])),
-            genderDistribution: Object.fromEntries(genderDist.map(d => [d.category || 'Unknown', d.count])),
-            moodTrendsByMood: Object.fromEntries(moodDist.map(d => [d.category, d.count])),
-            issueCategories: Object.fromEntries(issueDist.map(d => [d.category, d.count])),
-            total: timeSeries.reduce((acc, d) => acc + Number(d.appUse), 0),
-            counselorEscalations: timeSeries.reduce((acc, d) => acc + Number(d.urgent), 0),
-        }
-    });
 }));
 router.get('/security-logs', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.securityLogs).orderBy((0, drizzle_orm_1.desc)(schema_1.securityLogs.createdAt)).limit(100);
