@@ -5,7 +5,8 @@ import { validateEnv } from '../env';
 
 async function main() {
   validateEnv();
-  await migrate(db, { migrationsFolder: 'src/db/migrations' });
+  const folder = process.env.MIGRATIONS_FOLDER || 'src/db/migrations';
+  await migrate(db, { migrationsFolder: folder });
   await client.end();
   console.log('Database migrations completed.');
 }
