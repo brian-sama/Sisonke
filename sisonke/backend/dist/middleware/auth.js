@@ -3,11 +3,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminOnly = exports.optionalAuth = exports.authMiddleware = void 0;
+exports.superAdminOnly = exports.adminOnly = exports.optionalAuth = exports.authMiddleware = exports.hasAnyRole = exports.hasRole = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("../db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const hasRole = (user, role) => {
+    if (!user)
+        return false;
+    return user.role === role || user.roles.includes(role);
+};
+exports.hasRole = hasRole;
+const hasAnyRole = (user, roles) => {
+    return roles.some((role) => (0, exports.hasRole)(user, role));
+};
+exports.hasAnyRole = hasAnyRole;
 const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -31,6 +41,7 @@ const authMiddleware = async (req, res, next) => {
             id: user[0].id,
             email: user[0].email || undefined,
             role: user[0].role || 'guest',
+            roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
             isGuest: user[0].isGuest ?? true,
             deviceId: user[0].deviceId || undefined,
         };
@@ -62,6 +73,7 @@ const optionalAuth = async (req, res, next) => {
                 id: user[0].id,
                 email: user[0].email || undefined,
                 role: user[0].role || 'guest',
+                roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
                 isGuest: user[0].isGuest ?? true,
                 deviceId: user[0].deviceId || undefined,
             };
@@ -75,10 +87,17 @@ const optionalAuth = async (req, res, next) => {
 };
 exports.optionalAuth = optionalAuth;
 const adminOnly = (req, res, next) => {
-    if (!req.user || req.user.role !== 'admin') {
+    if (!(0, exports.hasAnyRole)(req.user, ['admin', 'super-admin'])) {
         return res.status(403).json({ error: 'Admin access required' });
     }
     next();
 };
 exports.adminOnly = adminOnly;
+const superAdminOnly = (req, res, next) => {
+    if (!(0, exports.hasRole)(req.user, 'super-admin')) {
+        return res.status(403).json({ error: 'Super admin access required' });
+    }
+    next();
+};
+exports.superAdminOnly = superAdminOnly;
 //# sourceMappingURL=auth.js.map

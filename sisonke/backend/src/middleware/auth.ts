@@ -9,10 +9,20 @@ export interface AuthRequest extends Request {
     id: string;
     email?: string;
     role: string;
+    roles: string[];
     isGuest: boolean;
     deviceId?: string;
   };
 }
+
+export const hasRole = (user: AuthRequest['user'] | undefined, role: string) => {
+  if (!user) return false;
+  return user.role === role || user.roles.includes(role);
+};
+
+export const hasAnyRole = (user: AuthRequest['user'] | undefined, roles: string[]) => {
+  return roles.some((role) => hasRole(user, role));
+};
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -45,6 +55,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       id: user[0].id,
       email: user[0].email || undefined,
       role: user[0].role || 'guest',
+      roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
       isGuest: user[0].isGuest ?? true,
       deviceId: user[0].deviceId || undefined,
     };
@@ -81,6 +92,7 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
         id: user[0].id,
         email: user[0].email || undefined,
         role: user[0].role || 'guest',
+        roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
         isGuest: user[0].isGuest ?? true,
         deviceId: user[0].deviceId || undefined,
       };
@@ -94,8 +106,15 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
 };
 
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user || req.user.role !== 'admin') {
+  if (!hasAnyRole(req.user, ['admin', 'super-admin'])) {
     return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
+
+export const superAdminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!hasRole(req.user, 'super-admin')) {
+    return res.status(403).json({ error: 'Super admin access required' });
   }
   next();
 };

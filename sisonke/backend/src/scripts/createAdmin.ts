@@ -17,8 +17,8 @@ async function main() {
 
   const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
-    await db.update(users).set({ role: 'admin', isGuest: false, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
-    console.log(`Promoted existing user ${email} to admin.`);
+    await db.update(users).set({ role: 'admin', roles: ['super-admin', 'admin'], isGuest: false, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
+    console.log(`Promoted existing user ${email} to super admin.`);
     return;
   }
 
@@ -27,6 +27,7 @@ async function main() {
     email,
     passwordHash,
     role: 'admin',
+    roles: ['super-admin', 'admin'],
     isGuest: false,
     updatedAt: new Date(),
   });

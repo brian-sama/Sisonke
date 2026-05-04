@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QuestionQuerySchema = exports.ResourceQuerySchema = exports.CreateJournalEntrySchema = exports.CreateMoodCheckinSchema = exports.CmsContentSchema = exports.CommunityPostSchema = exports.CounselorRequestSchema = exports.ChatbotMessageSchema = exports.OnboardingProfileSchema = exports.AnalyticsEventSchema = exports.UpdateEmergencyContactSchema = exports.CreateEmergencyContactSchema = exports.CreateReportSchema = exports.CreateAnswerSchema = exports.CreateQuestionSchema = exports.UpdateResourceSchema = exports.CreateResourceSchema = exports.GuestSessionSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
+exports.QuestionQuerySchema = exports.ResourceQuerySchema = exports.CreateJournalEntrySchema = exports.CreateMoodCheckinSchema = exports.CmsContentSchema = exports.CommunityPostSchema = exports.CounselorRequestSchema = exports.ChatbotMessageSchema = exports.OnboardingProfileSchema = exports.AnalyticsEventSchema = exports.UpdateEmergencyContactSchema = exports.CreateEmergencyContactSchema = exports.CreateReportSchema = exports.CreateAnswerSchema = exports.CreateQuestionSchema = exports.UpdateResourceSchema = exports.CreateResourceSchema = exports.UpdateUserRolesSchema = exports.CreateAdminUserSchema = exports.AdminRoleSchema = exports.GuestSessionSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
 const zod_1 = require("zod");
 // Auth schemas
 exports.LoginSchema = zod_1.z.object({
@@ -13,6 +13,26 @@ exports.RegisterSchema = zod_1.z.object({
 });
 exports.GuestSessionSchema = zod_1.z.object({
     deviceId: zod_1.z.string().min(10),
+});
+exports.AdminRoleSchema = zod_1.z.enum([
+    'guest',
+    'user',
+    'counselor',
+    'moderator',
+    'admin',
+    'super-admin',
+    'content-manager',
+    'safety-reviewer',
+    'analyst',
+]);
+exports.CreateAdminUserSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+    password: zod_1.z.string().min(12),
+    roles: zod_1.z.array(exports.AdminRoleSchema).min(1).default(['user']),
+    isGuest: zod_1.z.boolean().default(false),
+});
+exports.UpdateUserRolesSchema = zod_1.z.object({
+    roles: zod_1.z.array(exports.AdminRoleSchema).min(1),
 });
 // Resource schemas
 exports.CreateResourceSchema = zod_1.z.object({

@@ -18,8 +18,8 @@ async function main() {
     }
     const existing = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, email)).limit(1);
     if (existing.length > 0) {
-        await db_1.db.update(schema_1.users).set({ role: 'admin', isGuest: false, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.users.id, existing[0].id));
-        console.log(`Promoted existing user ${email} to admin.`);
+        await db_1.db.update(schema_1.users).set({ role: 'admin', roles: ['super-admin', 'admin'], isGuest: false, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.users.id, existing[0].id));
+        console.log(`Promoted existing user ${email} to super admin.`);
         return;
     }
     const passwordHash = await bcryptjs_1.default.hash(password, 12);
@@ -27,6 +27,7 @@ async function main() {
         email,
         passwordHash,
         role: 'admin',
+        roles: ['super-admin', 'admin'],
         isGuest: false,
         updatedAt: new Date(),
     });

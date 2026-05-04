@@ -15,6 +15,29 @@ export const GuestSessionSchema = z.object({
   deviceId: z.string().min(10),
 });
 
+export const AdminRoleSchema = z.enum([
+  'guest',
+  'user',
+  'counselor',
+  'moderator',
+  'admin',
+  'super-admin',
+  'content-manager',
+  'safety-reviewer',
+  'analyst',
+]);
+
+export const CreateAdminUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(12),
+  roles: z.array(AdminRoleSchema).min(1).default(['user']),
+  isGuest: z.boolean().default(false),
+});
+
+export const UpdateUserRolesSchema = z.object({
+  roles: z.array(AdminRoleSchema).min(1),
+});
+
 // Resource schemas
 export const CreateResourceSchema = z.object({
   title: z.string().min(1).max(255),
@@ -178,6 +201,8 @@ export const QuestionQuerySchema = z.object({
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type GuestSessionInput = z.infer<typeof GuestSessionSchema>;
+export type CreateAdminUserInput = z.infer<typeof CreateAdminUserSchema>;
+export type UpdateUserRolesInput = z.infer<typeof UpdateUserRolesSchema>;
 export type CreateResourceInput = z.infer<typeof CreateResourceSchema>;
 export type UpdateResourceInput = z.infer<typeof UpdateResourceSchema>;
 export type CreateQuestionInput = z.infer<typeof CreateQuestionSchema>;

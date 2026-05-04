@@ -13,7 +13,7 @@ router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)
     const availableCounselors = await db_1.db
         .select()
         .from(schema_1.users)
-        .where((0, drizzle_orm_1.inArray)(schema_1.users.role, ['counselor', 'admin']))
+        .where((0, drizzle_orm_1.sql) `${schema_1.users.roles} && ARRAY['counselor', 'admin', 'super-admin']::varchar(40)[]`)
         .limit(1);
     const [createdCase] = await db_1.db.insert(schema_1.counselorCases).values({
         userId: req.user.id,
@@ -38,7 +38,7 @@ router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)
 }));
 router.use(auth_1.authMiddleware);
 router.get('/cases', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    if (!['counselor', 'admin'].includes(req.user.role)) {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['counselor', 'admin', 'super-admin'])) {
         return res.status(403).json({ success: false, error: 'Counselor access required.' });
     }
     const rows = await db_1.db
@@ -61,7 +61,7 @@ router.post('/cases/:id/messages', (0, errorHandler_1.asyncHandler)(async (req, 
     res.status(201).json({ success: true, data: message });
 }));
 router.post('/cases/:id/notes', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    if (!['counselor', 'admin'].includes(req.user.role)) {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['counselor', 'admin', 'super-admin'])) {
         return res.status(403).json({ success: false, error: 'Counselor access required.' });
     }
     const note = String(req.body.note || '').trim();
@@ -75,7 +75,7 @@ router.post('/cases/:id/notes', (0, errorHandler_1.asyncHandler)(async (req, res
     res.status(201).json({ success: true, data: created });
 }));
 router.post('/cases/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    if (!['counselor', 'admin'].includes(req.user.role)) {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['counselor', 'admin', 'super-admin'])) {
         return res.status(403).json({ success: false, error: 'Counselor access required.' });
     }
     const status = String(req.body.status || '');

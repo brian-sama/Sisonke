@@ -46,6 +46,7 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     email: (0, pg_core_1.varchar)('email', { length: 255 }).unique(),
     passwordHash: (0, pg_core_1.varchar)('password_hash', { length: 255 }),
     role: (0, exports.userRoleEnum)('role').default('guest'),
+    roles: (0, pg_core_1.varchar)('roles', { length: 40 }).array().default(['guest']),
     deviceId: (0, pg_core_1.varchar)('device_id', { length: 255 }).unique(),
     isGuest: (0, pg_core_1.boolean)('is_guest').default(true),
     isSuspended: (0, pg_core_1.boolean)('is_suspended').default(false),

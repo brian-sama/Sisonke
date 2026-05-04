@@ -45,6 +45,7 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).unique(),
   passwordHash: varchar('password_hash', { length: 255 }),
   role: userRoleEnum('role').default('guest'),
+  roles: varchar('roles', { length: 40 }).array().default(['guest']),
   deviceId: varchar('device_id', { length: 255 }).unique(),
   isGuest: boolean('is_guest').default(true),
   isSuspended: boolean('is_suspended').default(false),

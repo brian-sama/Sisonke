@@ -26,6 +26,30 @@ export declare const GuestSessionSchema: z.ZodObject<{
 }, {
     deviceId: string;
 }>;
+export declare const AdminRoleSchema: z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>;
+export declare const CreateAdminUserSchema: z.ZodObject<{
+    email: z.ZodString;
+    password: z.ZodString;
+    roles: z.ZodDefault<z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">>;
+    isGuest: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    email: string;
+    roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
+    isGuest: boolean;
+    password: string;
+}, {
+    email: string;
+    password: string;
+    roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
+    isGuest?: boolean | undefined;
+}>;
+export declare const UpdateUserRolesSchema: z.ZodObject<{
+    roles: z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">;
+}, "strip", z.ZodTypeAny, {
+    roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
+}, {
+    roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
+}>;
 export declare const CreateResourceSchema: z.ZodObject<{
     title: z.ZodString;
     description: z.ZodString;
@@ -397,6 +421,8 @@ export declare const QuestionQuerySchema: z.ZodObject<{
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type GuestSessionInput = z.infer<typeof GuestSessionSchema>;
+export type CreateAdminUserInput = z.infer<typeof CreateAdminUserSchema>;
+export type UpdateUserRolesInput = z.infer<typeof UpdateUserRolesSchema>;
 export type CreateResourceInput = z.infer<typeof CreateResourceSchema>;
 export type UpdateResourceInput = z.infer<typeof UpdateResourceSchema>;
 export type CreateQuestionInput = z.infer<typeof CreateQuestionSchema>;

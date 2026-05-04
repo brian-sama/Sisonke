@@ -4,7 +4,7 @@ import { db } from '../db';
 import { resources, users } from '../db/schema';
 import { eq, and, ilike, desc, asc } from 'drizzle-orm';
 import { CreateResourceSchema, UpdateResourceSchema, ResourceQuerySchema } from '../types';
-import { authMiddleware, optionalAuth, adminOnly } from '../middleware/auth';
+import { authMiddleware, optionalAuth, adminOnly, hasAnyRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
@@ -33,7 +33,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   }
   
   // Only show published resources to non-admin users
-  if (!req.user || req.user.role !== 'admin') {
+  if (!hasAnyRole(req.user, ['admin', 'super-admin'])) {
     conditions.push(eq(resources.status, 'published'));
     conditions.push(eq(resources.isPublished, true));
   }
@@ -78,7 +78,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   }
   
   // Check if resource is published (unless admin)
-  if (!req.user || req.user.role !== 'admin') {
+  if (!hasAnyRole(req.user, ['admin', 'super-admin'])) {
     if (!resource[0].isPublished) {
       return res.status(404).json({
         success: false,

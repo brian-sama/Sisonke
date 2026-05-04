@@ -24,7 +24,7 @@ router.get('/', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler)(async (req
         conditions.push((0, drizzle_orm_1.eq)(schema_1.resources.language, query.language));
     }
     // Only show published resources to non-admin users
-    if (!req.user || req.user.role !== 'admin') {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['admin', 'super-admin'])) {
         conditions.push((0, drizzle_orm_1.eq)(schema_1.resources.status, 'published'));
         conditions.push((0, drizzle_orm_1.eq)(schema_1.resources.isPublished, true));
     }
@@ -61,7 +61,7 @@ router.get('/:id', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler)(async (
         });
     }
     // Check if resource is published (unless admin)
-    if (!req.user || req.user.role !== 'admin') {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['admin', 'super-admin'])) {
         if (!resource[0].isPublished) {
             return res.status(404).json({
                 success: false,

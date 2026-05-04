@@ -1,11 +1,10 @@
-FROM ghcr.io/cirruslabs/flutter:stable AS build
+FROM node:20-alpine AS build
 WORKDIR /app
-COPY pubspec.yaml pubspec.lock ./
-COPY third_party ./third_party
-RUN flutter pub get
-COPY . .
-ARG API_BASE_URL=/api
-RUN flutter build web --release --target=lib/admin_main.dart --dart-define=API_BASE_URL=${API_BASE_URL}
+COPY admin-dashboard/package*.json ./
+RUN npm ci
+COPY admin-dashboard ./
+RUN npm run build
 
 FROM caddy:2-alpine
-COPY --from=build /app/build/web /usr/share/caddy
+COPY --from=build /app/dist /usr/share/caddy
+COPY admin-dashboard/Caddyfile /etc/caddy/Caddyfile

@@ -49,6 +49,7 @@ router.post('/register', asyncHandler(async (req, res) => {
       email: validatedData.email,
       passwordHash,
       role: 'user',
+      roles: ['user'],
       isGuest: false,
     })
     .returning();
@@ -62,6 +63,7 @@ router.post('/register', asyncHandler(async (req, res) => {
         id: newUser[0].id,
         email: newUser[0].email,
         role: newUser[0].role,
+        roles: newUser[0].roles,
         isGuest: newUser[0].isGuest,
       },
       token,
@@ -112,6 +114,7 @@ router.post('/login', asyncHandler(async (req, res) => {
         id: user[0].id,
         email: user[0].email,
         role: user[0].role,
+        roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
         isGuest: user[0].isGuest,
       },
       token,
@@ -145,6 +148,7 @@ router.post('/guest', asyncHandler(async (req, res) => {
         user: {
           id: existingGuest[0].id,
           role: existingGuest[0].role,
+          roles: existingGuest[0].roles?.length ? existingGuest[0].roles : [existingGuest[0].role || 'guest'],
           isGuest: existingGuest[0].isGuest,
         },
         token,
@@ -158,6 +162,7 @@ router.post('/guest', asyncHandler(async (req, res) => {
     .values({
       deviceId: validatedData.deviceId,
       role: 'guest',
+      roles: ['guest'],
       isGuest: true,
     })
     .returning();
@@ -170,6 +175,7 @@ router.post('/guest', asyncHandler(async (req, res) => {
       user: {
         id: newGuest[0].id,
         role: newGuest[0].role,
+        roles: newGuest[0].roles,
         isGuest: newGuest[0].isGuest,
       },
       token,

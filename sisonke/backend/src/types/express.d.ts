@@ -5,6 +5,7 @@ declare global {
         id: string;
         email?: string;
         role: string;
+        roles: string[];
         isGuest: boolean;
         deviceId?: string;
       };

@@ -4,7 +4,7 @@ import { db } from '../db';
 import { questions, answers, reports } from '../db/schema';
 import { eq, and, desc, asc } from 'drizzle-orm';
 import { CreateQuestionSchema, CreateAnswerSchema, QuestionQuerySchema } from '../types';
-import { optionalAuth, authMiddleware, adminOnly } from '../middleware/auth';
+import { optionalAuth, authMiddleware, adminOnly, hasAnyRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
@@ -27,7 +27,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   }
   
   // Only show published questions to non-admin users
-  if (!req.user || req.user.role !== 'admin') {
+  if (!hasAnyRole(req.user, ['admin', 'super-admin'])) {
     conditions.push(eq(questions.status, 'published'));
     conditions.push(eq(questions.isPublished, true));
   }
@@ -73,7 +73,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   }
   
   // Check if question is published (unless admin)
-  if (!req.user || req.user.role !== 'admin') {
+  if (!hasAnyRole(req.user, ['admin', 'super-admin'])) {
     if (!question[0].isPublished) {
       return res.status(404).json({
         success: false,

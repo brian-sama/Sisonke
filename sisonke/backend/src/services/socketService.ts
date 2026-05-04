@@ -33,12 +33,13 @@ export class SocketService {
     this.io.on('connection', (socket) => {
       const user = socket.data.user;
       console.log(`User connected: ${user.id} (${user.role})`);
+      const roles = Array.isArray(user.roles) ? user.roles : [user.role];
 
       // Users join their own private room for notifications
       socket.join(`user:${user.id}`);
 
       // Counselors join a shared room to receive new request alerts
-      if (user.role === 'counselor' || user.role === 'admin') {
+      if (roles.includes('counselor') || roles.includes('admin') || roles.includes('super-admin')) {
         socket.join('counselors');
       }
 

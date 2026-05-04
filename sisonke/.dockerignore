@@ -4,6 +4,8 @@
 android/build
 backend/node_modules
 backend/dist
+admin-dashboard/node_modules
+admin-dashboard/dist
 build
 ios/Flutter/ephemeral
 linux/flutter/ephemeral

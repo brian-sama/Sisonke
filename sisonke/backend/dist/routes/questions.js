@@ -21,7 +21,7 @@ router.get('/', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler)(async (req
         conditions.push((0, drizzle_orm_1.eq)(schema_1.questions.isAnswered, query.answered));
     }
     // Only show published questions to non-admin users
-    if (!req.user || req.user.role !== 'admin') {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['admin', 'super-admin'])) {
         conditions.push((0, drizzle_orm_1.eq)(schema_1.questions.status, 'published'));
         conditions.push((0, drizzle_orm_1.eq)(schema_1.questions.isPublished, true));
     }
@@ -59,7 +59,7 @@ router.get('/:id', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler)(async (
         });
     }
     // Check if question is published (unless admin)
-    if (!req.user || req.user.role !== 'admin') {
+    if (!(0, auth_1.hasAnyRole)(req.user, ['admin', 'super-admin'])) {
         if (!question[0].isPublished) {
             return res.status(404).json({
                 success: false,

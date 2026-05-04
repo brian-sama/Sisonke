@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { desc, eq, inArray } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { counselingMessages, counselorCases, counselorNotes, users } from '../db/schema';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, hasAnyRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CounselorRequestSchema } from '../types';
 
@@ -13,7 +13,7 @@ router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
   const availableCounselors = await db
     .select()
     .from(users)
-    .where(inArray(users.role, ['counselor', 'admin']))
+    .where(sql`${users.roles} && ARRAY['counselor', 'admin', 'super-admin']::varchar(40)[]`)
     .limit(1);
 
   const [createdCase] = await db.insert(counselorCases).values({
@@ -42,7 +42,7 @@ router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
 router.use(authMiddleware);
 
 router.get('/cases', asyncHandler(async (req, res) => {
-  if (!['counselor', 'admin'].includes(req.user!.role)) {
+  if (!hasAnyRole(req.user, ['counselor', 'admin', 'super-admin'])) {
     return res.status(403).json({ success: false, error: 'Counselor access required.' });
   }
 
@@ -70,7 +70,7 @@ router.post('/cases/:id/messages', asyncHandler(async (req, res) => {
 }));
 
 router.post('/cases/:id/notes', asyncHandler(async (req, res) => {
-  if (!['counselor', 'admin'].includes(req.user!.role)) {
+  if (!hasAnyRole(req.user, ['counselor', 'admin', 'super-admin'])) {
     return res.status(403).json({ success: false, error: 'Counselor access required.' });
   }
 
@@ -87,7 +87,7 @@ router.post('/cases/:id/notes', asyncHandler(async (req, res) => {
 }));
 
 router.post('/cases/:id/status', asyncHandler(async (req, res) => {
-  if (!['counselor', 'admin'].includes(req.user!.role)) {
+  if (!hasAnyRole(req.user, ['counselor', 'admin', 'super-admin'])) {
     return res.status(403).json({ success: false, error: 'Counselor access required.' });
   }
 

@@ -62,6 +62,29 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             enumValues: ["guest", "user", "counselor", "moderator", "admin"];
             baseColumn: never;
         }, {}, {}>;
+        roles: import("drizzle-orm/pg-core").PgColumn<{
+            name: "roles";
+            tableName: "users";
+            dataType: "array";
+            columnType: "PgArray";
+            data: string[];
+            driverParam: string | string[];
+            notNull: false;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: import("drizzle-orm").Column<{
+                name: "roles";
+                tableName: "users";
+                dataType: "string";
+                columnType: "PgVarchar";
+                data: string;
+                driverParam: string;
+                notNull: false;
+                hasDefault: false;
+                enumValues: [string, ...string[]];
+                baseColumn: never;
+            }, object, object>;
+        }, {}, {}>;
         deviceId: import("drizzle-orm/pg-core").PgColumn<{
             name: "device_id";
             tableName: "users";
