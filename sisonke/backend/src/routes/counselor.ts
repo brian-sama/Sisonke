@@ -5,6 +5,7 @@ import { counselingMessages, counselorCases, counselorNotes, users } from '../db
 import { authMiddleware, hasAnyRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CounselorRequestSchema } from '../types';
+import { SocketService } from '../services/socketService';
 
 const router = Router();
 
@@ -26,6 +27,8 @@ router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
     source: 'mobile',
     updatedAt: new Date(),
   }).returning();
+  
+  SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'created' });
 
   res.status(201).json({
     success: true,
@@ -101,6 +104,8 @@ router.post('/cases/:id/status', asyncHandler(async (req, res) => {
     resolvedAt: status === 'resolved' ? new Date() : undefined,
     updatedAt: new Date(),
   }).where(eq(counselorCases.id, req.params.id)).returning();
+  
+  SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'status_updated' });
 
   res.json({ success: true, data: updated });
 }));

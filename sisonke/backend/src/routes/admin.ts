@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { desc, eq, gte, isNull } from 'drizzle-orm';
+import { count, desc, eq, gte, isNull, sql, and } from 'drizzle-orm';
 import { db } from '../db';
 import {
   analyticsEvents,
@@ -32,6 +32,8 @@ import {
 } from '../types';
 import { detectRisk } from '../services/riskService';
 import { goldFaqCards, safetyRules } from '../data/zimbabweRagKnowledge';
+import { AuditService } from '../services/auditService';
+import { SocketService } from '../services/socketService';
 
 const router = Router();
 
@@ -41,50 +43,104 @@ router.get('/me', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { user: req.user } });
 }));
 
-router.get('/overview', asyncHandler(async (_req, res) => {
-  const [allUsers, allResources, allContacts, allQuestions, events, allCases, allChatbotSessions, pendingCommunityPosts] = await Promise.all([
-    db.select().from(users),
-    db.select().from(resources).where(isNull(resources.deletedAt)),
-    db.select().from(emergencyContacts).where(isNull(emergencyContacts.deletedAt)),
-    db.select().from(questions).where(isNull(questions.deletedAt)),
-    db.select().from(analyticsEvents).orderBy(desc(analyticsEvents.occurredAt)).limit(500),
-    db.select().from(counselorCases),
-    db.select().from(chatbotSessions),
-    db.select().from(communityPosts).where(eq(communityPosts.status, 'pending')),
+router.get('/analytics/health', asyncHandler(async (_req, res) => {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const stats = await db.select({
+    date: sql<string>`DATE(${analyticsEvents.occurredAt})`,
+    count: count()
+  })
+  .from(analyticsEvents)
+  .where(gte(analyticsEvents.occurredAt, sevenDaysAgo))
+  .groupBy(sql`DATE(${analyticsEvents.occurredAt})`)
+  .orderBy(sql`DATE(${analyticsEvents.occurredAt})`);
+
+  res.json({ success: true, data: stats });
+}));
+  const [
+    [userCount],
+    [resourceCount],
+    [contactCount],
+    [questionCount],
+    [caseCount],
+    [sessionCount],
+    [pendingPostsCount],
+    [highRiskCasesCount],
+    latestEvents
+  ] = await Promise.all([
+    db.select({ value: count() }).from(users),
+    db.select({ value: count() }).from(resources).where(isNull(resources.deletedAt)),
+    db.select({ value: count() }).from(emergencyContacts).where(isNull(emergencyContacts.deletedAt)),
+    db.select({ value: count() }).from(questions).where(isNull(questions.deletedAt)),
+    db.select({ value: count() }).from(counselorCases),
+    db.select({ value: count() }).from(chatbotSessions),
+    db.select({ value: count() }).from(communityPosts).where(eq(communityPosts.status, 'pending')),
+    db.select({ value: count() }).from(counselorCases).where(eq(counselorCases.riskLevel, 'high')),
+    db.select().from(analyticsEvents).orderBy(desc(analyticsEvents.occurredAt)).limit(10),
   ]);
-
-  const countBy = <T extends { status: string }>(items: T[]) =>
-    items.reduce<Record<string, number>>((acc, item) => {
-      acc[item.status] = (acc[item.status] || 0) + 1;
-      return acc;
-    }, {});
-
-  const eventCounts = events.reduce<Record<string, number>>((acc, event) => {
-    acc[event.event] = (acc[event.event] || 0) + 1;
-    return acc;
-  }, {});
 
   res.json({
     success: true,
     data: {
-      users: {
-        total: allUsers.length,
-        guests: allUsers.filter((user) => user.isGuest).length,
-        admins: allUsers.filter((user) => user.roles?.includes('admin') || user.roles?.includes('super-admin') || user.role === 'admin').length,
+      users: { total: userCount.value },
+      resources: { total: resourceCount.value },
+      emergencyContacts: { total: contactCount.value },
+      questions: { total: questionCount.value },
+      counselorCases: { 
+        total: caseCount.value, 
+        highRisk: highRiskCasesCount.value 
       },
-      resources: { total: allResources.length, byStatus: countBy(allResources) },
-      emergencyContacts: { total: allContacts.length, byStatus: countBy(allContacts) },
-      questions: { total: allQuestions.length, byStatus: countBy(allQuestions) },
-      analytics: eventCounts,
-      chatbotSessions: { total: allChatbotSessions.length, highRisk: allChatbotSessions.filter((item) => item.riskLevel === 'high').length },
-      counselorCases: {
-        total: allCases.length,
-        waiting: allCases.filter((item) => ['requested', 'assigned', 'emergency'].includes(item.status)).length,
-        highRisk: allCases.filter((item) => item.riskLevel === 'high' || item.status === 'emergency').length,
-      },
-      communityPosts: { pending: pendingCommunityPosts.length },
+      chatbotSessions: { total: sessionCount.value },
+      communityPosts: { pending: pendingPostsCount.value },
+      latestEvents
     },
   });
+}));
+
+router.get('/community-posts', asyncHandler(async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(communityPosts)
+    .orderBy(desc(communityPosts.createdAt));
+  res.json({ success: true, data: rows });
+}));
+
+router.post('/community-posts/:id/moderate', asyncHandler(async (req, res) => {
+  const { status, reason } = req.body;
+  const [updated] = await db.update(communityPosts).set({
+    status,
+    moderationReason: reason,
+    reviewedAt: new Date(),
+    reviewedBy: req.user!.id,
+  }).where(eq(communityPosts.id, req.params.id)).returning();
+
+  if (!updated) return res.status(404).json({ success: false, error: 'Post not found' });
+  
+  SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'moderated' });
+  res.json({ success: true, data: updated });
+}));
+
+router.get('/reports', asyncHandler(async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(reports)
+    .orderBy(desc(reports.createdAt));
+  res.json({ success: true, data: rows });
+}));
+
+router.post('/reports/:id/status', asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const [updated] = await db.update(reports).set({
+    status,
+    reviewedAt: new Date(),
+    reviewedBy: req.user!.id,
+  }).where(eq(reports.id, req.params.id)).returning();
+
+  if (!updated) return res.status(404).json({ success: false, error: 'Report not found' });
+  
+  SocketService.broadcastDashboardUpdate({ type: 'report', action: 'resolved' });
+  res.json({ success: true, data: updated });
 }));
 
 router.get('/resources', asyncHandler(async (_req, res) => {
@@ -637,8 +693,109 @@ router.post('/users/:id/suspension', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
+router.get('/counselor-cases', asyncHandler(async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(counselorCases)
+    .orderBy(desc(counselorCases.createdAt));
+  res.json({ success: true, data: rows });
+}));
+
+router.post('/counselor-cases/:id/status', asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const [updated] = await db.update(counselorCases).set({
+    status,
+    updatedAt: new Date(),
+    resolvedAt: status === 'resolved' ? new Date() : undefined,
+  }).where(eq(counselorCases.id, req.params.id)).returning();
+
+  if (!updated) return res.status(404).json({ success: false, error: 'Case not found' });
+  
+  await AuditService.log({
+    action: 'case_status_updated',
+    actorId: req.user!.id,
+    entityType: 'counselor_case',
+    entityId: updated.id,
+    metadata: { status }
+  });
+
+  res.json({ success: true, data: updated });
+}));
+
+router.post('/counselor-cases/:id/notes', asyncHandler(async (req, res) => {
+  const { note } = req.body;
+  const [created] = await db.insert(securityLogs).values({
+    userId: req.user!.id,
+    event: 'counselor_note_added',
+    metadata: { caseId: req.params.id, notePreview: note.substring(0, 50) }
+  }).returning();
+
+  res.status(201).json({ success: true, data: created });
+}));
+
+router.get('/analytics', asyncHandler(async (req, res) => {
+  const days = parseInt(req.query.days as string) || 30;
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const [
+    timeSeriesRaw,
+    ageDist,
+    genderDist,
+    moodDist,
+    issueDist
+  ] = await Promise.all([
+    db.select({
+      date: sql<string>`DATE(${analyticsEvents.occurredAt})`,
+      appUse: count(analyticsEvents.id),
+      urgent: sql<number>`CAST(COUNT(CASE WHEN ${analyticsEvents.event} = 'counselor_escalated' THEN 1 END) AS INTEGER)`
+    })
+    .from(analyticsEvents)
+    .where(gte(analyticsEvents.occurredAt, startDate))
+    .groupBy(sql`DATE(${analyticsEvents.occurredAt})`)
+    .orderBy(sql`DATE(${analyticsEvents.occurredAt})`),
+
+    db.select({ category: userProfiles.ageGroup, count: count() })
+      .from(userProfiles)
+      .groupBy(userProfiles.ageGroup),
+
+    db.select({ category: userProfiles.gender, count: count() })
+      .from(userProfiles)
+      .groupBy(userProfiles.gender),
+
+    db.select({ category: moodCheckins.mood, count: count() })
+      .from(moodCheckins)
+      .groupBy(moodCheckins.mood),
+
+    db.select({ category: counselorCases.issueCategory, count: count() })
+      .from(counselorCases)
+      .groupBy(counselorCases.issueCategory),
+  ]);
+
+  // Fill in missing days with zeros if needed for a smooth chart
+  const timeSeries = timeSeriesRaw; 
+
+  res.json({
+    success: true,
+    data: {
+      timeSeries,
+      ageRangeDistribution: Object.fromEntries(ageDist.map(d => [d.category, d.count])),
+      genderDistribution: Object.fromEntries(genderDist.map(d => [d.category || 'Unknown', d.count])),
+      moodTrendsByMood: Object.fromEntries(moodDist.map(d => [d.category, d.count])),
+      issueCategories: Object.fromEntries(issueDist.map(d => [d.category, d.count])),
+      total: timeSeries.reduce((acc, d) => acc + Number(d.appUse), 0),
+      counselorEscalations: timeSeries.reduce((acc, d) => acc + Number(d.urgent), 0),
+    }
+  });
+}));
+
 router.get('/security-logs', asyncHandler(async (_req, res) => {
   const rows = await db.select().from(securityLogs).orderBy(desc(securityLogs.createdAt)).limit(100);
+  res.json({ success: true, data: rows });
+}));
+
+router.get('/audit-logs', asyncHandler(async (_req, res) => {
+  const rows = await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100);
   res.json({ success: true, data: rows });
 }));
 

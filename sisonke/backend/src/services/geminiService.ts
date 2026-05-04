@@ -10,23 +10,13 @@ type GeminiResponse = {
 
 function shouldUseGeminiFallback(message: string, localReply?: string) {
   if (!process.env.GEMINI_API_KEY) return false;
-  if (!localReply || localReply.trim().length < 20) return true;
-
-  const normalized = message.toLowerCase();
-  return [
-    'contraception',
-    'pregnant',
-    'pregnancy',
-    'translate',
-    'summarize',
-    'summarise',
-    'explain',
-    'srhr',
-  ].some((term) => normalized.includes(term));
+  // Loosen to allow all low-risk queries to benefit from Gemini's conversational ability
+  return true;
 }
 
 export async function generateGeminiFallback(input: {
   message: string;
+  history?: Array<{ sender: 'user' | 'bot'; content: string }>;
   persona: 'male' | 'female';
   riskLevel: RiskLevel;
   approvedContext?: string;
@@ -38,23 +28,25 @@ export async function generateGeminiFallback(input: {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return undefined;
 
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
   const baseUrl = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
   const personaLabel = input.persona === 'male' ? 'male peer supporter' : 'female peer supporter';
 
+  const historyLines = input.history?.map(h => 
+    `${h.sender === 'user' ? 'User' : 'E-Friend'}: ${h.content}`
+  ).join('\n') || '';
+
   const prompt = [
     `You are E-Friend, a warm ${personaLabel} in a youth wellness app in Zimbabwe.`,
-    'Use Zimbabwe-first guidance. International guidance is only a fallback when local approved context is thin.',
-    'Give general support and approved-resource guidance only.',
-    'Do not diagnose, do not provide therapy, and do not continue crisis support alone.',
-    'For suicide, abuse, violence, or severe crisis, tell the user a trained counselor must help immediately.',
-    'Use approved context when available. Do not invent organization-specific facts.',
-    'Keep the reply under 100 words, Grade 7 reading level, and end with one practical next step.',
-    'Never use slang during crisis. In normal low-risk chat, light Zimbabwean warmth is okay but clarity comes first.',
+    'Ubuntu Style: Be warm, empathetic, and respectful. Use clear, simple Grade 7 English.',
+    'Guidance: Give general support and approved-resource guidance only. Do not diagnose or provide therapy.',
+    'Rules: If the user is in severe crisis, stop chat and tell them to contact a human counselor immediately.',
+    'Context: Use the provided approved context as your source of truth for resources.',
     '',
-    input.approvedContext ? `Approved context:\n${input.approvedContext}\n` : '',
-    input.localReply ? `Local draft:\n${input.localReply}\n` : '',
-    `User message: ${input.message}`,
+    input.approvedContext ? `Approved Context:\n${input.approvedContext}\n` : '',
+    historyLines ? `Previous Conversation:\n${historyLines}\n` : '',
+    `User: ${input.message}`,
+    'E-Friend:',
   ].join('\n');
 
   try {
@@ -64,11 +56,8 @@ export async function generateGeminiFallback(input: {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.3,
+          temperature: 0.7, // Slightly higher for more natural small talk
           maxOutputTokens: 160,
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
         },
       }),
       signal: AbortSignal.timeout(Number(process.env.GEMINI_TIMEOUT_MS || 15000)),

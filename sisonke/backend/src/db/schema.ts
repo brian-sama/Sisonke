@@ -54,7 +54,18 @@ export const users = pgTable('users', {
   mustChangePassword: boolean('must_change_password').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at'),
+  deletedAt: timestamp('deleted_at'),
   lastActiveAt: timestamp('last_active_at').defaultNow(),
+});
+
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  action: varchar('action', { length: 120 }).notNull(),
+  entityType: varchar('entity_type', { length: 50 }), // 'user', 'resource', 'post', etc.
+  entityId: uuid('entity_id'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 export const userProfiles = pgTable('user_profiles', {
@@ -343,3 +354,5 @@ export type CommunityPost = typeof communityPosts.$inferSelect;
 export type NewCommunityPost = typeof communityPosts.$inferInsert;
 export type CmsContent = typeof cmsContent.$inferSelect;
 export type NewCmsContent = typeof cmsContent.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;

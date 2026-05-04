@@ -36,6 +36,13 @@
       "when": 1777887000000,
       "tag": "0004_user_password_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1777897215215,
+      "tag": "0005_lively_preak",
+      "breakpoints": true
     }
   ]
 }

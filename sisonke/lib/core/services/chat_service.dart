@@ -9,12 +9,15 @@ final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 class ChatService {
   io.Socket? _socket;
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
+  final _dashboardController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
+  Stream<Map<String, dynamic>> get dashboardUpdates => _dashboardController.stream;
 
   void connect(String token) {
+    final baseUrl = AppConstants.apiBaseUrl.replaceAll('/api', '');
     _socket = io.io(
-      AppConstants.devApiBaseUrl, // Ensure this matches your backend
+      baseUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .setAuth({'token': token})
@@ -28,6 +31,10 @@ class ChatService {
 
     _socket!.on('new_message', (data) {
       _messageController.add(Map<String, dynamic>.from(data));
+    });
+
+    _socket!.on('dashboard:update', (data) {
+      _dashboardController.add(Map<String, dynamic>.from(data));
     });
 
     _socket!.onDisconnect((_) => print('Socket disconnected'));

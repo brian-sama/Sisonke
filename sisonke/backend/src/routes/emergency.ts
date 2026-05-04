@@ -17,34 +17,46 @@ router.get('/contacts', asyncHandler(async (req, res) => {
     .orderBy(emergencyContacts.category, emergencyContacts.name);
 
   const seededContacts = zimbabweEmergencyContacts.map((contact) => ({
-    ...contact,
+    id: contact.id,
+    name: contact.name,
+    phone_number: contact.phoneNumber,
+    category: contact.category,
+    description: contact.description,
+    country: contact.country,
+    is_active: true,
     status: 'published',
-    isActive: true,
-    createdAt: null,
-    updatedAt: null,
-    publishedAt: null,
-    deletedAt: null,
+    created_at: new Date().toISOString(),
   }));
 
-  const contacts = [
+  const allContacts = [
     ...seededContacts,
-    ...dbContacts.filter((dbContact) => !seededContacts.some((seeded) => seeded.phoneNumber === dbContact.phoneNumber && seeded.name === dbContact.name)),
+    ...dbContacts.map(c => ({
+      id: c.id,
+      name: c.name,
+      phone_number: c.phoneNumber,
+      category: c.category,
+      description: c.description,
+      country: c.country,
+      is_active: c.isActive,
+      status: c.status,
+      created_at: c.createdAt.toISOString(),
+    })).filter((dbContact) => !seededContacts.some((seeded) => seeded.phone_number === dbContact.phone_number && seeded.name === dbContact.name)),
   ];
   
   // Group by category
-  const groupedContacts = contacts.reduce((acc, contact) => {
+  const groupedContacts = allContacts.reduce((acc, contact) => {
     if (!acc[contact.category]) {
       acc[contact.category] = [];
     }
     acc[contact.category].push(contact);
     return acc;
-  }, {} as Record<string, typeof contacts>);
+  }, {} as Record<string, any[]>);
   
   res.json({
     success: true,
     data: {
       contacts: groupedContacts,
-      total: contacts.length,
+      total: allContacts.length,
       last_updated: new Date().toISOString(),
     },
   });

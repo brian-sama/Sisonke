@@ -9,6 +9,7 @@ type OllamaResponse = {
 
 export async function generateLocalChatReply(input: {
   message: string;
+  history?: Array<{ sender: 'user' | 'bot'; content: string }>;
   persona: 'male' | 'female';
   riskLevel: RiskLevel;
   approvedContext?: string;
@@ -20,19 +21,20 @@ export async function generateLocalChatReply(input: {
   const model = process.env.OLLAMA_CHAT_MODEL || defaultModel;
   const personaLabel = input.persona === 'male' ? 'male peer supporter' : 'female peer supporter';
 
+  const historyLines = input.history?.map(h => 
+    `${h.sender === 'user' ? 'User' : 'E-Friend'}: ${h.content}`
+  ).join('\n') || '';
+
   const prompt = [
     `You are E-Friend, a warm ${personaLabel} for a youth wellness app in Zimbabwe.`,
-    'Use Zimbabwe-first guidance. International guidance is only a fallback when local approved context is thin.',
-    'You only provide general emotional support, self-care ideas, and encouragement to use approved resources.',
-    'Do not diagnose, do not provide therapy, and do not handle crisis alone.',
-    'If the user mentions suicide, abuse, violence, being unsafe, or severe crisis, say they need a live counselor immediately.',
-    'If approved context is provided, answer only from that context plus general supportive wording.',
-    'If approved context does not answer the question, say you can share a general support step and suggest resources or a counselor.',
-    'Keep the reply under 90 words, Grade 7 reading level, kind, practical, and simple.',
-    'End with one practical next step. Never use slang during crisis.',
+    'Style: Warm, respectful, brief. Use plain Grade 7 English.',
+    'Guidance: Emotional support and approved resource navigation only. No therapy or diagnosis.',
+    'Rules: If crisis is detected, tell user they need a live counselor now.',
     '',
     input.approvedContext ? `Approved context:\n${input.approvedContext}\n` : '',
-    `User message: ${input.message}`,
+    historyLines ? `Previous Conversation:\n${historyLines}\n` : '',
+    `User: ${input.message}`,
+    'E-Friend:',
   ].join('\n');
 
   try {

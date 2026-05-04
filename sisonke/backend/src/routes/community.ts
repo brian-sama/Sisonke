@@ -6,6 +6,7 @@ import { authMiddleware } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CommunityPostSchema } from '../types';
 import { detectRiskLevel } from '../services/riskService';
+import { SocketService } from '../services/socketService';
 
 const router = Router();
 
@@ -40,6 +41,8 @@ router.post('/posts', authMiddleware, asyncHandler(async (req, res) => {
     status: blocked || riskLevel !== 'low' ? 'pending' : 'pending',
     moderationReason: blocked ? 'Safety review required' : undefined,
   }).returning();
+  
+  SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'created' });
 
   await db.insert(analyticsEvents).values({
     event: 'community_post_submitted',
@@ -66,6 +69,8 @@ router.post('/reports', authMiddleware, asyncHandler(async (req, res) => {
     description: req.body.description,
     reporterDeviceId: req.user!.deviceId,
   }).returning();
+  
+  SocketService.broadcastDashboardUpdate({ type: 'report', action: 'created' });
 
   res.status(201).json({ success: true, data: report });
 }));

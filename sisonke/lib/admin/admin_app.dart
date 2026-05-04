@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,16 +51,16 @@ class _SisonkeAdminAppState extends State<SisonkeAdminApp> {
   }
 }
 
-class AdminShell extends StatefulWidget {
+class AdminShell extends ConsumerStatefulWidget {
   final AdminApi api;
 
   const AdminShell({super.key, required this.api});
 
   @override
-  State<AdminShell> createState() => _AdminShellState();
+  ConsumerState<AdminShell> createState() => _AdminShellState();
 }
 
-class _AdminShellState extends State<AdminShell> {
+class _AdminShellState extends ConsumerState<AdminShell> {
   var _authenticated = false;
   var _index = 0;
 
@@ -67,6 +68,22 @@ class _AdminShellState extends State<AdminShell> {
   void initState() {
     super.initState();
     _authenticated = widget.api.isAuthenticated;
+    _setupSocket();
+  }
+
+  void _setupSocket() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('admin_token');
+    if (token != null) {
+      final socketService = ref.read(chatServiceProvider);
+      socketService.connect(token);
+      socketService.dashboardUpdates.listen((event) {
+        if (mounted) {
+          debugPrint('Dashboard update received: $event');
+          setState(() {}); 
+        }
+      });
+    }
   }
 
   @override
@@ -190,6 +207,8 @@ class _AdminTopBar extends StatelessWidget {
               avatar: Icon(Icons.health_and_safety_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
               label: const Text('Safety dashboard'),
             ),
+            const SizedBox(width: 12),
+            const _LiveIndicator(),
             const Spacer(),
             FilledButton.tonalIcon(
               onPressed: onLogout,
@@ -299,6 +318,21 @@ class AdminCounselorScreen extends ConsumerStatefulWidget {
 
 class _AdminCounselorScreenState extends ConsumerState<AdminCounselorScreen> {
   late Future<List<Map<String, dynamic>>> _future = widget.api.counselorCases();
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = ref.read(chatServiceProvider).dashboardUpdates.listen((_) {
+      if (mounted) setState(() => _future = widget.api.counselorCases());
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +343,13 @@ class _AdminCounselorScreenState extends ConsumerState<AdminCounselorScreen> {
       child: FutureBuilder<List<Map<String, dynamic>>>(
         future: _future,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+            return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
+          }
+          if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No active cases.')));
+          }
           return DataTable(
             columns: const [
               DataColumn(label: Text('Issue')),
@@ -509,25 +549,48 @@ class _AdminLiveChatViewState extends ConsumerState<_AdminLiveChatView> {
   }
 }
 
-class AdminCommunityModerationScreen extends StatefulWidget {
+class AdminCommunityModerationScreen extends ConsumerStatefulWidget {
   final AdminApi api;
 
   const AdminCommunityModerationScreen({super.key, required this.api});
 
   @override
-  State<AdminCommunityModerationScreen> createState() => _AdminCommunityModerationScreenState();
+  ConsumerState<AdminCommunityModerationScreen> createState() => _AdminCommunityModerationScreenState();
 }
 
-class _AdminCommunityModerationScreenState extends State<AdminCommunityModerationScreen> {
+class _AdminCommunityModerationScreenState extends ConsumerState<AdminCommunityModerationScreen> {
   late Future<List<Map<String, dynamic>>> _future = widget.api.communityPosts();
   late Future<List<Map<String, dynamic>>> _reportsFuture = widget.api.reports();
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = ref.read(chatServiceProvider).dashboardUpdates.listen((_) {
+      if (mounted) {
+        setState(() {
+          _future = widget.api.communityPosts();
+          _reportsFuture = widget.api.reports();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return _AdminTablePage(
       title: 'Community moderation',
       actionLabel: 'Refresh',
-      onAdd: () => setState(() => _future = widget.api.communityPosts()),
+      onAdd: () => setState(() {
+        _future = widget.api.communityPosts();
+        _reportsFuture = widget.api.reports();
+      }),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -765,15 +828,37 @@ class _CmsEditorState extends State<_CmsEditor> {
   }
 }
 
-class AdminOverviewScreen extends StatelessWidget {
+class AdminOverviewScreen extends ConsumerStatefulWidget {
   final AdminApi api;
 
   const AdminOverviewScreen({super.key, required this.api});
 
   @override
+  ConsumerState<AdminOverviewScreen> createState() => _AdminOverviewScreenState();
+}
+
+class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
+  late Future<Map<String, dynamic>> _future = widget.api.overview();
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = ref.read(chatServiceProvider).dashboardUpdates.listen((_) {
+      if (mounted) setState(() => _future = widget.api.overview());
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: api.overview(),
+      future: _future,
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final data = snapshot.data!;
@@ -789,9 +874,9 @@ class AdminOverviewScreen extends StatelessWidget {
               runSpacing: 16,
               children: [
                 _MetricCard(title: 'Resources', value: '${data['resources']?['total'] ?? 0}', icon: Icons.menu_book_rounded),
-                _MetricCard(title: 'Emergency contacts', value: '${data['emergencyContacts']?['total'] ?? 0}', icon: Icons.health_and_safety_rounded),
-                _MetricCard(title: 'Questions', value: '${data['questions']?['total'] ?? 0}', icon: Icons.forum_rounded),
-                _MetricCard(title: 'Recent events', value: '${(data['analytics'] as Map?)?.values.fold<int>(0, (a, b) => a + (b as int)) ?? 0}', icon: Icons.query_stats_rounded),
+                _MetricCard(title: 'Pending Posts', value: '${data['communityPosts']?['pending'] ?? 0}', icon: Icons.groups_rounded),
+                _MetricCard(title: 'Emergency Contacts', value: '${data['emergencyContacts']?['total'] ?? 0}', icon: Icons.health_and_safety_rounded),
+                _MetricCard(title: 'High-Risk Cases', value: '${data['counselorCases']?['highRisk'] ?? 0}', icon: Icons.priority_high_rounded),
               ],
             ),
           ],
@@ -801,15 +886,76 @@ class AdminOverviewScreen extends StatelessWidget {
   }
 }
 
-class AdminAnalyticsScreen extends StatelessWidget {
+class _LiveIndicator extends StatelessWidget {
+  const _LiveIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFA5D6A7)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Color(0xFF4CAF50),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'LIVE',
+            style: TextStyle(
+              color: Color(0xFF2E7D32),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminAnalyticsScreen extends ConsumerStatefulWidget {
   final AdminApi api;
 
   const AdminAnalyticsScreen({super.key, required this.api});
 
   @override
+  ConsumerState<AdminAnalyticsScreen> createState() => _AdminAnalyticsScreenState();
+}
+
+class _AdminAnalyticsScreenState extends ConsumerState<AdminAnalyticsScreen> {
+  late Future<Map<String, dynamic>> _future = widget.api.analytics(days: 7);
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = ref.read(chatServiceProvider).dashboardUpdates.listen((_) {
+      if (mounted) setState(() => _future = widget.api.analytics(days: 7));
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: api.analytics(days: 7),
+      future: _future,
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final data = snapshot.data!;
@@ -939,7 +1085,7 @@ class _AppUseChart extends StatelessWidget {
                     x: e.key,
                     barRods: [
                       BarChartRodData(
-                        toY: (e.value['appUse'] as num).toDouble() + 5,
+                        toY: (e.value['appUse'] as num).toDouble(),
                         color: Colors.white.withValues(alpha: e.key % 2 == 0 ? 1 : 0.4),
                         width: 16,
                         borderRadius: BorderRadius.circular(4),
@@ -959,11 +1105,11 @@ class _AppUseChart extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${(totalVisits / 1000).toStringAsFixed(1)}k',
+                    totalVisits >= 1000 ? '${(totalVisits / 1000).toStringAsFixed(1)}k' : '$totalVisits',
                     style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
                   ),
                   Text(
-                    'USUAL VISITS',
+                    'TOTAL VISITS',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -1074,7 +1220,7 @@ class _UrgentHelpChart extends StatelessWidget {
                 lineBarsData: [
                   LineChartBarData(
                     spots: timeSeries.asMap().entries.map((e) {
-                      return FlSpot(e.key.toDouble(), (e.value['urgent'] as num).toDouble() + 2);
+                      return FlSpot(e.key.toDouble(), (e.value['urgent'] as num).toDouble());
                     }).toList(),
                     isCurved: true,
                     color: const Color(0xFFFF4B6E),

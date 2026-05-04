@@ -26,8 +26,7 @@ class AdminApi {
   }
 
   static String get _adminApiBaseUrl {
-    const configured = String.fromEnvironment('API_BASE_URL');
-    return configured.isNotEmpty ? configured : AppConstants.devApiBaseUrl;
+    return AppConstants.apiBaseUrl;
   }
 
   bool get isAuthenticated => (_prefs.getString(_tokenKey) ?? '').isNotEmpty;

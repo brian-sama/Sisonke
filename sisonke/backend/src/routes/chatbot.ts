@@ -1,5 +1,4 @@
-import { Router } from 'express';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { db } from '../db';
 import { analyticsEvents, chatbotMessages, chatbotSessions, counselorCases } from '../db/schema';
 import { optionalAuth } from '../middleware/auth';
@@ -9,6 +8,8 @@ import { detectRiskLevel, safeBotReply } from '../services/riskService';
 import { generateLocalChatReply } from '../services/ollamaService';
 import { generateGeminiFallback } from '../services/geminiService';
 import { RagService } from '../services/ragService';
+import { SocketService } from '../services/socketService';
+import { Router } from 'express';
 
 const router = Router();
 
@@ -36,6 +37,18 @@ router.post('/message', asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, error: 'Chat session not found.' });
   }
 
+  // Fetch history BEFORE inserting current message to keep history clean for the AI
+  const history = await db
+    .select()
+    .from(chatbotMessages)
+    .where(eq(chatbotMessages.sessionId, session.id))
+    .orderBy(desc(chatbotMessages.createdAt))
+    .limit(5);
+
+  const formattedHistory = history
+    .reverse()
+    .map(m => ({ sender: m.sender as 'user' | 'bot', content: m.content }));
+
   await db.insert(chatbotMessages).values({
     sessionId: session.id,
     sender: 'user',
@@ -45,19 +58,24 @@ router.post('/message', asyncHandler(async (req, res) => {
 
   const approvedContext = await RagService.getGroundingContext(input.message);
   const fallbackReply = safeBotReply(input.message, riskLevel, input.persona);
+  
   const localReply = await generateLocalChatReply({
     message: input.message,
+    history: formattedHistory,
     persona: input.persona,
     riskLevel,
     approvedContext,
   });
+  
   const geminiReply = await generateGeminiFallback({
     message: input.message,
+    history: formattedHistory,
     persona: input.persona,
     riskLevel,
     approvedContext,
     localReply,
   });
+  
   const reply = {
     ...fallbackReply,
     text: geminiReply || localReply || fallbackReply.text,
@@ -80,6 +98,7 @@ router.post('/message', asyncHandler(async (req, res) => {
       .set({ escalatedCaseId: caseId, updatedAt: new Date() })
       .where(eq(chatbotSessions.id, session.id));
     await db.insert(analyticsEvents).values({ event: 'counselor_escalated', category: 'chatbot', metadata: { riskLevel } });
+    SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'escalated' });
   }
 
   await db.insert(chatbotMessages).values({
@@ -94,6 +113,8 @@ router.post('/message', asyncHandler(async (req, res) => {
     category: riskLevel,
     metadata: { persona: input.persona },
   });
+  
+  SocketService.broadcastDashboardUpdate({ type: 'chatbot_session', action: 'created' });
 
   res.json({
     success: true,
