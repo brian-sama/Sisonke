@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/quick_exit_service.dart';
 import '../constants/app_constants.dart';
 
 class QuickExitButton extends StatefulWidget {
@@ -52,14 +51,14 @@ class _QuickExitButtonState extends State<QuickExitButton> {
           boxShadow: _isPressed
               ? [
                   BoxShadow(
-                    color: Colors.red.withOpacity(0.3),
+                    color: Colors.red.withValues(alpha: 0.3),
                     blurRadius: 8,
                     spreadRadius: 2,
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -186,8 +185,14 @@ class _QuickExitDetectorState extends State<QuickExitDetector>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: widget.enableBackPress ? _handleWillPop : null,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (widget.enableBackPress) {
+          await _handleWillPop();
+        }
+      },
       child: widget.enableVolumeKeys
           ? HardwareVolumeButtons(
               onVolumeButtonPressed: _handleVolumeButtonPressed,

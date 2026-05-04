@@ -15,7 +15,7 @@ extension GetRecoveryEntryCollection on Isar {
 
 const RecoveryEntrySchema = CollectionSchema(
   name: r'RecoveryEntry',
-  id: 4768218845951803957,
+  id: 1001,
   properties: {
     r'id': PropertySchema(
       id: 0,

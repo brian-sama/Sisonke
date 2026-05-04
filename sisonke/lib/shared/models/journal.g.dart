@@ -15,7 +15,7 @@ extension GetJournalEntryCollection on Isar {
 
 const JournalEntrySchema = CollectionSchema(
   name: r'JournalEntry',
-  id: -8443410721192565146,
+  id: 1003,
   properties: {
     r'content': PropertySchema(
       id: 0,

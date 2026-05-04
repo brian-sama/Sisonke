@@ -24,7 +24,7 @@ services:
     image: nginx:alpine
     restart: always
     ports:
-      - "8080:80"
+      - "3016:80"
     volumes:
       - ./backend/public:/usr/share/nginx/html
     # Note: We will need to build the flutter web and move it to backend/public 

@@ -15,7 +15,7 @@ extension GetMoodEntryCollection on Isar {
 
 const MoodEntrySchema = CollectionSchema(
   name: r'MoodEntry',
-  id: -3945731646672296789,
+  id: 1002,
   properties: {
     r'energyLevel': PropertySchema(
       id: 0,
