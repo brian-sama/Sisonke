@@ -55,7 +55,7 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             tableName: "users";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "guest" | "user" | "counselor" | "moderator" | "admin";
+            data: "counselor" | "admin" | "guest" | "user" | "moderator";
             driverParam: string;
             notNull: false;
             hasDefault: true;

@@ -1,11 +1,11 @@
 export declare class QAService {
     static getQuestions(category?: any, isAdmin?: boolean): Promise<{
+        description: string;
         id: string;
         deviceId: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
         title: string;
-        description: string;
         category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
@@ -29,12 +29,12 @@ export declare class QAService {
             expertRole: string | null;
             answeredAt: Date | null;
         }[];
+        description: string;
         id: string;
         deviceId: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
         title: string;
-        description: string;
         category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
@@ -52,12 +52,12 @@ export declare class QAService {
         category: any;
         deviceId?: string;
     }): Promise<{
+        description: string;
         id: string;
         deviceId: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
         title: string;
-        description: string;
         category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;

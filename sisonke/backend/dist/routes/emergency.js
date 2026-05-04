@@ -6,14 +6,28 @@ const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
+const zimbabweRagKnowledge_1 = require("../data/zimbabweRagKnowledge");
 const router = (0, express_1.Router)();
 // Get all emergency contacts
 router.get('/contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const contacts = await db_1.db
+    const dbContacts = await db_1.db
         .select()
         .from(schema_1.emergencyContacts)
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.emergencyContacts.isActive, true), (0, drizzle_orm_1.eq)(schema_1.emergencyContacts.status, 'published')))
         .orderBy(schema_1.emergencyContacts.category, schema_1.emergencyContacts.name);
+    const seededContacts = zimbabweRagKnowledge_1.zimbabweEmergencyContacts.map((contact) => ({
+        ...contact,
+        status: 'published',
+        isActive: true,
+        createdAt: null,
+        updatedAt: null,
+        publishedAt: null,
+        deletedAt: null,
+    }));
+    const contacts = [
+        ...seededContacts,
+        ...dbContacts.filter((dbContact) => !seededContacts.some((seeded) => seeded.phoneNumber === dbContact.phoneNumber && seeded.name === dbContact.name)),
+    ];
     // Group by category
     const groupedContacts = contacts.reduce((acc, contact) => {
         if (!acc[contact.category]) {
@@ -34,11 +48,26 @@ router.get('/contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
 // Get emergency contacts by category
 router.get('/contacts/:category', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { category } = req.params;
-    const contacts = await db_1.db
+    const dbContacts = await db_1.db
         .select()
         .from(schema_1.emergencyContacts)
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.emergencyContacts.category, category), (0, drizzle_orm_1.eq)(schema_1.emergencyContacts.isActive, true)))
         .orderBy(schema_1.emergencyContacts.name);
+    const seededContacts = zimbabweRagKnowledge_1.zimbabweEmergencyContacts
+        .filter((contact) => contact.category === category)
+        .map((contact) => ({
+        ...contact,
+        status: 'published',
+        isActive: true,
+        createdAt: null,
+        updatedAt: null,
+        publishedAt: null,
+        deletedAt: null,
+    }));
+    const contacts = [
+        ...seededContacts,
+        ...dbContacts.filter((dbContact) => !seededContacts.some((seeded) => seeded.phoneNumber === dbContact.phoneNumber && seeded.name === dbContact.name)),
+    ];
     res.json({
         success: true,
         data: contacts,
@@ -128,13 +157,13 @@ router.get('/toolkit', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const toolkit = {
         breathing_exercises: [
             {
-                id: '4-7-8',
-                title: '4-7-8 Breathing',
-                description: 'Breathe in for 4, hold for 7, exhale for 8',
+                id: 'belly-breathing',
+                title: 'Deep Belly Breathing',
+                description: 'Put one hand on your chest and one on your belly. Breathe in so your belly rises, then breathe out slowly.',
                 inhale_seconds: 4,
-                hold_seconds: 7,
-                exhale_seconds: 8,
-                cycles: 4,
+                hold_seconds: 0,
+                exhale_seconds: 6,
+                cycles: 5,
             },
             {
                 id: 'box-breathing',
@@ -161,9 +190,9 @@ router.get('/toolkit', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             },
         ],
         safety_plan_steps: [
-            { id: '1', title: 'Warning Signs', description: 'Know your personal warning signs', order: 1 },
-            { id: '2', title: 'Coping Strategies', description: 'Activities that help you feel better', order: 2 },
-            { id: '3', title: 'Support Contacts', description: 'People you can call for help', order: 3 },
+            { id: '1', title: 'Move to Safety', description: 'If it is safe to move, go near other people or a trusted adult.', order: 1 },
+            { id: '2', title: 'Avoid Danger Spots', description: 'Stay away from kitchens, garages, locked rooms, or weapons during violence.', order: 2 },
+            { id: '3', title: 'Contact Help', description: 'Call Childline 116, Musasa for GBV, Adult Rape Clinic for rape, or 999 for immediate danger.', order: 3 },
         ],
         quick_exit_url: 'https://www.google.com/search?q=weather+today',
     };

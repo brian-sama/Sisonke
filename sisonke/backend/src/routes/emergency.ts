@@ -4,16 +4,32 @@ import { emergencyContacts } from '../db/schema';
 import { and, eq } from 'drizzle-orm';
 import { optionalAuth, authMiddleware, adminOnly } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
+import { zimbabweEmergencyContacts } from '../data/zimbabweRagKnowledge';
 
 const router = Router();
 
 // Get all emergency contacts
 router.get('/contacts', asyncHandler(async (req, res) => {
-  const contacts = await db
+  const dbContacts = await db
     .select()
     .from(emergencyContacts)
     .where(and(eq(emergencyContacts.isActive, true), eq(emergencyContacts.status, 'published')))
     .orderBy(emergencyContacts.category, emergencyContacts.name);
+
+  const seededContacts = zimbabweEmergencyContacts.map((contact) => ({
+    ...contact,
+    status: 'published',
+    isActive: true,
+    createdAt: null,
+    updatedAt: null,
+    publishedAt: null,
+    deletedAt: null,
+  }));
+
+  const contacts = [
+    ...seededContacts,
+    ...dbContacts.filter((dbContact) => !seededContacts.some((seeded) => seeded.phoneNumber === dbContact.phoneNumber && seeded.name === dbContact.name)),
+  ];
   
   // Group by category
   const groupedContacts = contacts.reduce((acc, contact) => {
@@ -38,11 +54,28 @@ router.get('/contacts', asyncHandler(async (req, res) => {
 router.get('/contacts/:category', asyncHandler(async (req, res) => {
   const { category } = req.params;
   
-  const contacts = await db
+  const dbContacts = await db
     .select()
     .from(emergencyContacts)
     .where(and(eq(emergencyContacts.category, category), eq(emergencyContacts.isActive, true)))
     .orderBy(emergencyContacts.name);
+
+  const seededContacts = zimbabweEmergencyContacts
+    .filter((contact) => contact.category === category)
+    .map((contact) => ({
+      ...contact,
+      status: 'published',
+      isActive: true,
+      createdAt: null,
+      updatedAt: null,
+      publishedAt: null,
+      deletedAt: null,
+    }));
+
+  const contacts = [
+    ...seededContacts,
+    ...dbContacts.filter((dbContact) => !seededContacts.some((seeded) => seeded.phoneNumber === dbContact.phoneNumber && seeded.name === dbContact.name)),
+  ];
   
   res.json({
     success: true,
@@ -148,13 +181,13 @@ router.get('/toolkit', asyncHandler(async (req, res) => {
   const toolkit = {
     breathing_exercises: [
       {
-        id: '4-7-8',
-        title: '4-7-8 Breathing',
-        description: 'Breathe in for 4, hold for 7, exhale for 8',
+        id: 'belly-breathing',
+        title: 'Deep Belly Breathing',
+        description: 'Put one hand on your chest and one on your belly. Breathe in so your belly rises, then breathe out slowly.',
         inhale_seconds: 4,
-        hold_seconds: 7,
-        exhale_seconds: 8,
-        cycles: 4,
+        hold_seconds: 0,
+        exhale_seconds: 6,
+        cycles: 5,
       },
       {
         id: 'box-breathing',
@@ -181,9 +214,9 @@ router.get('/toolkit', asyncHandler(async (req, res) => {
       },
     ],
     safety_plan_steps: [
-      { id: '1', title: 'Warning Signs', description: 'Know your personal warning signs', order: 1 },
-      { id: '2', title: 'Coping Strategies', description: 'Activities that help you feel better', order: 2 },
-      { id: '3', title: 'Support Contacts', description: 'People you can call for help', order: 3 },
+      { id: '1', title: 'Move to Safety', description: 'If it is safe to move, go near other people or a trusted adult.', order: 1 },
+      { id: '2', title: 'Avoid Danger Spots', description: 'Stay away from kitchens, garages, locked rooms, or weapons during violence.', order: 2 },
+      { id: '3', title: 'Contact Help', description: 'Call Childline 116, Musasa for GBV, Adult Rape Clinic for rape, or 999 for immediate danger.', order: 3 },
     ],
     quick_exit_url: 'https://www.google.com/search?q=weather+today',
   };

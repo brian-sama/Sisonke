@@ -4,12 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const http_1 = require("http");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const env_1 = require("./env");
+const socketService_1 = require("./services/socketService");
 // Import routes
 const auth_1 = __importDefault(require("./routes/auth"));
 const resources_1 = __importDefault(require("./routes/resources"));
@@ -101,11 +103,14 @@ app.get('/', (req, res) => {
 app.use(errorHandler_1.notFound);
 app.use(errorHandler_1.errorHandler);
 // Start server
-app.listen(PORT, () => {
+const httpServer = (0, http_1.createServer)(app);
+socketService_1.SocketService.init(httpServer);
+httpServer.listen(PORT, () => {
     console.log(`🚀 Sisonke API Server running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
     console.log(`📚 API status: http://localhost:${PORT}/api/health/status`);
     console.log(`🔐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log('💬 Socket.io initialized for real-time support');
 });
 exports.default = app;
 //# sourceMappingURL=index.js.map

@@ -470,7 +470,7 @@ class _QuickActionCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurface,
+                  color: const Color(0xFF14213D), // Force dark text on light action cards
                   fontWeight: FontWeight.w900,
                   height: 1.1,
                 ),
@@ -481,7 +481,7 @@ class _QuickActionCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.58),
+                  color: const Color(0xFF14213D).withValues(alpha: 0.65), // Force dark caption on light action cards
                   fontWeight: FontWeight.w600,
                 ),
               ),

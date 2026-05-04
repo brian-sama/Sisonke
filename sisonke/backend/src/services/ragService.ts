@@ -1,6 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { resources, cmsContent } from '../db/schema';
+import { allZimbabweRagCards } from '../data/zimbabweRagKnowledge';
 
 /**
  * RAG Service for Sisonke
@@ -43,6 +44,13 @@ export class RagService {
     ]);
 
     const candidates: GroundingSource[] = [
+      ...allZimbabweRagCards.map(card => ({
+        id: card.id,
+        title: card.title,
+        content: card.content,
+        category: card.category,
+        type: 'cms' as const
+      })),
       ...resRows.map(r => ({
         id: r.id,
         title: r.title,
@@ -77,7 +85,7 @@ export class RagService {
 
   private static tokenize(text: string): string[] {
     return text.toLowerCase()
-      .replace(/[^\w\s]/g, '')
+      .replace(/[^\p{L}\p{N}\s]/gu, '')
       .split(/\s+/)
       .filter(t => t.length > 2 && !this.stopWords.has(t));
   }

@@ -38,8 +38,8 @@ export declare const CreateResourceSchema: z.ZodObject<{
     status: z.ZodDefault<z.ZodEnum<["draft", "review", "published", "archived"]>>;
     isOfflineAvailable: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-    title: string;
     description: string;
+    title: string;
     category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
     language: string;
     status: "draft" | "review" | "published" | "archived";
@@ -49,8 +49,8 @@ export declare const CreateResourceSchema: z.ZodObject<{
     imageUrl?: string | undefined;
     readingTimeMinutes?: number | undefined;
 }, {
-    title: string;
     description: string;
+    title: string;
     category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
     content?: string | undefined;
     tags?: string[] | undefined;
@@ -72,8 +72,8 @@ export declare const UpdateResourceSchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodDefault<z.ZodEnum<["draft", "review", "published", "archived"]>>>;
     isOfflineAvailable: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
-    title?: string | undefined;
     description?: string | undefined;
+    title?: string | undefined;
     content?: string | undefined;
     category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     tags?: string[] | undefined;
@@ -83,8 +83,8 @@ export declare const UpdateResourceSchema: z.ZodObject<{
     status?: "draft" | "review" | "published" | "archived" | undefined;
     isOfflineAvailable?: boolean | undefined;
 }, {
-    title?: string | undefined;
     description?: string | undefined;
+    title?: string | undefined;
     content?: string | undefined;
     category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     tags?: string[] | undefined;
@@ -100,13 +100,13 @@ export declare const CreateQuestionSchema: z.ZodObject<{
     category: z.ZodEnum<["mental-health", "srhr", "emergency", "relationships", "general"]>;
     deviceId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    title: string;
     description: string;
+    title: string;
     category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
     deviceId?: string | undefined;
 }, {
-    title: string;
     description: string;
+    title: string;
     category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
     deviceId?: string | undefined;
 }>;
@@ -179,16 +179,16 @@ export declare const UpdateEmergencyContactSchema: z.ZodObject<{
     isActive: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     country: z.ZodOptional<z.ZodDefault<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    name?: string | undefined;
     description?: string | undefined;
+    name?: string | undefined;
     category?: string | undefined;
     status?: "draft" | "review" | "published" | "archived" | undefined;
     phoneNumber?: string | undefined;
     isActive?: boolean | undefined;
     country?: string | undefined;
 }, {
-    name?: string | undefined;
     description?: string | undefined;
+    name?: string | undefined;
     category?: string | undefined;
     status?: "draft" | "review" | "published" | "archived" | undefined;
     phoneNumber?: string | undefined;
@@ -266,8 +266,8 @@ export declare const ChatbotMessageSchema: z.ZodObject<{
     message: z.ZodString;
     deviceId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    persona: "male" | "female";
     message: string;
+    persona: "male" | "female";
     deviceId?: string | undefined;
     sessionId?: string | undefined;
 }, {
@@ -368,13 +368,13 @@ export declare const ResourceQuerySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     limit: number;
     offset: number;
+    search?: string | undefined;
     category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     language?: string | undefined;
-    search?: string | undefined;
 }, {
+    search?: string | undefined;
     category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
     language?: string | undefined;
-    search?: string | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
 }>;

@@ -1,11 +1,11 @@
 export declare class ResourceService {
     static getAll(query: any, isAdmin?: boolean): Promise<{
         resources: {
+            description: string;
             id: string;
             createdAt: Date | null;
             updatedAt: Date | null;
             title: string;
-            description: string;
             content: string | null;
             category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
             tags: string[] | null;
@@ -25,11 +25,11 @@ export declare class ResourceService {
         hasMore: boolean;
     }>;
     static getById(id: string, isAdmin?: boolean): Promise<{
+        description: string;
         id: string;
         createdAt: Date | null;
         updatedAt: Date | null;
         title: string;
-        description: string;
         content: string | null;
         category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
         tags: string[] | null;

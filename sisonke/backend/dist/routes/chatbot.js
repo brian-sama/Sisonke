@@ -10,7 +10,7 @@ const types_1 = require("../types");
 const riskService_1 = require("../services/riskService");
 const ollamaService_1 = require("../services/ollamaService");
 const geminiService_1 = require("../services/geminiService");
-const resourceRetrievalService_1 = require("../services/resourceRetrievalService");
+const ragService_1 = require("../services/ragService");
 const router = (0, express_1.Router)();
 router.use(auth_1.optionalAuth);
 router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
@@ -38,7 +38,7 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         content: input.message,
         riskLevel,
     });
-    const approvedContext = await (0, resourceRetrievalService_1.retrieveApprovedContext)(input.message);
+    const approvedContext = await ragService_1.RagService.getGroundingContext(input.message);
     const fallbackReply = (0, riskService_1.safeBotReply)(input.message, riskLevel, input.persona);
     const localReply = await (0, ollamaService_1.generateLocalChatReply)({
         message: input.message,
