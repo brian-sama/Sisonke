@@ -43,6 +43,7 @@ const authMiddleware = async (req, res, next) => {
             role: user[0].role || 'guest',
             roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
             isGuest: user[0].isGuest ?? true,
+            mustChangePassword: user[0].mustChangePassword ?? false,
             deviceId: user[0].deviceId || undefined,
         };
         next();
@@ -75,6 +76,7 @@ const optionalAuth = async (req, res, next) => {
                 role: user[0].role || 'guest',
                 roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
                 isGuest: user[0].isGuest ?? true,
+                mustChangePassword: user[0].mustChangePassword ?? false,
                 deviceId: user[0].deviceId || undefined,
             };
         }

@@ -11,6 +11,7 @@ const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const types_1 = require("../types");
 const errorHandler_1 = require("../middleware/errorHandler");
+const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 // Generate JWT token
 const generateToken = (userId) => {
@@ -60,6 +61,7 @@ router.post('/register', (0, errorHandler_1.asyncHandler)(async (req, res) => {
                 role: newUser[0].role,
                 roles: newUser[0].roles,
                 isGuest: newUser[0].isGuest,
+                mustChangePassword: newUser[0].mustChangePassword,
             },
             token,
         },
@@ -103,10 +105,34 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
                 role: user[0].role,
                 roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
                 isGuest: user[0].isGuest,
+                mustChangePassword: user[0].mustChangePassword,
             },
             token,
         },
     });
+}));
+router.post('/change-password', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const input = types_1.ChangePasswordSchema.parse(req.body);
+    const [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.user.id)).limit(1);
+    if (!user || !user.passwordHash) {
+        return res.status(404).json({ success: false, error: 'Account not found.' });
+    }
+    if (!user.mustChangePassword) {
+        if (!input.currentPassword) {
+            return res.status(400).json({ success: false, error: 'Current password is required.' });
+        }
+        const isValidPassword = await bcryptjs_1.default.compare(input.currentPassword, user.passwordHash);
+        if (!isValidPassword) {
+            return res.status(401).json({ success: false, error: 'Current password is incorrect.' });
+        }
+    }
+    const passwordHash = await bcryptjs_1.default.hash(input.newPassword, 12);
+    await db_1.db.update(schema_1.users).set({
+        passwordHash,
+        mustChangePassword: false,
+        updatedAt: new Date(),
+    }).where((0, drizzle_orm_1.eq)(schema_1.users.id, user.id));
+    res.json({ success: true });
 }));
 // Create guest session
 router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
@@ -132,6 +158,7 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
                     role: existingGuest[0].role,
                     roles: existingGuest[0].roles?.length ? existingGuest[0].roles : [existingGuest[0].role || 'guest'],
                     isGuest: existingGuest[0].isGuest,
+                    mustChangePassword: existingGuest[0].mustChangePassword,
                 },
                 token,
             },
@@ -156,6 +183,7 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
                 role: newGuest[0].role,
                 roles: newGuest[0].roles,
                 isGuest: newGuest[0].isGuest,
+                mustChangePassword: newGuest[0].mustChangePassword,
             },
             token,
         },

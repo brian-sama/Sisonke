@@ -52,7 +52,7 @@ async function apiFetch(path: string, options: RequestInit = {}) {
 
 // --- Auth Context ---
 const useAuth = () => {
-  const [user, setUser] = useState<{ email: string } | null>(() => {
+  const [user, setUser] = useState<{ email: string; mustChangePassword?: boolean } | null>(() => {
     const saved = localStorage.getItem(userKey);
     return saved ? JSON.parse(saved) : null;
   });
@@ -66,7 +66,7 @@ const useAuth = () => {
     if (!roles.includes('admin') && !roles.includes('super-admin')) {
       throw new Error('This account does not have admin access.');
     }
-    const u = { email: data.user.email || email };
+    const u = { email: data.user.email || email, mustChangePassword: Boolean(data.user.mustChangePassword) };
     setUser(u);
     localStorage.setItem(userKey, JSON.stringify(u));
     localStorage.setItem(tokenKey, data.token);
@@ -78,7 +78,14 @@ const useAuth = () => {
     localStorage.removeItem(tokenKey);
   };
 
-  return { user, login, logout, isAuthenticated: !!user };
+  const finishPasswordChange = () => {
+    if (!user) return;
+    const updated = { ...user, mustChangePassword: false };
+    setUser(updated);
+    localStorage.setItem(userKey, JSON.stringify(updated));
+  };
+
+  return { user, login, logout, finishPasswordChange, isAuthenticated: !!user };
 };
 
 // --- Components ---
@@ -88,37 +95,38 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
   
   const navGroups = [
     {
-      label: 'Core',
+      label: 'Main',
       items: [
-        { name: 'Dashboard', path: '/', icon: BarChart },
-        { name: 'Analytics', path: '/analytics', icon: Activity },
+        { name: 'Home', path: '/', icon: BarChart },
+        { name: 'Reports', path: '/analytics', icon: Activity },
       ]
     },
     {
-      label: 'Safety & Trust',
+      label: 'Safety',
       items: [
-        { name: 'Emergency Vault', path: '/emergency', icon: Phone },
+        { name: 'Help Contacts', path: '/emergency', icon: Phone },
         { name: 'Safety Rules', path: '/safety', icon: ShieldAlert },
-        { name: 'Moderation', path: '/moderation', icon: MessageSquare },
+        { name: 'Community Posts', path: '/moderation', icon: MessageSquare },
       ]
     },
     {
-      label: 'Knowledge',
+      label: 'Learning',
       items: [
-        { name: 'Resources CMS', path: '/resources', icon: BookOpen },
-        { name: 'FAQ Bank', path: '/faq', icon: HelpCircle },
+        { name: 'Resources', path: '/resources', icon: BookOpen },
+        { name: 'Questions', path: '/faq', icon: HelpCircle },
       ]
     },
     {
-      label: 'Clinical',
+      label: 'Support',
       items: [
-        { name: 'Counselor Cases', path: '/cases', icon: UserCheck },
+        { name: 'Support Requests', path: '/cases', icon: UserCheck },
       ]
     },
     {
-      label: 'System',
+      label: 'Team',
       items: [
-        { name: 'Governance', path: '/settings', icon: SettingsIcon },
+        { name: 'People', path: '/users', icon: Users },
+        { name: 'Settings', path: '/settings', icon: SettingsIcon },
       ]
     }
   ];
@@ -142,9 +150,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
       >
         <div className="p-8 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
-              <Shield className="text-white" size={24} strokeWidth={2.5} />
-            </div>
+            <SisonkeLogo />
             <h1 className="text-2xl font-display font-black text-zinc-900 tracking-tight italic uppercase">Sisonke</h1>
           </div>
           <button onClick={onClose} className="lg:hidden p-2 text-zinc-400 hover:text-zinc-900 transition-colors">
@@ -158,7 +164,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
               <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4">{group.label}</p>
               <div className="space-y-1">
                 {group.items.map((item) => {
-                  const isActive = location.pathname === item.path;
+                  const isOn = location.pathname === item.path;
                   const Icon = item.icon;
                   return (
                     <Link
@@ -167,20 +173,20 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
                       onClick={() => onClose()}
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all group relative overflow-hidden",
-                        isActive 
+                        isOn 
                           ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" 
                           : "text-zinc-500 hover:bg-indigo-50 hover:text-indigo-600"
                       )}
                     >
-                      {isActive && (
+                      {isOn && (
                         <motion.div 
                           layoutId="sidebar-active"
                           className="absolute inset-0 bg-indigo-600 -z-10"
                         />
                       )}
-                      <Icon size={20} strokeWidth={isActive ? 3 : 2.5} className={cn(
+                      <Icon size={20} strokeWidth={isOn ? 3 : 2.5} className={cn(
                         "transition-transform group-hover:scale-110",
-                        isActive ? "text-white" : "text-zinc-400 group-hover:text-indigo-500"
+                        isOn ? "text-white" : "text-zinc-400 group-hover:text-indigo-500"
                       )} />
                       {item.name}
                     </Link>
@@ -194,8 +200,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
         <div className="absolute bottom-6 left-6 right-6">
            <div className="p-5 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex items-center justify-between">
               <div className="flex flex-col">
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Local Time</p>
-                <p className="text-sm font-display font-bold text-zinc-900">Bulawayo • 08:39</p>
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Place</p>
+                <p className="text-sm font-display font-bold text-zinc-900">Bulawayo</p>
               </div>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
            </div>
@@ -220,7 +226,7 @@ const TopBar = ({ title, user, onLogout, onMenuOpen }: any) => (
         </div>
         <div className="flex flex-col text-sm">
           <span className="font-semibold text-indigo-900 leading-none mb-0.5">{user?.email?.split('@')[0]}</span>
-          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Super Admin</span>
+          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Team Lead</span>
         </div>
       </div>
       <button 
@@ -239,9 +245,13 @@ const Card = ({ children, className }: { children: React.ReactNode, className?: 
   </div>
 );
 
+const SisonkeLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
+  <img src="/sisonke-logo.png" alt="Sisonke" className={cn("rounded-2xl object-cover shadow-lg", className)} />
+);
+
 // --- Pages ---
 
-const Dashboard = () => {
+const Home = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -270,9 +280,9 @@ const Dashboard = () => {
 
   const cards = [
     { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { title: 'Guest Sessions', value: stats.guestSessions, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: 'Chatbot Sessions', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'High-Risk Alerts', value: stats.highRiskEscalations, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { title: 'Guest visits', value: stats.guestSessions, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'AI chat Sessions', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Urgent alerts', value: stats.highRiskEscalations, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
     { title: 'Cases Pending', value: stats.counselorCasesWaiting, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
     { title: 'Posts to Moderate', value: stats.communityPostsPending, icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];
@@ -303,15 +313,15 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="p-8">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-display font-bold">Activity Pulse</h3>
+            <h3 className="text-xl font-display font-bold">Recent activity</h3>
             <div className="flex gap-2">
                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                  <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                 App Opens
+                 App visits
                </div>
                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                  <div className="w-3 h-3 rounded-full bg-blue-400" />
-                 Chatbot
+                 AI chat
                </div>
             </div>
           </div>
@@ -339,7 +349,7 @@ const Dashboard = () => {
         </Card>
 
         <Card className="p-8">
-          <h3 className="text-xl font-display font-bold mb-8">Alert Escalations</h3>
+          <h3 className="text-xl font-display font-bold mb-8">Urgent help requests</h3>
           <div className="h-[320px]">
              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={[
@@ -395,14 +405,14 @@ const EmergencyContacts = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
           <input 
             type="text" 
-            placeholder="Find specialized support contacts..." 
+            placeholder="Find help contacts..." 
             className="w-full pl-12 pr-6 py-4 bg-white border border-zinc-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-zinc-400"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <button className="flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-          <Plus size={20} strokeWidth={3} /> Add New Contact
+          <Plus size={20} strokeWidth={3} /> Add contact
         </button>
       </div>
 
@@ -411,11 +421,11 @@ const EmergencyContacts = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-zinc-50/50 border-b border-zinc-100">
               <tr>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Contact Details</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Classification</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Direct Line</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Live Status</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 text-right">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Contact</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Type</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Phone</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Status</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 text-right">Edit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -434,10 +444,10 @@ const EmergencyContacts = () => {
                   <td className="px-8 py-6">
                     <div className={cn(
                       "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter",
-                      contact.isActive ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"
+                      contact.isOn ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"
                     )}>
-                      <div className={cn("w-1.5 h-1.5 rounded-full", contact.isActive ? "bg-emerald-500 animate-pulse" : "bg-zinc-400")} />
-                      {contact.isActive ? 'Active' : 'Offline'}
+                      <div className={cn("w-1.5 h-1.5 rounded-full", contact.isOn ? "bg-emerald-500 animate-pulse" : "bg-zinc-400")} />
+                      {contact.isOn ? 'On' : 'Off'}
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -494,7 +504,7 @@ const ResourcesCMS = () => {
                       "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
                       r.isPublished ? "bg-emerald-400/20 text-white" : "bg-white/20 text-white"
                     )}>
-                      {r.isPublished ? 'Live' : 'Draft'}
+                      {r.isPublished ? 'Open' : 'Draft'}
                     </span>
                   </div>
                   <h4 className="font-display font-black text-white text-xl leading-tight group-hover:translate-x-2 transition-transform">{r.title}</h4>
@@ -502,7 +512,7 @@ const ResourcesCMS = () => {
                 <div className="p-6 space-y-4">
                   <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">
                     <span className="bg-zinc-100 px-2 py-1 rounded-lg">{r.category}</span>
-                    <span>•</span>
+                    <span>|</span>
                     <span>{r.language}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -575,7 +585,7 @@ const ResourcesCMS = () => {
                           category: editing.category,
                           status: editing.isPublished ? 'published' : 'draft',
                           language: editing.language || 'en',
-                          isOfflineAvailable: true,
+                          isOffAvailable: true,
                         }),
                       });
                       const data = await apiFetch('/api/admin/resources');
@@ -615,10 +625,10 @@ const FAQBank = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-indigo-600 p-8 lg:p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
         <div className="relative z-10">
-          <h3 className="text-4xl font-display font-black text-white leading-tight">Gold FAQ Bank</h3>
+          <h3 className="text-4xl font-display font-black text-white leading-tight">Saved answers</h3>
           <p className="text-indigo-100 font-medium mt-1">High-quality, vetted answers for AI & Youth</p>
         </div>
-        <button className="relative z-10 px-8 py-4 bg-white text-indigo-600 rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-105 transition-transform active:scale-95">Add FAQ</button>
+        <button className="relative z-10 px-8 py-4 bg-white text-indigo-600 rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-105 transition-transform active:scale-95">Add answer</button>
       </div>
       
       <div className="space-y-6">
@@ -640,7 +650,7 @@ const FAQBank = () => {
                       faq.riskLevel === 'red' ? "bg-rose-100 text-rose-700" :
                       faq.riskLevel === 'amber' ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
                     )}>
-                      {faq.riskLevel} risk tier
+                      {faq.riskLevel} level
                     </span>
                  </div>
                  <div className="p-6 bg-zinc-50 rounded-3xl border border-zinc-100 italic text-zinc-600 leading-relaxed text-lg">
@@ -686,8 +696,8 @@ const SafetyRules = () => {
     <div className="p-6 lg:p-10 grid grid-cols-1 xl:grid-cols-2 gap-12 max-w-7xl mx-auto">
       <div className="space-y-10">
         <div>
-          <h3 className="text-3xl font-display font-black text-zinc-900 leading-none mb-3">Crisis Triggers</h3>
-          <p className="text-zinc-500 font-medium">Automatic escalation patterns for sensitive situations</p>
+          <h3 className="text-3xl font-display font-black text-zinc-900 leading-none mb-3">Danger words</h3>
+          <p className="text-zinc-500 font-medium">Words and phrases that tell Sisonke to get human help quickly</p>
         </div>
         
         <div className="space-y-6">
@@ -757,7 +767,7 @@ const SafetyRules = () => {
                onClick={handleTest}
                className="w-full py-6 bg-zinc-900 text-white rounded-[2rem] font-display font-black text-xl shadow-xl shadow-zinc-900/30 hover:scale-[1.02] active:scale-95 transition-all"
              >
-               Verify Pattern Match
+               Check message
              </button>
 
              <AnimatePresence>
@@ -771,12 +781,12 @@ const SafetyRules = () => {
                          {testResult.detected ? <AlertTriangle size={24} strokeWidth={3} /> : <Check size={24} strokeWidth={3} />}
                        </div>
                        <div className="flex flex-col">
-                         <span className="text-xs font-black uppercase tracking-widest opacity-60">Test Conclusion</span>
-                         <span className="font-display font-black text-xl">{testResult.detected ? 'CRITICAL TRIGGER' : 'CLEAN INPUT'}</span>
+                         <span className="text-xs font-black uppercase tracking-widest opacity-60">Result</span>
+                         <span className="font-display font-black text-xl">{testResult.detected ? 'Needs urgent help' : 'No urgent danger found'}</span>
                        </div>
                     </div>
                     {testResult.detected && (
-                      <p className="text-sm font-medium leading-relaxed mt-4 opacity-80 italic">Matched pattern: '{testResult.rule.route}'. The user will be instantly escalated to human counselor support with the defined emergency prompt.</p>
+                      <p className="text-sm font-medium leading-relaxed mt-4 opacity-80 italic">Matched: '{testResult.rule.route}'. Sisonke will show help contacts and ask the young person to get human support.</p>
                     )}
                  </motion.div>
                )}
@@ -797,10 +807,10 @@ const CounselorCases = () => {
     return (
       <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-           <h3 className="text-3xl font-display font-black text-zinc-900">Active Support Queue</h3>
+           <h3 className="text-3xl font-display font-black text-zinc-900">Open support requests</h3>
            <div className="flex gap-3">
               <div className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-sm font-bold flex items-center gap-2">
-                <Activity size={18} /> 4 Active Counselors
+                <Activity size={18} /> 4 On Counselors
               </div>
            </div>
         </div>
@@ -821,12 +831,12 @@ const CounselorCases = () => {
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-400 underline decoration-zinc-200 underline-offset-4">CASE LOG #{c.id}</span>
+                      <span className="text-[10px] font-black text-zinc-400 underline decoration-zinc-200 underline-offset-4">HELP REQUEST #{c.id}</span>
                       <span className={cn(
                         "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest",
                         c.riskLevel === 'high' ? "bg-rose-100 text-rose-700" : "bg-zinc-100 text-zinc-500"
                       )}>
-                        {c.riskLevel} threat level
+                        {c.riskLevel} level
                       </span>
                     </div>
                     <h4 className="text-2xl font-display font-black text-zinc-900 line-clamp-1">{c.summary}</h4>
@@ -838,11 +848,11 @@ const CounselorCases = () => {
                 </div>
                 <div className="flex items-center gap-4">
                    <select className="px-6 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-100 outline-none">
-                     <option>Unassigned</option>
-                     <option>Dr. Mutambo (Active)</option>
-                     <option>Sarah (Active)</option>
+                     <option>No helper yet</option>
+                     <option>Dr. Mutambo</option>
+                     <option>Sarah (On)</option>
                    </select>
-                   <button className="px-8 py-3.5 bg-zinc-900 text-white rounded-2xl font-display font-bold text-sm shadow-xl shadow-zinc-900/10 hover:-translate-y-1 active:translate-y-0 transition-transform">Enter Vault</button>
+                   <button className="px-8 py-3.5 bg-zinc-900 text-white rounded-2xl font-display font-bold text-sm shadow-xl shadow-zinc-900/10 hover:-translate-y-1 active:translate-y-0 transition-transform">Open</button>
                 </div>
               </Card>
             </motion.div>
@@ -852,7 +862,176 @@ const CounselorCases = () => {
     );
 };
 
-const Analytics = () => {
+const roleOptions = [
+  { value: 'super-admin', label: 'Team lead' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'counselor', label: 'Counselor' },
+  { value: 'moderator', label: 'Community helper' },
+  { value: 'content-manager', label: 'Content helper' },
+  { value: 'safety-reviewer', label: 'Safety reviewer' },
+  { value: 'analyst', label: 'Reports viewer' },
+  { value: 'user', label: 'App user' },
+];
+
+const People = () => {
+  const blankForm = { id: '', email: '', password: '', roles: ['user'], mustChangePassword: true, isSuspended: false };
+  const [people, setPeople] = useState<any[]>([]);
+  const [form, setForm] = useState<any>(blankForm);
+  const [message, setMessage] = useState('');
+
+  const loadPeople = () => apiFetch('/api/admin/users').then(data => setPeople(Array.isArray(data) ? data : []));
+
+  useEffect(() => {
+    loadPeople();
+  }, []);
+
+  const toggleRole = (role: string) => {
+    setForm((current: any) => {
+      const roles = current.roles.includes(role)
+        ? current.roles.filter((item: string) => item !== role)
+        : [...current.roles, role];
+      return { ...current, roles: roles.length ? roles : ['user'] };
+    });
+  };
+
+  const editPerson = (person: any) => {
+    setForm({
+      id: person.id,
+      email: person.email || '',
+      password: '',
+      roles: person.roles?.length ? person.roles : [person.role || 'user'],
+      mustChangePassword: Boolean(person.mustChangePassword),
+      isSuspended: Boolean(person.isSuspended),
+    });
+    setMessage('');
+  };
+
+  const savePerson = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setMessage('');
+    if (!form.email.trim()) return setMessage('Please enter an email address.');
+    if (!form.id && !form.password) return setMessage('Please enter a starting password.');
+
+    if (form.id) {
+      await apiFetch(`/api/admin/users/${form.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          email: form.email,
+          roles: form.roles,
+          mustChangePassword: form.mustChangePassword,
+          isSuspended: form.isSuspended,
+        }),
+      });
+      if (form.password) {
+        await apiFetch(`/api/admin/users/${form.id}/password`, {
+          method: 'PUT',
+          body: JSON.stringify({ password: form.password, mustChangePassword: form.mustChangePassword }),
+        });
+      }
+      setMessage('Person updated.');
+    } else {
+      await apiFetch('/api/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          roles: form.roles,
+          mustChangePassword: form.mustChangePassword,
+        }),
+      });
+      setMessage('Person added.');
+    }
+    setForm(blankForm);
+    await loadPeople();
+  };
+
+  return (
+    <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto">
+      <div>
+        <h3 className="text-3xl font-display font-black text-zinc-900">People</h3>
+        <p className="text-zinc-500 font-medium">Add team members, choose what they can do, and reset passwords.</p>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[420px_1fr] gap-8">
+        <Card className="p-8">
+          <h4 className="text-xl font-display font-black mb-6">{form.id ? 'Edit person' : 'Add person'}</h4>
+          <form onSubmit={savePerson} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500">Email</label>
+              <input className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} type="email" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500">{form.id ? 'New password, if changing it' : 'Starting password'}</label>
+              <input className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} type="password" />
+            </div>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-500">What this person can do</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {roleOptions.map(role => (
+                  <label key={role.value} className={cn("flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-bold cursor-pointer", form.roles.includes(role.value) ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-zinc-100 text-zinc-500")}>
+                    <input type="checkbox" className="accent-indigo-600" checked={form.roles.includes(role.value)} onChange={() => toggleRole(role.value)} />
+                    {role.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center gap-3 p-4 bg-amber-50 text-amber-800 rounded-2xl font-bold">
+              <input type="checkbox" className="accent-amber-600" checked={form.mustChangePassword} onChange={e => setForm({ ...form, mustChangePassword: e.target.checked })} />
+              Ask them to choose a new password next time
+            </label>
+            {form.id && (
+              <label className="flex items-center gap-3 p-4 bg-rose-50 text-rose-800 rounded-2xl font-bold">
+                <input type="checkbox" className="accent-rose-600" checked={form.isSuspended} onChange={e => setForm({ ...form, isSuspended: e.target.checked })} />
+                Pause this account
+              </label>
+            )}
+            <div className="flex gap-3">
+              <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100">{form.id ? 'Save changes' : 'Add person'}</button>
+              {form.id && <button type="button" onClick={() => setForm(blankForm)} className="px-5 py-4 bg-zinc-100 rounded-2xl font-bold">Cancel</button>}
+            </div>
+            {message && <p className="text-sm font-bold text-indigo-700">{message}</p>}
+          </form>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-zinc-50 border-b border-zinc-100">
+              <tr>
+                <th className="px-6 py-4 text-xs font-black text-zinc-400">Person</th>
+                <th className="px-6 py-4 text-xs font-black text-zinc-400">Can do</th>
+                <th className="px-6 py-4 text-xs font-black text-zinc-400">Password</th>
+                <th className="px-6 py-4 text-xs font-black text-zinc-400 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {people.map(person => (
+                <tr key={person.id} className="hover:bg-indigo-50/30">
+                  <td className="px-6 py-5">
+                    <div className="font-bold text-zinc-900">{person.email || 'Guest user'}</div>
+                    <div className="text-xs text-zinc-400">{person.isSuspended ? 'Paused' : 'On'}</div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex flex-wrap gap-2">
+                      {(person.roles || []).map((role: string) => (
+                        <span key={role} className="px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg text-xs font-bold">{roleOptions.find(item => item.value === role)?.label || role}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 text-sm font-bold text-zinc-500">{person.mustChangePassword ? 'Must choose new password' : 'Set'}</td>
+                  <td className="px-6 py-5 text-right">
+                    <button onClick={() => editPerson(person)} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold">Edit</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const Reports = () => {
   const [data, setData] = useState<any>(null);
   useEffect(() => {
     apiFetch('/api/admin/analytics?days=30').then((summary) => {
@@ -880,7 +1059,7 @@ const Analytics = () => {
        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <h3 className="text-3xl font-display font-black text-zinc-900">Health Insights</h3>
-            <p className="text-zinc-500 font-medium">Aggregated behavior analysis & safety metrics</p>
+            <p className="text-zinc-500 font-medium">Simple totals about app use and safety</p>
           </div>
           <div className="flex gap-2">
              <button className="px-6 py-3 bg-white border border-zinc-100 rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm">May 2026</button>
@@ -890,7 +1069,7 @@ const Analytics = () => {
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <Card className="p-10 bg-indigo-600 text-white border-none shadow-2xl shadow-indigo-100">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 mb-8 flex items-center gap-2">
-              <Activity size={12} strokeWidth={3} /> Retention Engine
+              <Activity size={12} strokeWidth={3} /> App use
             </h4>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -903,11 +1082,11 @@ const Analytics = () => {
             <div className="mt-8 pt-8 border-t border-white/10 flex justify-between">
                <div className="flex flex-col">
                  <span className="text-2xl font-display font-black">2.4k</span>
-                 <span className="text-[10px] font-bold uppercase opacity-60">Avg. Opens</span>
+                 <span className="text-[10px] font-bold uppercase opacity-60">Usual visits</span>
                </div>
                <div className="flex flex-col items-end">
                  <span className="text-2xl font-display font-black">+14%</span>
-                 <span className="text-[10px] font-bold uppercase opacity-60">Growth</span>
+                 <span className="text-[10px] font-bold uppercase opacity-60">Change</span>
                </div>
             </div>
          </Card>
@@ -915,7 +1094,7 @@ const Analytics = () => {
          <Card className="p-10 lg:col-span-2 bg-white shadow-2xl shadow-zinc-100 border-none">
             <div className="flex items-center justify-between mb-8">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
-                <AlertTriangle size={12} strokeWidth={3} className="text-rose-500" /> Crisis Trend Analysis
+                <AlertTriangle size={12} strokeWidth={3} className="text-rose-500" /> Urgent help over time
               </h4>
               <div className="text-[10px] font-black uppercase text-rose-500 bg-rose-50 px-3 py-1 rounded-full">Elevated Risk</div>
             </div>
@@ -941,7 +1120,7 @@ const Analytics = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-display font-black text-xl leading-none">42</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Escalations</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Urgent requests</span>
                   </div>
                </div>
                <div className="flex items-center gap-3">
@@ -950,7 +1129,7 @@ const Analytics = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-display font-black text-xl leading-none">98%</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Support Ratio</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Help rate</span>
                   </div>
                </div>
             </div>
@@ -963,9 +1142,9 @@ const Analytics = () => {
             <Lock size={32} strokeWidth={2.5} />
           </div>
           <div>
-            <h5 className="text-2xl font-display font-black text-amber-900 mb-2 tracking-tight">Privacy Fortress Protocol</h5>
+            <h5 className="text-2xl font-display font-black text-amber-900 mb-2 tracking-tight">Privacy promise</h5>
             <p className="text-lg text-amber-800 leading-relaxed max-w-4xl opacity-80 font-medium italic">
-              "Every metric displayed here is a high-level summary. We never track individual chat content, private journal notes, or reveal the identity of at-risk youth beyond clinical necessity. Zimbabwe Youth's digital safety is our non-negotiable priority."
+              "These numbers are summaries only. We do not show private chats or journal notes here. We only share personal details when safety support truly needs it."
             </p>
           </div>
        </div>
@@ -978,7 +1157,7 @@ const Settings = () => (
     <div className="space-y-12">
       <section>
         <h3 className="text-3xl font-display font-black text-zinc-900 flex items-center gap-3 mb-8 italic">
-          <Shield className="text-indigo-600" size={32} strokeWidth={3} /> Governance Protocol
+          <Shield className="text-indigo-600" size={32} strokeWidth={3} /> How we keep Sisonke safe
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
@@ -1000,19 +1179,19 @@ const Settings = () => (
       </section>
       
       <section className="space-y-8 bg-white p-12 rounded-[3.5rem] shadow-2xl border border-zinc-100">
-        <h3 className="text-2xl font-display font-black text-zinc-900 leading-none">Admin Profile</h3>
+        <h3 className="text-2xl font-display font-black text-zinc-900 leading-none">Your account</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
            <div className="space-y-2">
-             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Authority Grade</label>
-             <div className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold text-zinc-600">Super User</div>
+             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Access level</label>
+             <div className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold text-zinc-600">Team lead</div>
            </div>
            <div className="space-y-2">
-             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Network Base</label>
-             <div className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold text-zinc-600">Bulawayo Central Hub</div>
+             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Location</label>
+             <div className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold text-zinc-600">Bulawayo</div>
            </div>
         </div>
         <div className="pt-4 flex justify-end">
-           <button className="px-10 py-4 bg-indigo-600 text-white rounded-3xl font-display font-black tracking-widest uppercase text-xs shadow-xl shadow-indigo-200">Audit Configuration</button>
+           <button className="px-10 py-4 bg-indigo-600 text-white rounded-3xl font-display font-black tracking-widest uppercase text-xs shadow-xl shadow-indigo-200">Review settings</button>
         </div>
       </section>
     </div>
@@ -1035,11 +1214,9 @@ const LoginPage = ({ onLogin }: { onLogin: (email: string, password: string) => 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Card className="w-full max-w-lg p-12 border-none shadow-2xl relative overflow-hidden bg-white/80 backdrop-blur-xl">
           <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-200 group hover:rotate-12 transition-transform">
-               <Shield className="text-white" size={32} />
-            </div>
+            <SisonkeLogo className="w-20 h-20 mx-auto mb-6 rounded-3xl" />
             <h1 className="text-4xl font-display font-black text-zinc-900 tracking-tight mb-2 uppercase italic">SISONKE</h1>
-            <p className="text-zinc-500 font-medium tracking-tight">Admin Gateway • Wellness for Youth</p>
+            <p className="text-zinc-500 font-medium tracking-tight">Team sign in for youth support</p>
           </div>
           
           <form onSubmit={async (e) => {
@@ -1055,7 +1232,7 @@ const LoginPage = ({ onLogin }: { onLogin: (email: string, password: string) => 
             }
           }} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Email Command Center</label>
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Email</label>
               <div className="relative">
                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
                  <input 
@@ -1069,7 +1246,7 @@ const LoginPage = ({ onLogin }: { onLogin: (email: string, password: string) => 
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Security Key</label>
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Password</label>
               <div className="relative">
                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
                  <input 
@@ -1077,7 +1254,7 @@ const LoginPage = ({ onLogin }: { onLogin: (email: string, password: string) => 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-100 focus:bg-white outline-none transition-all"
-                  placeholder="••••••••"
+                  placeholder="||||||||"
                   required
                 />
               </div>
@@ -1087,18 +1264,66 @@ const LoginPage = ({ onLogin }: { onLogin: (email: string, password: string) => 
               disabled={loading}
               className="w-full py-5 bg-zinc-900 text-white rounded-3xl font-display font-black text-lg shadow-xl shadow-zinc-900/20 hover:scale-[1.02] active:scale-95 transition-all"
             >
-              {loading ? 'Checking access...' : 'Unlock Dashboard'}
+              {loading ? 'Checking...' : 'Sign in'}
             </button>
             {error && <p className="text-sm font-bold text-rose-600 text-center">{error}</p>}
           </form>
           
           <div className="mt-10 pt-8 border-t border-zinc-50 flex items-center justify-center gap-4 text-[10px] font-black text-zinc-300 uppercase tracking-[0.2em]">
-             <span>Privacy First</span>
-             <span>•</span>
-             <span>Secured by Zimbabwe Health</span>
+             <span>Private</span>
+             <span>|</span>
+             <span>Made for youth support</span>
           </div>
         </Card>
       </motion.div>
+    </div>
+  );
+};
+
+const ChangePasswordPage = ({ onDone, onLogout }: { onDone: () => void; onLogout: () => void }) => {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-[#FAFAFF] flex items-center justify-center p-6">
+      <Card className="w-full max-w-lg p-10 border-none shadow-2xl bg-white">
+        <div className="text-center mb-8">
+          <SisonkeLogo className="w-20 h-20 mx-auto mb-5 rounded-3xl" />
+          <h1 className="text-3xl font-display font-black text-zinc-900">Choose a new password</h1>
+          <p className="text-zinc-500 mt-2">Your team lead asked you to update your password before you continue.</p>
+        </div>
+        <form onSubmit={async (event) => {
+          event.preventDefault();
+          setError('');
+          setLoading(true);
+          try {
+            await apiFetch('/api/auth/change-password', {
+              method: 'POST',
+              body: JSON.stringify({ newPassword: password }),
+            });
+            onDone();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not change password.');
+          } finally {
+            setLoading(false);
+          }
+        }} className="space-y-5">
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full px-5 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-100 outline-none"
+            placeholder="New password"
+            required
+          />
+          <button type="submit" disabled={loading} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black">
+            {loading ? 'Saving...' : 'Save password'}
+          </button>
+          <button type="button" onClick={onLogout} className="w-full py-3 text-zinc-500 font-bold">Sign out</button>
+          {error && <p className="text-sm font-bold text-rose-600 text-center">{error}</p>}
+        </form>
+      </Card>
     </div>
   );
 };
@@ -1134,26 +1359,35 @@ const AdminLayout = ({ children, title, logout, user }: any) => {
 // --- App Root ---
 
 export default function App() {
-  const { user, login, logout, isAuthenticated } = useAuth();
+  const { user, login, logout, finishPasswordChange, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={login} />;
   }
 
+  if (user?.mustChangePassword) {
+    return <ChangePasswordPage onDone={finishPasswordChange} onLogout={logout} />;
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<AdminLayout title="Dashboard" user={user} logout={logout}><Dashboard /></AdminLayout>} />
-        <Route path="/emergency" element={<AdminLayout title="Emergency Contacts" user={user} logout={logout}><EmergencyContacts /></AdminLayout>} />
-        <Route path="/resources" element={<AdminLayout title="Resources CMS" user={user} logout={logout}><ResourcesCMS /></AdminLayout>} />
-        <Route path="/faq" element={<AdminLayout title="FAQ Bank" user={user} logout={logout}><FAQBank /></AdminLayout>} />
-        <Route path="/safety" element={<AdminLayout title="Chatbot Safety" user={user} logout={logout}><SafetyRules /></AdminLayout>} />
-        <Route path="/cases" element={<AdminLayout title="Counselor Cases" user={user} logout={logout}><CounselorCases /></AdminLayout>} />
-        <Route path="/moderation" element={<AdminLayout title="Community Moderation" user={user} logout={logout}><div className="p-8 text-zinc-500">Moderation interface implementation...</div></AdminLayout>} />
-        <Route path="/analytics" element={<AdminLayout title="Analytics" user={user} logout={logout}><Analytics /></AdminLayout>} />
+        <Route path="/" element={<AdminLayout title="Home" user={user} logout={logout}><Home /></AdminLayout>} />
+        <Route path="/emergency" element={<AdminLayout title="Help Contacts" user={user} logout={logout}><EmergencyContacts /></AdminLayout>} />
+        <Route path="/resources" element={<AdminLayout title="Resources" user={user} logout={logout}><ResourcesCMS /></AdminLayout>} />
+        <Route path="/faq" element={<AdminLayout title="Questions" user={user} logout={logout}><FAQBank /></AdminLayout>} />
+        <Route path="/safety" element={<AdminLayout title="Safety Rules" user={user} logout={logout}><SafetyRules /></AdminLayout>} />
+        <Route path="/cases" element={<AdminLayout title="Support Requests" user={user} logout={logout}><CounselorCases /></AdminLayout>} />
+        <Route path="/users" element={<AdminLayout title="People" user={user} logout={logout}><People /></AdminLayout>} />
+        <Route path="/moderation" element={<AdminLayout title="Community Posts" user={user} logout={logout}><div className="p-8 text-zinc-500">Community post review is coming soon.</div></AdminLayout>} />
+        <Route path="/analytics" element={<AdminLayout title="Reports" user={user} logout={logout}><Reports /></AdminLayout>} />
         <Route path="/settings" element={<AdminLayout title="Settings" user={user} logout={logout}><Settings /></AdminLayout>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
 }
+
+
+
+

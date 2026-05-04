@@ -346,6 +346,7 @@ router.get('/users', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
             isGuest: user.isGuest,
             isSuspended: user.isSuspended,
             suspensionReason: user.suspensionReason,
+            mustChangePassword: user.mustChangePassword,
             createdAt: user.createdAt,
             lastActiveAt: user.lastActiveAt,
         })),
@@ -377,6 +378,7 @@ router.post('/users', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(as
         role: primaryRole,
         roles: input.roles,
         isGuest: input.isGuest,
+        mustChangePassword: input.mustChangePassword,
         updatedAt: new Date(),
     }).returning();
     await db_1.db.insert(schema_1.securityLogs).values({
@@ -394,9 +396,74 @@ router.post('/users', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(as
             role: created.role,
             roles: created.roles,
             isGuest: created.isGuest,
+            mustChangePassword: created.mustChangePassword,
             createdAt: created.createdAt,
         },
     });
+}));
+router.put('/users/:id', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const input = types_1.UpdateAdminUserSchema.parse(req.body);
+    if (req.params.id === req.user.id && input.roles && !input.roles.includes('super-admin')) {
+        return res.status(400).json({ success: false, error: 'You cannot remove your own top-level access.' });
+    }
+    const roleUpdate = input.roles ? {
+        role: primaryRoleFor(input.roles),
+        roles: input.roles,
+        isGuest: input.roles.includes('guest') && input.roles.length === 1,
+    } : {};
+    const [updated] = await db_1.db.update(schema_1.users).set({
+        ...roleUpdate,
+        email: input.email ? input.email.trim().toLowerCase() : undefined,
+        isSuspended: input.isSuspended,
+        suspensionReason: input.isSuspended ? input.suspensionReason || 'Paused by an admin' : input.isSuspended === false ? null : undefined,
+        suspendedAt: input.isSuspended === true ? new Date() : input.isSuspended === false ? null : undefined,
+        mustChangePassword: input.mustChangePassword,
+        updatedAt: new Date(),
+    }).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id)).returning();
+    if (!updated) {
+        return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+    await db_1.db.insert(schema_1.securityLogs).values({
+        userId: req.user.id,
+        event: 'user_updated',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        metadata: { targetUserId: req.params.id },
+    });
+    res.json({
+        success: true,
+        data: {
+            id: updated.id,
+            email: updated.email,
+            role: updated.role,
+            roles: updated.roles,
+            isGuest: updated.isGuest,
+            isSuspended: updated.isSuspended,
+            suspensionReason: updated.suspensionReason,
+            mustChangePassword: updated.mustChangePassword,
+            updatedAt: updated.updatedAt,
+        },
+    });
+}));
+router.put('/users/:id/password', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const input = types_1.AdminSetPasswordSchema.parse(req.body);
+    const passwordHash = await bcryptjs_1.default.hash(input.password, 12);
+    const [updated] = await db_1.db.update(schema_1.users).set({
+        passwordHash,
+        mustChangePassword: input.mustChangePassword,
+        updatedAt: new Date(),
+    }).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id)).returning();
+    if (!updated) {
+        return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+    await db_1.db.insert(schema_1.securityLogs).values({
+        userId: req.user.id,
+        event: 'user_password_set',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        metadata: { targetUserId: req.params.id, mustChangePassword: input.mustChangePassword },
+    });
+    res.json({ success: true, data: { id: updated.id, mustChangePassword: updated.mustChangePassword } });
 }));
 router.put('/users/:id/roles', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.UpdateUserRolesSchema.parse(req.body);
@@ -428,6 +495,7 @@ router.put('/users/:id/roles', auth_1.superAdminOnly, (0, errorHandler_1.asyncHa
             role: updated.role,
             roles: updated.roles,
             isGuest: updated.isGuest,
+            mustChangePassword: updated.mustChangePassword,
             updatedAt: updated.updatedAt,
         },
     });

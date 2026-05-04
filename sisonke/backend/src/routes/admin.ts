@@ -23,7 +23,9 @@ import {
   CreateEmergencyContactSchema,
   CreateAdminUserSchema,
   CmsContentSchema,
+  AdminSetPasswordSchema,
   CreateResourceSchema,
+  UpdateAdminUserSchema,
   UpdateUserRolesSchema,
   UpdateEmergencyContactSchema,
   UpdateResourceSchema,
@@ -413,6 +415,7 @@ router.get('/users', asyncHandler(async (_req, res) => {
       isGuest: user.isGuest,
       isSuspended: user.isSuspended,
       suspensionReason: user.suspensionReason,
+      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
       lastActiveAt: user.lastActiveAt,
     })),
@@ -444,6 +447,7 @@ router.post('/users', superAdminOnly, asyncHandler(async (req, res) => {
     role: primaryRole as any,
     roles: input.roles,
     isGuest: input.isGuest,
+    mustChangePassword: input.mustChangePassword,
     updatedAt: new Date(),
   }).returning();
 
@@ -463,9 +467,86 @@ router.post('/users', superAdminOnly, asyncHandler(async (req, res) => {
       role: created.role,
       roles: created.roles,
       isGuest: created.isGuest,
+      mustChangePassword: created.mustChangePassword,
       createdAt: created.createdAt,
     },
   });
+}));
+
+router.put('/users/:id', superAdminOnly, asyncHandler(async (req, res) => {
+  const input = UpdateAdminUserSchema.parse(req.body);
+
+  if (req.params.id === req.user!.id && input.roles && !input.roles.includes('super-admin')) {
+    return res.status(400).json({ success: false, error: 'You cannot remove your own top-level access.' });
+  }
+
+  const roleUpdate = input.roles ? {
+    role: primaryRoleFor(input.roles) as any,
+    roles: input.roles,
+    isGuest: input.roles.includes('guest') && input.roles.length === 1,
+  } : {};
+
+  const [updated] = await db.update(users).set({
+    ...roleUpdate,
+    email: input.email ? input.email.trim().toLowerCase() : undefined,
+    isSuspended: input.isSuspended,
+    suspensionReason: input.isSuspended ? input.suspensionReason || 'Paused by an admin' : input.isSuspended === false ? null : undefined,
+    suspendedAt: input.isSuspended === true ? new Date() : input.isSuspended === false ? null : undefined,
+    mustChangePassword: input.mustChangePassword,
+    updatedAt: new Date(),
+  }).where(eq(users.id, req.params.id)).returning();
+
+  if (!updated) {
+    return res.status(404).json({ success: false, error: 'User not found.' });
+  }
+
+  await db.insert(securityLogs).values({
+    userId: req.user!.id,
+    event: 'user_updated',
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+    metadata: { targetUserId: req.params.id },
+  });
+
+  res.json({
+    success: true,
+    data: {
+      id: updated.id,
+      email: updated.email,
+      role: updated.role,
+      roles: updated.roles,
+      isGuest: updated.isGuest,
+      isSuspended: updated.isSuspended,
+      suspensionReason: updated.suspensionReason,
+      mustChangePassword: updated.mustChangePassword,
+      updatedAt: updated.updatedAt,
+    },
+  });
+}));
+
+router.put('/users/:id/password', superAdminOnly, asyncHandler(async (req, res) => {
+  const input = AdminSetPasswordSchema.parse(req.body);
+  const passwordHash = await bcrypt.hash(input.password, 12);
+
+  const [updated] = await db.update(users).set({
+    passwordHash,
+    mustChangePassword: input.mustChangePassword,
+    updatedAt: new Date(),
+  }).where(eq(users.id, req.params.id)).returning();
+
+  if (!updated) {
+    return res.status(404).json({ success: false, error: 'User not found.' });
+  }
+
+  await db.insert(securityLogs).values({
+    userId: req.user!.id,
+    event: 'user_password_set',
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+    metadata: { targetUserId: req.params.id, mustChangePassword: input.mustChangePassword },
+  });
+
+  res.json({ success: true, data: { id: updated.id, mustChangePassword: updated.mustChangePassword } });
 }));
 
 router.put('/users/:id/roles', superAdminOnly, asyncHandler(async (req, res) => {
@@ -501,10 +582,11 @@ router.put('/users/:id/roles', superAdminOnly, asyncHandler(async (req, res) => 
       id: updated.id,
       email: updated.email,
       role: updated.role,
-      roles: updated.roles,
-      isGuest: updated.isGuest,
-      updatedAt: updated.updatedAt,
-    },
+    roles: updated.roles,
+    isGuest: updated.isGuest,
+    mustChangePassword: updated.mustChangePassword,
+    updatedAt: updated.updatedAt,
+  },
   });
 }));
 

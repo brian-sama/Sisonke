@@ -11,6 +11,7 @@ export interface AuthRequest extends Request {
     role: string;
     roles: string[];
     isGuest: boolean;
+    mustChangePassword: boolean;
     deviceId?: string;
   };
 }
@@ -57,6 +58,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       role: user[0].role || 'guest',
       roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
       isGuest: user[0].isGuest ?? true,
+      mustChangePassword: user[0].mustChangePassword ?? false,
       deviceId: user[0].deviceId || undefined,
     };
 
@@ -94,6 +96,7 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
         role: user[0].role || 'guest',
         roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
         isGuest: user[0].isGuest ?? true,
+        mustChangePassword: user[0].mustChangePassword ?? false,
         deviceId: user[0].deviceId || undefined,
       };
     }

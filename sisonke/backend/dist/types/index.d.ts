@@ -32,16 +32,19 @@ export declare const CreateAdminUserSchema: z.ZodObject<{
     password: z.ZodString;
     roles: z.ZodDefault<z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">>;
     isGuest: z.ZodDefault<z.ZodBoolean>;
+    mustChangePassword: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     email: string;
     roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
     isGuest: boolean;
+    mustChangePassword: boolean;
     password: string;
 }, {
     email: string;
     password: string;
     roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
     isGuest?: boolean | undefined;
+    mustChangePassword?: boolean | undefined;
 }>;
 export declare const UpdateUserRolesSchema: z.ZodObject<{
     roles: z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">;
@@ -49,6 +52,45 @@ export declare const UpdateUserRolesSchema: z.ZodObject<{
     roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
 }, {
     roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
+}>;
+export declare const UpdateAdminUserSchema: z.ZodObject<{
+    email: z.ZodOptional<z.ZodString>;
+    roles: z.ZodOptional<z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">>;
+    isSuspended: z.ZodOptional<z.ZodBoolean>;
+    suspensionReason: z.ZodOptional<z.ZodString>;
+    mustChangePassword: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    email?: string | undefined;
+    roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
+    isSuspended?: boolean | undefined;
+    suspensionReason?: string | undefined;
+    mustChangePassword?: boolean | undefined;
+}, {
+    email?: string | undefined;
+    roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
+    isSuspended?: boolean | undefined;
+    suspensionReason?: string | undefined;
+    mustChangePassword?: boolean | undefined;
+}>;
+export declare const AdminSetPasswordSchema: z.ZodObject<{
+    password: z.ZodString;
+    mustChangePassword: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    mustChangePassword: boolean;
+    password: string;
+}, {
+    password: string;
+    mustChangePassword?: boolean | undefined;
+}>;
+export declare const ChangePasswordSchema: z.ZodObject<{
+    currentPassword: z.ZodOptional<z.ZodString>;
+    newPassword: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    newPassword: string;
+    currentPassword?: string | undefined;
+}, {
+    newPassword: string;
+    currentPassword?: string | undefined;
 }>;
 export declare const CreateResourceSchema: z.ZodObject<{
     title: z.ZodString;
@@ -423,6 +465,9 @@ export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type GuestSessionInput = z.infer<typeof GuestSessionSchema>;
 export type CreateAdminUserInput = z.infer<typeof CreateAdminUserSchema>;
 export type UpdateUserRolesInput = z.infer<typeof UpdateUserRolesSchema>;
+export type UpdateAdminUserInput = z.infer<typeof UpdateAdminUserSchema>;
+export type AdminSetPasswordInput = z.infer<typeof AdminSetPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 export type CreateResourceInput = z.infer<typeof CreateResourceSchema>;
 export type UpdateResourceInput = z.infer<typeof UpdateResourceSchema>;
 export type CreateQuestionInput = z.infer<typeof CreateQuestionSchema>;

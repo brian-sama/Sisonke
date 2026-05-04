@@ -29,13 +29,32 @@ export const AdminRoleSchema = z.enum([
 
 export const CreateAdminUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(12),
+  password: z.string().min(1),
   roles: z.array(AdminRoleSchema).min(1).default(['user']),
   isGuest: z.boolean().default(false),
+  mustChangePassword: z.boolean().default(false),
 });
 
 export const UpdateUserRolesSchema = z.object({
   roles: z.array(AdminRoleSchema).min(1),
+});
+
+export const UpdateAdminUserSchema = z.object({
+  email: z.string().email().optional(),
+  roles: z.array(AdminRoleSchema).min(1).optional(),
+  isSuspended: z.boolean().optional(),
+  suspensionReason: z.string().optional(),
+  mustChangePassword: z.boolean().optional(),
+});
+
+export const AdminSetPasswordSchema = z.object({
+  password: z.string().min(1),
+  mustChangePassword: z.boolean().default(false),
+});
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(1),
 });
 
 // Resource schemas
@@ -203,6 +222,9 @@ export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type GuestSessionInput = z.infer<typeof GuestSessionSchema>;
 export type CreateAdminUserInput = z.infer<typeof CreateAdminUserSchema>;
 export type UpdateUserRolesInput = z.infer<typeof UpdateUserRolesSchema>;
+export type UpdateAdminUserInput = z.infer<typeof UpdateAdminUserSchema>;
+export type AdminSetPasswordInput = z.infer<typeof AdminSetPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 export type CreateResourceInput = z.infer<typeof CreateResourceSchema>;
 export type UpdateResourceInput = z.infer<typeof UpdateResourceSchema>;
 export type CreateQuestionInput = z.infer<typeof CreateQuestionSchema>;

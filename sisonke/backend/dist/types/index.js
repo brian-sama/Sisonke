@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QuestionQuerySchema = exports.ResourceQuerySchema = exports.CreateJournalEntrySchema = exports.CreateMoodCheckinSchema = exports.CmsContentSchema = exports.CommunityPostSchema = exports.CounselorRequestSchema = exports.ChatbotMessageSchema = exports.OnboardingProfileSchema = exports.AnalyticsEventSchema = exports.UpdateEmergencyContactSchema = exports.CreateEmergencyContactSchema = exports.CreateReportSchema = exports.CreateAnswerSchema = exports.CreateQuestionSchema = exports.UpdateResourceSchema = exports.CreateResourceSchema = exports.UpdateUserRolesSchema = exports.CreateAdminUserSchema = exports.AdminRoleSchema = exports.GuestSessionSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
+exports.QuestionQuerySchema = exports.ResourceQuerySchema = exports.CreateJournalEntrySchema = exports.CreateMoodCheckinSchema = exports.CmsContentSchema = exports.CommunityPostSchema = exports.CounselorRequestSchema = exports.ChatbotMessageSchema = exports.OnboardingProfileSchema = exports.AnalyticsEventSchema = exports.UpdateEmergencyContactSchema = exports.CreateEmergencyContactSchema = exports.CreateReportSchema = exports.CreateAnswerSchema = exports.CreateQuestionSchema = exports.UpdateResourceSchema = exports.CreateResourceSchema = exports.ChangePasswordSchema = exports.AdminSetPasswordSchema = exports.UpdateAdminUserSchema = exports.UpdateUserRolesSchema = exports.CreateAdminUserSchema = exports.AdminRoleSchema = exports.GuestSessionSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
 const zod_1 = require("zod");
 // Auth schemas
 exports.LoginSchema = zod_1.z.object({
@@ -27,12 +27,28 @@ exports.AdminRoleSchema = zod_1.z.enum([
 ]);
 exports.CreateAdminUserSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
-    password: zod_1.z.string().min(12),
+    password: zod_1.z.string().min(1),
     roles: zod_1.z.array(exports.AdminRoleSchema).min(1).default(['user']),
     isGuest: zod_1.z.boolean().default(false),
+    mustChangePassword: zod_1.z.boolean().default(false),
 });
 exports.UpdateUserRolesSchema = zod_1.z.object({
     roles: zod_1.z.array(exports.AdminRoleSchema).min(1),
+});
+exports.UpdateAdminUserSchema = zod_1.z.object({
+    email: zod_1.z.string().email().optional(),
+    roles: zod_1.z.array(exports.AdminRoleSchema).min(1).optional(),
+    isSuspended: zod_1.z.boolean().optional(),
+    suspensionReason: zod_1.z.string().optional(),
+    mustChangePassword: zod_1.z.boolean().optional(),
+});
+exports.AdminSetPasswordSchema = zod_1.z.object({
+    password: zod_1.z.string().min(1),
+    mustChangePassword: zod_1.z.boolean().default(false),
+});
+exports.ChangePasswordSchema = zod_1.z.object({
+    currentPassword: zod_1.z.string().optional(),
+    newPassword: zod_1.z.string().min(1),
 });
 // Resource schemas
 exports.CreateResourceSchema = zod_1.z.object({

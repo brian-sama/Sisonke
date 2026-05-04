@@ -52,6 +52,7 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     isSuspended: (0, pg_core_1.boolean)('is_suspended').default(false),
     suspensionReason: (0, pg_core_1.text)('suspension_reason'),
     suspendedAt: (0, pg_core_1.timestamp)('suspended_at'),
+    mustChangePassword: (0, pg_core_1.boolean)('must_change_password').default(false),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at'),
     lastActiveAt: (0, pg_core_1.timestamp)('last_active_at').defaultNow(),

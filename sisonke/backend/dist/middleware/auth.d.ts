@@ -6,6 +6,7 @@ export interface AuthRequest extends Request {
         role: string;
         roles: string[];
         isGuest: boolean;
+        mustChangePassword: boolean;
         deviceId?: string;
     };
 }

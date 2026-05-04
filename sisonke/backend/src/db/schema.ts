@@ -51,6 +51,7 @@ export const users = pgTable('users', {
   isSuspended: boolean('is_suspended').default(false),
   suspensionReason: text('suspension_reason'),
   suspendedAt: timestamp('suspended_at'),
+  mustChangePassword: boolean('must_change_password').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at'),
   lastActiveAt: timestamp('last_active_at').defaultNow(),
