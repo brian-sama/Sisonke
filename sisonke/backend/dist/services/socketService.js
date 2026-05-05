@@ -45,8 +45,19 @@ class SocketService {
                 socket.join('staff');
             if (isAdmin)
                 socket.join('admins');
-            if (roles.includes('counselor'))
+            if (roles.includes('counselor')) {
                 socket.join('counselors');
+                this.io.to('staff').emit('counselor:online', {
+                    counselorId: user.id,
+                    status: 'online',
+                    timestamp: new Date().toISOString()
+                });
+                this.io.to('staff').emit('dashboard:update', {
+                    type: 'counselor',
+                    action: 'online',
+                    counselorId: user.id
+                });
+            }
             // Join a specific case room
             socket.on('join_case', (caseId) => {
                 socket.join(`case:${caseId}`);
@@ -69,6 +80,18 @@ class SocketService {
             });
             socket.on('disconnect', () => {
                 console.log(`User disconnected: ${user.id}`);
+                if (roles.includes('counselor')) {
+                    this.io.to('staff').emit('counselor:offline', {
+                        counselorId: user.id,
+                        status: 'offline',
+                        timestamp: new Date().toISOString()
+                    });
+                    this.io.to('staff').emit('dashboard:update', {
+                        type: 'counselor',
+                        action: 'offline',
+                        counselorId: user.id
+                    });
+                }
             });
         });
     }
@@ -102,6 +125,15 @@ class SocketService {
     static broadcastDashboardUpdate(data) {
         if (this.io) {
             this.io.to('staff').emit('dashboard:update', data);
+        }
+    }
+    static emitCaseEvent(caseId, userId, event, data) {
+        if (this.io) {
+            this.io.to(`case:${caseId}`).emit(event, data);
+            this.io.to('staff').emit(event, data);
+            if (userId)
+                this.io.to(`user:${userId}`).emit(event, data);
+            this.io.to('staff').emit('dashboard:update', { type: 'counselor_case', event, caseId, data });
         }
     }
     /**

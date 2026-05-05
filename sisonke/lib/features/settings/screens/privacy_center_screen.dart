@@ -18,9 +18,9 @@ class PrivacyCenterScreen extends StatelessWidget {
           children: [
             Text(
               'Your Privacy Matters',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppConstants.spacingMedium),
             Text(
@@ -28,40 +28,52 @@ class PrivacyCenterScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: AppConstants.spacingLarge),
-            
+
             _buildPrivacyCard(
               context,
               'Data Protection',
               Icons.security,
               'Your data is encrypted and stored securely.',
             ),
-            
+
             _buildPrivacyCard(
               context,
               'Anonymous Usage',
               Icons.person_off,
               'You can use the app anonymously without revealing your identity.',
             ),
-            
+
             _buildPrivacyCard(
               context,
               'Quick Exit',
               Icons.exit_to_app,
               'Quickly exit the app and show neutral content for privacy.',
             ),
-            
+
             _buildPrivacyCard(
               context,
               'Data Control',
               Icons.settings,
-              'Control what data is collected and how it\'s used.',
+              'Use Settings to change analytics, export requests, or ask for personal data deletion.',
             ),
-            
+
             _buildPrivacyCard(
               context,
               'Local Storage',
               Icons.storage,
               'Most of your data is stored locally on your device.',
+            ),
+            _buildPrivacyCard(
+              context,
+              'Permissions',
+              Icons.admin_panel_settings_rounded,
+              'Microphone is only for voice notes. Notifications are only for reminders and counselor updates.',
+            ),
+            _buildPrivacyCard(
+              context,
+              'Medical disclaimer',
+              Icons.health_and_safety_rounded,
+              'Sisonke supports wellness and routing to help. It does not replace emergency, medical, or legal services.',
             ),
           ],
         ),
@@ -81,11 +93,7 @@ class PrivacyCenterScreen extends StatelessWidget {
         padding: const EdgeInsets.all(AppConstants.spacingMedium),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            Icon(icon, size: 40, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: AppConstants.spacingMedium),
             Expanded(
               child: Column(
@@ -101,7 +109,9 @@ class PrivacyCenterScreen extends StatelessWidget {
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],

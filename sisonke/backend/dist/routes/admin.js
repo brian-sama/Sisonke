@@ -7,6 +7,7 @@ const express_1 = require("express");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const drizzle_orm_1 = require("drizzle-orm");
 const db_1 = require("../db");
+const authService_1 = require("../services/authService");
 const schema_1 = require("../db/schema");
 const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
@@ -15,7 +16,33 @@ const riskService_1 = require("../services/riskService");
 const zimbabweRagKnowledge_1 = require("../data/zimbabweRagKnowledge");
 const socketService_1 = require("../services/socketService");
 const router = (0, express_1.Router)();
-router.use(auth_1.authMiddleware, auth_1.adminOnly);
+router.use(auth_1.authMiddleware, auth_1.dashboardAccess);
+const roleList = (user) => (user?.roles?.length ? user.roles : ['guest']).map((role) => String(role).toLowerCase().replace(/_/g, '-'));
+const hasAny = (user, roles) => {
+    const current = roleList(user);
+    return roles.some((role) => current.includes(role));
+};
+const canSeePrivateCase = (user, item) => {
+    return hasAny(user, ['counselor']) && item.counselorId === user.id;
+};
+const sanitizeCaseForUser = (user, item) => {
+    if (canSeePrivateCase(user, item))
+        return item;
+    return {
+        id: item.id,
+        issueCategory: item.issueCategory,
+        status: item.status,
+        riskLevel: item.riskLevel,
+        source: item.source,
+        preferredContactMethod: item.preferredContactMethod,
+        callbackStatus: item.callbackStatus,
+        counselorId: item.counselorId,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        followUpAt: item.followUpAt,
+        resolvedAt: item.resolvedAt,
+    };
+};
 router.get('/me', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     res.json({ success: true, data: { user: req.user } });
 }));
@@ -243,7 +270,7 @@ router.get('/analytics', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     cases.forEach((c) => {
         if (c.createdAt) {
             const d = c.createdAt.toISOString().split('T')[0];
-            if (timeSeries[d] && (c.riskLevel === 'high' || c.status === 'emergency')) {
+            if (timeSeries[d] && (c.riskLevel === 'high' || c.status === 'escalated')) {
                 timeSeries[d].urgent++;
             }
         }
@@ -272,37 +299,205 @@ router.get('/analytics', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         },
     });
 }));
-router.get('/counselor-cases', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/counselor-cases', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const rows = await db_1.db
         .select()
         .from(schema_1.counselorCases)
         .orderBy((0, drizzle_orm_1.desc)(schema_1.counselorCases.createdAt))
         .limit(100);
-    res.json({ success: true, data: rows });
+    const visibleRows = hasAny(req.user, ['admin', 'system-admin', 'super-admin'])
+        ? rows.map((item) => sanitizeCaseForUser(req.user, item))
+        : rows
+            .filter((item) => item.counselorId === req.user.id)
+            .map((item) => sanitizeCaseForUser(req.user, item));
+    res.json({ success: true, data: visibleRows });
+}));
+router.get('/counselor-operations', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const [cases, counselors, auditRows] = await Promise.all([
+        db_1.db.select().from(schema_1.counselorCases).orderBy((0, drizzle_orm_1.desc)(schema_1.counselorCases.createdAt)).limit(100),
+        db_1.db.select().from(schema_1.users),
+        db_1.db
+            .select()
+            .from(schema_1.auditLogs)
+            .where((0, drizzle_orm_1.eq)(schema_1.auditLogs.entityType, 'counselor_case'))
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.auditLogs.createdAt))
+            .limit(50),
+    ]);
+    const visibleCases = hasAny(req.user, ['admin', 'system-admin', 'super-admin'])
+        ? cases.map((item) => sanitizeCaseForUser(req.user, item))
+        : cases
+            .filter((item) => item.counselorId === req.user.id)
+            .map((item) => sanitizeCaseForUser(req.user, item));
+    const activeStatuses = ['assigned', 'accepted', 'live', 'waiting_for_client', 'callback_requested', 'follow_up'];
+    const staffRoles = ['counselor', 'admin', 'super-admin', 'system-admin'];
+    // Filter users who have counselor or admin roles using new role system
+    const staffUsers = [];
+    for (const user of counselors) {
+        const userRoles = await authService_1.AuthService.getUserRoles(user.id);
+        const roleNames = userRoles.map(r => r.name.toLowerCase().replace(/_/g, '-'));
+        if (roleNames.some((role) => staffRoles.includes(role))) {
+            staffUsers.push(user);
+        }
+    }
+    const workloadFor = (id) => cases.filter((item) => item.counselorId === id && activeStatuses.includes(item.status)).length;
+    const operationsCounselors = staffUsers.map((counselor) => ({
+        id: counselor.id,
+        email: counselor.email,
+        status: counselor.counselorStatus || 'offline',
+        isOnCall: counselor.isOnCall,
+        specializations: counselor.counselorSpecializations || [],
+        workload: workloadFor(counselor.id),
+        lastActiveAt: counselor.lastActiveAt,
+    }));
+    const metrics = {
+        activeCases: visibleCases.filter((item) => activeStatuses.includes(item.status)).length,
+        highRiskAlerts: visibleCases.filter((item) => item.riskLevel === 'high' || item.status === 'escalated').length,
+        counselorsOnline: operationsCounselors.filter((item) => item.status === 'online').length,
+        pendingRequests: visibleCases.filter((item) => item.status === 'requested').length,
+    };
+    res.json({
+        success: true,
+        data: {
+            metrics,
+            cases: visibleCases,
+            counselors: operationsCounselors,
+            auditLogs: auditRows,
+            assignmentPolicy: {
+                low: 'queue_claiming',
+                medium: 'queue_claiming',
+                high: 'auto_assign_lowest_workload_available_or_on_call',
+            },
+        },
+    });
+}));
+router.post('/counselor-cases/:id/assign', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const counselorId = String(req.body.counselorId || '').trim();
+    if (!counselorId)
+        return res.status(400).json({ success: false, error: 'Counselor is required' });
+    const [existing] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).limit(1);
+    if (!existing)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    const canReassign = hasAny(req.user, ['admin', 'system-admin', 'super-admin'])
+        || (hasAny(req.user, ['counselor']) && existing.counselorId === req.user.id);
+    if (!canReassign) {
+        return res.status(403).json({ success: false, error: 'You cannot reassign this case' });
+    }
+    const [updated] = await db_1.db.update(schema_1.counselorCases).set({
+        counselorId,
+        status: 'assigned',
+        updatedAt: new Date(),
+    }).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).returning();
+    if (!updated)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: 'case_assigned',
+        entityType: 'counselor_case',
+        entityId: updated.id,
+        metadata: { counselorId, previousStatus: req.body.previousStatus },
+    });
+    socketService_1.SocketService.emitCaseEvent(req.params.id, updated.userId, 'case:assigned', { case: updated });
+    res.json({ success: true, data: updated });
+}));
+router.post('/counselors/:id/availability', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const status = String(req.body.status || 'offline');
+    if (!['online', 'busy', 'offline'].includes(status)) {
+        return res.status(400).json({ success: false, error: 'Invalid counselor status' });
+    }
+    const [updated] = await db_1.db.update(schema_1.users).set({
+        counselorStatus: status,
+        isOnCall: typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : undefined,
+        counselorSpecializations: Array.isArray(req.body.specializations) ? req.body.specializations : undefined,
+        lastActiveAt: new Date(),
+        updatedAt: new Date(),
+    }).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id)).returning();
+    if (!updated)
+        return res.status(404).json({ success: false, error: 'Counselor not found' });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: 'counselor_availability_changed',
+        entityType: 'user',
+        entityId: updated.id,
+        metadata: { status, isOnCall: updated.isOnCall, specializations: updated.counselorSpecializations },
+    });
+    socketService_1.SocketService.notifyStaff(status === 'online' ? 'counselor:online' : 'counselor:offline', {
+        counselorId: updated.id,
+        status,
+        isOnCall: updated.isOnCall,
+    });
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'counselor', action: 'availability_changed', counselorId: updated.id });
+    res.json({ success: true, data: updated });
 }));
 router.post('/counselor-cases/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const status = String(req.body.status || '');
-    const allowed = ['requested', 'assigned', 'live', 'follow-up', 'resolved', 'emergency'];
+    const allowed = [
+        'requested',
+        'assigned',
+        'accepted',
+        'live',
+        'waiting_for_client',
+        'callback_requested',
+        'follow_up',
+        'resolved',
+        'escalated',
+        'closed',
+    ];
     if (!allowed.includes(status))
         return res.status(400).json({ success: false, error: 'Invalid status' });
+    const [existing] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).limit(1);
+    if (!existing)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    const canManageCase = hasAny(req.user, ['system-admin', 'super-admin'])
+        || (hasAny(req.user, ['counselor']) && existing.counselorId === req.user.id);
+    if (!canManageCase) {
+        return res.status(403).json({ success: false, error: 'Only the assigned counselor can manage private case status' });
+    }
     const [updated] = await db_1.db.update(schema_1.counselorCases).set({
         status: status,
         followUpAt: req.body.followUpAt ? new Date(req.body.followUpAt) : undefined,
-        resolvedAt: status === 'resolved' ? new Date() : undefined,
+        resolvedAt: status === 'resolved' || status === 'closed' ? new Date() : undefined,
         updatedAt: new Date(),
     }).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).returning();
+    if (!updated)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: status === 'escalated' ? 'case_escalated' : status === 'resolved' || status === 'closed' ? 'case_closed' : 'case_status_changed',
+        entityType: 'counselor_case',
+        entityId: updated.id,
+        metadata: { status, followUpAt: req.body.followUpAt },
+    });
+    const event = status === 'escalated'
+        ? 'case:escalated'
+        : status === 'accepted'
+            ? 'case:accepted'
+            : 'case:status_changed';
+    socketService_1.SocketService.emitCaseEvent(req.params.id, updated?.userId, event, { case: updated });
     res.json({ success: true, data: updated });
 }));
 router.post('/counselor-cases/:id/notes', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const note = String(req.body.note || '').trim();
     if (!note)
         return res.status(400).json({ success: false, error: 'Note is required' });
+    const [existing] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).limit(1);
+    if (!existing)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    if (!hasAny(req.user, ['counselor']) || existing.counselorId !== req.user.id) {
+        return res.status(403).json({ success: false, error: 'Only the assigned counselor can add private notes' });
+    }
     await db_1.db.insert(schema_1.securityLogs).values({
         userId: req.user.id,
         event: 'counselor_note_added',
         ipAddress: req.ip,
         userAgent: req.get('user-agent'),
         metadata: { caseId: req.params.id },
+    });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: 'case_note_added',
+        entityType: 'counselor_case',
+        entityId: req.params.id,
+        metadata: { noteLength: note.length },
     });
     res.status(201).json({ success: true });
 }));
@@ -374,26 +569,29 @@ router.put('/cms-content/:id', (0, errorHandler_1.asyncHandler)(async (req, res)
         return res.status(404).json({ success: false, error: 'CMS content not found' });
     res.json({ success: true, data: updated });
 }));
-router.get('/users', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/users', auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.users).orderBy((0, drizzle_orm_1.desc)(schema_1.users.createdAt)).limit(100);
     res.json({
         success: true,
-        data: rows.map((user) => ({
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            roles: user.roles?.length ? user.roles : [user.role || 'guest'],
-            isGuest: user.isGuest,
-            isSuspended: user.isSuspended,
-            suspensionReason: user.suspensionReason,
-            mustChangePassword: user.mustChangePassword,
-            createdAt: user.createdAt,
-            lastActiveAt: user.lastActiveAt,
-        })),
+        data: rows.map(async (user) => {
+            const userRoles = await authService_1.AuthService.getUserRoles(user.id);
+            const roleNames = userRoles.map(r => r.name);
+            return {
+                id: user.id,
+                email: user.email,
+                roles: roleNames,
+                isGuest: user.isGuest,
+                isSuspended: user.isSuspended,
+                suspensionReason: user.suspensionReason,
+                mustChangePassword: user.mustChangePassword,
+                createdAt: user.createdAt,
+                lastActiveAt: user.lastActiveAt,
+            };
+        }),
     });
 }));
 const primaryRoleFor = (roles) => {
-    if (roles.includes('admin') || roles.includes('super-admin'))
+    if (roles.includes('admin') || roles.includes('super-admin') || roles.includes('system-admin'))
         return 'admin';
     if (roles.includes('counselor'))
         return 'counselor';
@@ -415,12 +613,16 @@ router.post('/users', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(as
     const [created] = await db_1.db.insert(schema_1.users).values({
         email,
         passwordHash,
-        role: primaryRole,
-        roles: input.roles,
         isGuest: input.isGuest,
         mustChangePassword: input.mustChangePassword,
         updatedAt: new Date(),
     }).returning();
+    // Assign roles to the new user
+    if (input.roles && input.roles.length > 0) {
+        for (const roleName of input.roles) {
+            await authService_1.AuthService.assignRole(created.id, roleName, req.user.id);
+        }
+    }
     await db_1.db.insert(schema_1.securityLogs).values({
         userId: req.user.id,
         event: 'admin_user_created',
@@ -433,8 +635,7 @@ router.post('/users', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(as
         data: {
             id: created.id,
             email: created.email,
-            role: created.role,
-            roles: created.roles,
+            roles: input.roles,
             isGuest: created.isGuest,
             mustChangePassword: created.mustChangePassword,
             createdAt: created.createdAt,
@@ -443,7 +644,7 @@ router.post('/users', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(as
 }));
 router.put('/users/:id', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.UpdateAdminUserSchema.parse(req.body);
-    if (req.params.id === req.user.id && input.roles && !input.roles.includes('super-admin')) {
+    if (req.params.id === req.user.id && input.roles && !input.roles.some((role) => ['super-admin', 'system-admin'].includes(role))) {
         return res.status(400).json({ success: false, error: 'You cannot remove your own top-level access.' });
     }
     const roleUpdate = input.roles ? {
@@ -475,8 +676,6 @@ router.put('/users/:id', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)
         data: {
             id: updated.id,
             email: updated.email,
-            role: updated.role,
-            roles: updated.roles,
             isGuest: updated.isGuest,
             isSuspended: updated.isSuspended,
             suspensionReason: updated.suspensionReason,
@@ -507,16 +706,24 @@ router.put('/users/:id/password', auth_1.superAdminOnly, (0, errorHandler_1.asyn
 }));
 router.put('/users/:id/roles', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.UpdateUserRolesSchema.parse(req.body);
-    if (req.params.id === req.user.id && !input.roles.includes('super-admin')) {
-        return res.status(400).json({ success: false, error: 'You cannot remove your own super-admin role.' });
+    if (req.params.id === req.user.id && !input.roles.some((role) => ['super-admin', 'system-admin'].includes(role))) {
+        return res.status(400).json({ success: false, error: 'You cannot remove your own top-level role.' });
     }
     const primaryRole = primaryRoleFor(input.roles);
+    // Update user properties (excluding roles which are now managed separately)
     const [updated] = await db_1.db.update(schema_1.users).set({
-        role: primaryRole,
-        roles: input.roles,
         isGuest: input.roles.includes('guest') && input.roles.length === 1,
         updatedAt: new Date(),
     }).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id)).returning();
+    // Update roles using new role system
+    if (input.roles && input.roles.length > 0) {
+        // First, remove all existing roles
+        await db_1.db.delete(userRoles).where((0, drizzle_orm_1.eq)(userRoles.userId, req.params.id));
+        // Then assign new roles
+        for (const roleName of input.roles) {
+            await authService_1.AuthService.assignRole(req.params.id, roleName, req.user.id);
+        }
+    }
     if (!updated) {
         return res.status(404).json({ success: false, error: 'User not found.' });
     }
@@ -541,7 +748,7 @@ router.put('/users/:id/roles', auth_1.superAdminOnly, (0, errorHandler_1.asyncHa
     });
 }));
 router.post('/users/:id/suspension', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    if (!(0, auth_1.hasRole)(req.user, 'super-admin')) {
+    if (!(0, auth_1.hasRole)(req.user, 'super-admin') && !(0, auth_1.hasRole)(req.user, 'system-admin')) {
         return res.status(403).json({ success: false, error: 'Super admin access required.' });
     }
     const suspended = Boolean(req.body.suspended);
@@ -560,11 +767,11 @@ router.post('/users/:id/suspension', (0, errorHandler_1.asyncHandler)(async (req
     });
     res.json({ success: true, data: updated });
 }));
-router.get('/security-logs', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/security-logs', auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.securityLogs).orderBy((0, drizzle_orm_1.desc)(schema_1.securityLogs.createdAt)).limit(100);
     res.json({ success: true, data: rows });
 }));
-router.get('/audit-logs', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/audit-logs', auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.auditLogs).orderBy((0, drizzle_orm_1.desc)(schema_1.auditLogs.createdAt)).limit(100);
     res.json({ success: true, data: rows });
 }));

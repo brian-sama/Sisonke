@@ -94,10 +94,7 @@ class QuickExitFloatingButton extends StatelessWidget {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
       right: 16,
-      child: QuickExitButton(
-        onExit: onExit,
-        size: 40,
-      ),
+      child: QuickExitButton(onExit: onExit, size: 40),
     );
   }
 }
@@ -129,11 +126,7 @@ class QuickExitAppBar extends StatelessWidget {
       leading: leading,
       actions: [
         if (onExit != null)
-          QuickExitButton(
-            onExit: onExit,
-            size: 36,
-            showTooltip: false,
-          ),
+          QuickExitButton(onExit: onExit, size: 36, showTooltip: false),
         if (actions != null) ...actions!,
         const SizedBox(width: 8),
       ],
@@ -159,7 +152,7 @@ class QuickExitDetector extends StatefulWidget {
   State<QuickExitDetector> createState() => _QuickExitDetectorState();
 }
 
-class _QuickExitDetectorState extends State<QuickExitDetector> 
+class _QuickExitDetectorState extends State<QuickExitDetector>
     with WidgetsBindingObserver {
   DateTime? _lastBackPressTime;
   int _volumeKeyPressCount = 0;
@@ -204,16 +197,16 @@ class _QuickExitDetectorState extends State<QuickExitDetector>
 
   Future<bool> _handleWillPop() async {
     final now = DateTime.now();
-    
+
     // Check if back button was pressed twice within 2 seconds
     if (_lastBackPressTime != null &&
         now.difference(_lastBackPressTime!).inSeconds < 2) {
       widget.onExit?.call();
       return false; // Don't actually pop
     }
-    
+
     _lastBackPressTime = now;
-    
+
     // Show snackbar on first back press
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -222,28 +215,28 @@ class _QuickExitDetectorState extends State<QuickExitDetector>
         behavior: SnackBarBehavior.floating,
       ),
     );
-    
+
     return false; // Don't pop yet
   }
 
   void _handleVolumeButtonPressed(VolumeButton button) {
     final now = DateTime.now();
-    
+
     // Reset counter if more than 2 seconds have passed
     if (_volumeKeyStartTime == null ||
         now.difference(_volumeKeyStartTime!).inSeconds > 2) {
       _volumeKeyPressCount = 0;
       _volumeKeyStartTime = now;
     }
-    
+
     _volumeKeyPressCount++;
-    
+
     // Trigger Quick Exit if volume keys pressed 3+ times
     if (_volumeKeyPressCount >= 3) {
       widget.onExit?.call();
       _volumeKeyPressCount = 0;
     }
-    
+
     // Show feedback after 2 presses
     if (_volumeKeyPressCount == 2) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -261,11 +254,7 @@ class QuickExitScreen extends StatelessWidget {
   final Map<String, dynamic> content;
   final VoidCallback? onReturn;
 
-  const QuickExitScreen({
-    super.key,
-    required this.content,
-    this.onReturn,
-  });
+  const QuickExitScreen({super.key, required this.content, this.onReturn});
 
   @override
   Widget build(BuildContext context) {
@@ -296,115 +285,15 @@ class QuickExitScreen extends StatelessWidget {
   }
 
   Widget _buildContent() {
-    final title = content['title'] as String;
-    
-    if (title == 'Weather Today') {
-      return _buildWeatherContent();
-    } else if (title == 'Latest News') {
-      return _buildNewsContent();
-    } else if (title == 'Calculator') {
+    final title = content['title'] as String? ?? '';
+
+    if (title == 'Calculator') {
       return _buildCalculatorContent();
     } else if (title == 'My Notes') {
       return _buildNotesContent();
     }
-    
-    return const Center(child: Text('Content not available'));
-  }
 
-  Widget _buildWeatherContent() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Text(
-                    content['location'],
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    content['temperature'],
-                    style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    content['condition'],
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    content['forecast'],
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: (content['hourly'] as List).length,
-              itemBuilder: (context, index) {
-                final hour = (content['hourly'] as List)[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(hour['time']),
-                    subtitle: Text(hour['condition']),
-                    trailing: Text(
-                      hour['temp'],
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNewsContent() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ListView.builder(
-        itemCount: (content['articles'] as List).length,
-        itemBuilder: (context, index) {
-          final article = (content['articles'] as List)[index];
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    article['title'],
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    article['summary'],
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    article['time'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    return const SizedBox.expand();
   }
 
   Widget _buildCalculatorContent() {
@@ -437,20 +326,17 @@ class QuickExitScreen extends StatelessWidget {
                 children: [
                   Text(
                     note['title'],
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    note['content'],
-                    style: const TextStyle(fontSize: 14),
-                  ),
+                  Text(note['content'], style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 8),
                   Text(
                     note['date'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -489,7 +375,4 @@ class _HardwareVolumeButtonsState extends State<HardwareVolumeButtons> {
   }
 }
 
-enum VolumeButton {
-  volumeUp,
-  volumeDown,
-}
+enum VolumeButton { volumeUp, volumeDown }

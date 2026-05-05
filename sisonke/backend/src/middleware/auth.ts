@@ -3,12 +3,12 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { AuthService } from '../services/authService';
 
 export interface AuthRequest extends Request {
   user?: {
     id: string;
     email?: string;
-    role: string;
     roles: string[];
     isGuest: boolean;
     mustChangePassword: boolean;
@@ -16,13 +16,38 @@ export interface AuthRequest extends Request {
   };
 }
 
+export const normalizeRole = (role: string | null | undefined) => {
+  return String(role || '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, '-');
+};
+
+export const DASHBOARD_ROLES = [
+  'admin',
+  'system-admin', 
+  'super-admin',
+  'counselor',
+  'moderator',
+  'content-admin',
+];
+
+export const SYSTEM_ADMIN_ROLES = ['admin', 'system-admin', 'super-admin'];
+
 export const hasRole = (user: AuthRequest['user'] | undefined, role: string) => {
   if (!user) return false;
-  return user.role === role || user.roles.includes(role);
+  const normalized = normalizeRole(role);
+  return user.roles.map(normalizeRole).includes(normalized);
 };
 
 export const hasAnyRole = (user: AuthRequest['user'] | undefined, roles: string[]) => {
+  if (!user) return false;
   return roles.some((role) => hasRole(user, role));
+};
+
+// Permission-based middleware helpers
+export const hasPermission = async (userId: string, permission: string): Promise<boolean> => {
+  return await AuthService.hasPermission(userId, permission as any);
 };
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -52,11 +77,13 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       return res.status(403).json({ error: 'Account suspended' });
     }
 
+    // Get user roles from new role system
+    const userRoles = await AuthService.getUserRoles(user[0].id);
+
     req.user = {
       id: user[0].id,
       email: user[0].email || undefined,
-      role: user[0].role || 'guest',
-      roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
+      roles: userRoles.map(r => r.name).map(normalizeRole),
       isGuest: user[0].isGuest ?? true,
       mustChangePassword: user[0].mustChangePassword ?? false,
       deviceId: user[0].deviceId || undefined,
@@ -90,11 +117,14 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
     
     if (user.length) {
       if (user[0].isSuspended) return next();
+      
+      // Get user roles from new role system
+      const userRoles = await AuthService.getUserRoles(user[0].id);
+      
       req.user = {
         id: user[0].id,
         email: user[0].email || undefined,
-        role: user[0].role || 'guest',
-        roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
+        roles: userRoles.map(r => r.name).map(normalizeRole),
         isGuest: user[0].isGuest ?? true,
         mustChangePassword: user[0].mustChangePassword ?? false,
         deviceId: user[0].deviceId || undefined,
@@ -109,15 +139,22 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
 };
 
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!hasAnyRole(req.user, ['admin', 'super-admin'])) {
+  if (!hasAnyRole(req.user, SYSTEM_ADMIN_ROLES)) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
 };
 
 export const superAdminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!hasRole(req.user, 'super-admin')) {
+  if (!hasAnyRole(req.user, ['super-admin', 'system-admin'])) {
     return res.status(403).json({ error: 'Super admin access required' });
+  }
+  next();
+};
+
+export const dashboardAccess = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!hasAnyRole(req.user, DASHBOARD_ROLES)) {
+    return res.status(403).json({ error: 'Dashboard access required' });
   }
   next();
 };

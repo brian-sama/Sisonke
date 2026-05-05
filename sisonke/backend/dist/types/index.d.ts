@@ -26,48 +26,48 @@ export declare const GuestSessionSchema: z.ZodObject<{
 }, {
     deviceId: string;
 }>;
-export declare const AdminRoleSchema: z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>;
+export declare const AdminRoleSchema: z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst", unknown>;
 export declare const CreateAdminUserSchema: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodString;
-    roles: z.ZodDefault<z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">>;
+    roles: z.ZodDefault<z.ZodArray<z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst", unknown>, "many">>;
     isGuest: z.ZodDefault<z.ZodBoolean>;
     mustChangePassword: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+    roles: ("counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst")[];
     email: string;
-    roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
     isGuest: boolean;
     mustChangePassword: boolean;
     password: string;
 }, {
     email: string;
     password: string;
-    roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
+    roles?: unknown[] | undefined;
     isGuest?: boolean | undefined;
     mustChangePassword?: boolean | undefined;
 }>;
 export declare const UpdateUserRolesSchema: z.ZodObject<{
-    roles: z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">;
+    roles: z.ZodArray<z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst", unknown>, "many">;
 }, "strip", z.ZodTypeAny, {
-    roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
+    roles: ("counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst")[];
 }, {
-    roles: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[];
+    roles: unknown[];
 }>;
 export declare const UpdateAdminUserSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
-    roles: z.ZodOptional<z.ZodArray<z.ZodEnum<["guest", "user", "counselor", "moderator", "admin", "super-admin", "content-manager", "safety-reviewer", "analyst"]>, "many">>;
+    roles: z.ZodOptional<z.ZodArray<z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst", unknown>, "many">>;
     isSuspended: z.ZodOptional<z.ZodBoolean>;
     suspensionReason: z.ZodOptional<z.ZodString>;
     mustChangePassword: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+    roles?: ("counselor" | "admin" | "super-admin" | "user" | "guest" | "moderator" | "content-admin" | "system-admin" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
     email?: string | undefined;
-    roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
     isSuspended?: boolean | undefined;
     suspensionReason?: string | undefined;
     mustChangePassword?: boolean | undefined;
 }, {
+    roles?: unknown[] | undefined;
     email?: string | undefined;
-    roles?: ("counselor" | "admin" | "super-admin" | "guest" | "user" | "moderator" | "content-manager" | "safety-reviewer" | "analyst")[] | undefined;
     isSuspended?: boolean | undefined;
     suspensionReason?: string | undefined;
     mustChangePassword?: boolean | undefined;
@@ -106,7 +106,7 @@ export declare const CreateResourceSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     description: string;
     title: string;
-    category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
+    category: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide";
     language: string;
     status: "draft" | "review" | "published" | "archived";
     isOfflineAvailable: boolean;
@@ -117,7 +117,7 @@ export declare const CreateResourceSchema: z.ZodObject<{
 }, {
     description: string;
     title: string;
-    category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
+    category: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide";
     content?: string | undefined;
     tags?: string[] | undefined;
     imageUrl?: string | undefined;
@@ -141,7 +141,7 @@ export declare const UpdateResourceSchema: z.ZodObject<{
     description?: string | undefined;
     title?: string | undefined;
     content?: string | undefined;
-    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
     tags?: string[] | undefined;
     imageUrl?: string | undefined;
     readingTimeMinutes?: number | undefined;
@@ -152,7 +152,7 @@ export declare const UpdateResourceSchema: z.ZodObject<{
     description?: string | undefined;
     title?: string | undefined;
     content?: string | undefined;
-    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
     tags?: string[] | undefined;
     imageUrl?: string | undefined;
     readingTimeMinutes?: number | undefined;
@@ -168,12 +168,12 @@ export declare const CreateQuestionSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     description: string;
     title: string;
-    category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
+    category: "srhr" | "mental-health" | "emergency" | "relationships" | "general";
     deviceId?: string | undefined;
 }, {
     description: string;
     title: string;
-    category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
+    category: "srhr" | "mental-health" | "emergency" | "relationships" | "general";
     deviceId?: string | undefined;
 }>;
 export declare const CreateAnswerSchema: z.ZodObject<{
@@ -346,14 +346,20 @@ export declare const CounselorRequestSchema: z.ZodObject<{
     issueCategory: z.ZodString;
     summary: z.ZodOptional<z.ZodString>;
     riskLevel: z.ZodDefault<z.ZodEnum<["low", "medium", "high"]>>;
+    preferredContactMethod: z.ZodDefault<z.ZodEnum<["live_chat", "leave_message", "voice_note", "callback"]>>;
+    callbackPhone: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     riskLevel: "low" | "medium" | "high";
     issueCategory: string;
+    preferredContactMethod: "live_chat" | "leave_message" | "voice_note" | "callback";
     summary?: string | undefined;
+    callbackPhone?: string | undefined;
 }, {
     issueCategory: string;
     riskLevel?: "low" | "medium" | "high" | undefined;
     summary?: string | undefined;
+    callbackPhone?: string | undefined;
+    preferredContactMethod?: "live_chat" | "leave_message" | "voice_note" | "callback" | undefined;
 }>;
 export declare const CommunityPostSchema: z.ZodObject<{
     ageGroup: z.ZodEnum<["13-15", "16-17", "18-24", "25+"]>;
@@ -435,11 +441,11 @@ export declare const ResourceQuerySchema: z.ZodObject<{
     limit: number;
     offset: number;
     search?: string | undefined;
-    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
     language?: string | undefined;
 }, {
     search?: string | undefined;
-    category?: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide" | undefined;
+    category?: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide" | undefined;
     language?: string | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
@@ -452,10 +458,10 @@ export declare const QuestionQuerySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     limit: number;
     offset: number;
-    category?: "emergency" | "srhr" | "mental-health" | "relationships" | "general" | undefined;
+    category?: "srhr" | "mental-health" | "emergency" | "relationships" | "general" | undefined;
     answered?: boolean | undefined;
 }, {
-    category?: "emergency" | "srhr" | "mental-health" | "relationships" | "general" | undefined;
+    category?: "srhr" | "mental-health" | "emergency" | "relationships" | "general" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
     answered?: boolean | undefined;

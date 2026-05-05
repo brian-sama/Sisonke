@@ -9,10 +9,15 @@ final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 class ChatService {
   io.Socket? _socket;
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
-  final _dashboardController = StreamController<Map<String, dynamic>>.broadcast();
+  final _dashboardController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _caseUpdateController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
-  Stream<Map<String, dynamic>> get dashboardUpdates => _dashboardController.stream;
+  Stream<Map<String, dynamic>> get dashboardUpdates =>
+      _dashboardController.stream;
+  Stream<Map<String, dynamic>> get caseUpdates => _caseUpdateController.stream;
 
   void connect(String token) {
     final baseUrl = AppConstants.apiBaseUrl.replaceAll('/api', '');
@@ -33,6 +38,24 @@ class ChatService {
       _messageController.add(Map<String, dynamic>.from(data));
     });
 
+    for (final event in [
+      'case:created',
+      'case:assigned',
+      'case:accepted',
+      'case:message',
+      'case:status_changed',
+      'case:escalated',
+      'callback:requested',
+      'voice_note:uploaded',
+    ]) {
+      _socket!.on(event, (data) {
+        _caseUpdateController.add({
+          'event': event,
+          ...Map<String, dynamic>.from(data as Map),
+        });
+      });
+    }
+
     _socket!.on('dashboard:update', (data) {
       _dashboardController.add(Map<String, dynamic>.from(data));
     });
@@ -50,10 +73,7 @@ class ChatService {
   }
 
   void sendMessage(String caseId, String content) {
-    _socket?.emit('send_message', {
-      'caseId': caseId,
-      'content': content,
-    });
+    _socket?.emit('send_message', {'caseId': caseId, 'content': content});
   }
 
   void disconnect() {

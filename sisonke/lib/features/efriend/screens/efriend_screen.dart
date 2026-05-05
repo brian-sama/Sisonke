@@ -12,11 +12,12 @@ class EFriendScreen extends StatefulWidget {
 
 class _EFriendScreenState extends State<EFriendScreen> {
   var _persona = 'female';
+  String? _emotion;
   final _api = ApiService();
   final _messages = <_ChatMessage>[
     const _ChatMessage(
       fromUser: false,
-      text: 'Choose a persona, then tell E-Friend what is on your mind.',
+      text: 'Choose a persona, then tell Sisonke Friend what is on your mind.',
       risk: 'LOW',
     ),
   ];
@@ -27,52 +28,109 @@ class _EFriendScreenState extends State<EFriendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SisonkeAppBar(title: 'E-Friend'),
+      appBar: const SisonkeAppBar(title: 'Talk to Sisonke Friend'),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'female',
-                        icon: Icon(Icons.face_3_rounded),
-                        label: Text('Sister'),
-                      ),
-                      ButtonSegment(
-                        value: 'male',
-                        icon: Icon(Icons.face_rounded),
-                        label: Text('Brother'),
-                      ),
-                    ],
-                    selected: {_persona},
-                    onSelectionChanged: (value) => setState(() => _persona = value.first),
-                  ),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'female',
+                      icon: Icon(Icons.face_3_rounded),
+                      label: Text('Sister'),
+                    ),
+                    ButtonSegment(
+                      value: 'male',
+                      icon: Icon(Icons.face_rounded),
+                      label: Text('Brother'),
+                    ),
+                  ],
+                  selected: {_persona},
+                  onSelectionChanged: (value) =>
+                      setState(() => _persona = value.first),
                 ),
+                const SizedBox(height: 14),
+                Text(
+                  'How are you arriving?',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      const [
+                        'Sad',
+                        'Anxious',
+                        'Angry',
+                        'Confused',
+                        'Lonely',
+                        'Okay',
+                        'Happy',
+                      ].map((emotion) {
+                        return _EmotionChip(
+                          emotion: emotion,
+                          selected: _emotion == emotion,
+                          onSelected: () => _selectEmotion(emotion),
+                        );
+                      }).toList(),
+                ),
+                if (_emotion != null) ...[
+                  const SizedBox(height: 10),
+                  _RiskCheckBanner(emotion: _emotion!),
+                ],
               ],
             ),
           ),
+          if (_messages.length > 1)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/breathing'),
+                      icon: const Icon(Icons.self_improvement_rounded),
+                      label: const Text('Breathe'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/private-journal'),
+                      icon: const Icon(Icons.edit_note_rounded),
+                      label: const Text('Journal'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               itemCount: _messages.length,
               separatorBuilder: (context, index) => const SizedBox(height: 10),
-              itemBuilder: (context, index) => _ChatBubble(message: _messages[index]),
+              itemBuilder: (context, index) =>
+                  _ChatBubble(message: _messages[index]),
             ),
           ),
-          if (_messages.any((m) => m.risk == 'HIGH'))
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SisonkeButton(
-                label: 'Talk to a real counselor',
-                icon: Icons.support_agent_rounded,
-                isFullWidth: true,
-                onPressed: () => context.push('/talk-to-counselor'),
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: SisonkeButton(
+              label: _messages.any((m) => m.risk == 'HIGH')
+                  ? 'Talk to a real counselor now'
+                  : 'Talk to a counselor',
+              icon: Icons.support_agent_rounded,
+              isFullWidth: true,
+              onPressed: () => context.push('/talk-to-counselor'),
             ),
+          ),
           SafeArea(
             top: false,
             child: Padding(
@@ -116,13 +174,19 @@ class _EFriendScreenState extends State<EFriendScreen> {
     if (text.isEmpty) return;
     setState(() {
       _sending = true;
-      _messages.add(_ChatMessage(fromUser: true, text: text, risk: 'CHECKING'));
+      _messages.add(
+        _ChatMessage(
+          fromUser: true,
+          text: _emotion == null ? text : 'I feel $_emotion. $text',
+          risk: 'CHECKING',
+        ),
+      );
       _controller.clear();
     });
 
     try {
       final response = await _api.sendChatbotMessage(
-        message: text,
+        message: _emotion == null ? text : 'I feel $_emotion. $text',
         persona: _persona,
         sessionId: _sessionId,
       );
@@ -149,24 +213,147 @@ class _EFriendScreenState extends State<EFriendScreen> {
       final risk = _riskFor(text);
       if (!mounted) return;
       setState(() {
-        _messages.add(_ChatMessage(
-          fromUser: false,
-          text: risk == 'HIGH'
-              ? 'This sounds serious. Please use the "Talk to Counselor" button now. I could not reach my full system, so I will not continue this alone.'
-              : 'I could not reach the server, but I can still suggest a simple next step: pause, breathe, and try again when connected.',
-          risk: risk,
-        ));
+        _messages.add(
+          _ChatMessage(
+            fromUser: false,
+            text: risk == 'HIGH'
+                ? 'This sounds serious. Please use the "Talk to Counselor" button now. I could not reach my full system, so I will not continue this alone.'
+                : 'I could not reach the server, but I can still suggest a simple next step: pause, breathe, and try again when connected.',
+            risk: risk,
+          ),
+        );
         _sending = false;
       });
     }
   }
 
+  void _selectEmotion(String emotion) {
+    setState(() {
+      if (_emotion == emotion) {
+        _emotion = null;
+        return;
+      }
+      _emotion = emotion;
+      _controller.text = _promptForEmotion(emotion);
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: _controller.text.length),
+      );
+    });
+  }
+
   String _riskFor(String value) {
     final text = value.toLowerCase();
-    if (['suicide', 'kill myself', 'hurt myself', 'abuse', 'violence', 'unsafe'].any(text.contains)) {
+    if ([
+      'suicide',
+      'kill myself',
+      'hurt myself',
+      'abuse',
+      'violence',
+      'unsafe',
+    ].any(text.contains)) {
       return 'HIGH';
     }
     return 'LOW';
+  }
+}
+
+class _EmotionChip extends StatelessWidget {
+  final String emotion;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _EmotionChip({
+    required this.emotion,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(emotion),
+      selected: selected,
+      avatar: Icon(_iconFor(emotion), size: 18),
+      onSelected: (_) => onSelected(),
+    );
+  }
+
+  IconData _iconFor(String value) {
+    switch (value) {
+      case 'Sad':
+        return Icons.sentiment_dissatisfied_rounded;
+      case 'Anxious':
+        return Icons.air_rounded;
+      case 'Angry':
+        return Icons.local_fire_department_rounded;
+      case 'Confused':
+        return Icons.help_outline_rounded;
+      case 'Lonely':
+        return Icons.person_outline_rounded;
+      case 'Happy':
+        return Icons.sentiment_very_satisfied_rounded;
+      default:
+        return Icons.sentiment_neutral_rounded;
+    }
+  }
+}
+
+String _promptForEmotion(String value) {
+  switch (value) {
+    case 'Anxious':
+      return 'My body feels tense because ';
+    case 'Angry':
+      return 'I need help cooling down because ';
+    case 'Lonely':
+      return 'I feel alone and I need ';
+    case 'Confused':
+      return 'I am not sure what to do about ';
+    case 'Sad':
+      return 'I have been feeling low because ';
+    case 'Happy':
+      return 'I want to remember this good thing: ';
+    default:
+      return '';
+  }
+}
+
+class _RiskCheckBanner extends StatelessWidget {
+  final String emotion;
+
+  const _RiskCheckBanner({required this.emotion});
+
+  @override
+  Widget build(BuildContext context) {
+    final highAttention =
+        emotion == 'Angry' || emotion == 'Sad' || emotion == 'Lonely';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: highAttention
+            ? const Color(0xFFFFEEF0)
+            : const Color(0xFFE7FAFA),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            highAttention
+                ? Icons.health_and_safety_rounded
+                : Icons.check_circle_rounded,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              highAttention
+                  ? 'E-Friend will check safety and may suggest counselor support.'
+                  : 'E-Friend will suggest a gentle next step.',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -175,7 +362,11 @@ class _ChatMessage {
   final String text;
   final String risk;
 
-  const _ChatMessage({required this.fromUser, required this.text, required this.risk});
+  const _ChatMessage({
+    required this.fromUser,
+    required this.text,
+    required this.risk,
+  });
 }
 
 class _ChatBubble extends StatelessWidget {
@@ -194,30 +385,42 @@ class _ChatBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isUser ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+          color: isUser
+              ? theme.colorScheme.primary
+              : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
             bottomLeft: Radius.circular(isUser ? 16 : 0),
             bottomRight: Radius.circular(isUser ? 0 : 16),
           ),
-          border: message.risk == 'HIGH' ? Border.all(color: Colors.red, width: 2) : null,
+          border: message.risk == 'HIGH'
+              ? Border.all(color: Colors.red, width: 2)
+              : null,
         ),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               message.text,
               style: TextStyle(
-                color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
+                color: isUser
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurfaceVariant,
               ),
             ),
             if (message.risk != 'LOW' && message.risk != 'CHECKING') ...[
               const SizedBox(height: 4),
               Text(
                 'Safety Status: ${message.risk}',
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
               ),
             ],
           ],

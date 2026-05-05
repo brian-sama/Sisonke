@@ -15,17 +15,24 @@ export const GuestSessionSchema = z.object({
   deviceId: z.string().min(10),
 });
 
-export const AdminRoleSchema = z.enum([
+const AdminRoleValueSchema = z.enum([
   'guest',
   'user',
   'counselor',
   'moderator',
+  'content-admin',
   'admin',
   'super-admin',
+  'system-admin',
   'content-manager',
   'safety-reviewer',
   'analyst',
 ]);
+
+export const AdminRoleSchema = z.preprocess(
+  (value) => typeof value === 'string' ? value.trim().toLowerCase().replace(/_/g, '-') : value,
+  AdminRoleValueSchema,
+);
 
 export const CreateAdminUserSchema = z.object({
   email: z.string().email(),
@@ -158,6 +165,8 @@ export const CounselorRequestSchema = z.object({
   issueCategory: z.string().min(1).max(120),
   summary: z.string().max(2000).optional(),
   riskLevel: z.enum(['low', 'medium', 'high']).default('medium'),
+  preferredContactMethod: z.enum(['live_chat', 'leave_message', 'voice_note', 'callback']).default('live_chat'),
+  callbackPhone: z.string().max(80).optional(),
 });
 
 export const CommunityPostSchema = z.object({

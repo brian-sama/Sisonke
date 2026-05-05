@@ -12,6 +12,7 @@ const drizzle_orm_1 = require("drizzle-orm");
 const types_1 = require("../types");
 const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
+const authService_1 = require("../services/authService");
 const router = (0, express_1.Router)();
 // Generate JWT token
 const generateToken = (userId) => {
@@ -46,11 +47,13 @@ router.post('/register', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         .values({
         email: validatedData.email,
         passwordHash,
-        role: 'user',
-        roles: ['user'],
         isGuest: false,
     })
         .returning();
+    // Assign USER role
+    await authService_1.AuthService.assignRole(newUser[0].id, 'USER');
+    // Get user roles for response
+    const userRoles = await authService_1.AuthService.getUserRoles(newUser[0].id);
     const token = generateToken(newUser[0].id);
     res.status(201).json({
         success: true,
@@ -58,8 +61,7 @@ router.post('/register', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             user: {
                 id: newUser[0].id,
                 email: newUser[0].email,
-                role: newUser[0].role,
-                roles: newUser[0].roles,
+                roles: userRoles.map(r => r.name),
                 isGuest: newUser[0].isGuest,
                 mustChangePassword: newUser[0].mustChangePassword,
             },
@@ -95,6 +97,8 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         .update(schema_1.users)
         .set({ lastActiveAt: new Date() })
         .where((0, drizzle_orm_1.eq)(schema_1.users.id, user[0].id));
+    // Get user roles for response
+    const userRoles = await authService_1.AuthService.getUserRoles(user[0].id);
     const token = generateToken(user[0].id);
     res.json({
         success: true,
@@ -102,8 +106,7 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             user: {
                 id: user[0].id,
                 email: user[0].email,
-                role: user[0].role,
-                roles: user[0].roles?.length ? user[0].roles : [user[0].role || 'guest'],
+                roles: userRoles.map(r => r.name),
                 isGuest: user[0].isGuest,
                 mustChangePassword: user[0].mustChangePassword,
             },
@@ -149,14 +152,15 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             .update(schema_1.users)
             .set({ lastActiveAt: new Date() })
             .where((0, drizzle_orm_1.eq)(schema_1.users.id, existingGuest[0].id));
+        // Get user roles for response
+        const userRoles = await authService_1.AuthService.getUserRoles(existingGuest[0].id);
         const token = generateToken(existingGuest[0].id);
         return res.json({
             success: true,
             data: {
                 user: {
                     id: existingGuest[0].id,
-                    role: existingGuest[0].role,
-                    roles: existingGuest[0].roles?.length ? existingGuest[0].roles : [existingGuest[0].role || 'guest'],
+                    roles: userRoles.map(r => r.name),
                     isGuest: existingGuest[0].isGuest,
                     mustChangePassword: existingGuest[0].mustChangePassword,
                 },
@@ -169,19 +173,25 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         .insert(schema_1.users)
         .values({
         deviceId: validatedData.deviceId,
-        role: 'guest',
-        roles: ['guest'],
         isGuest: true,
     })
         .returning();
+    // Assign GUEST role (we'll need to add this to the role system)
+    try {
+        await authService_1.AuthService.assignRole(newGuest[0].id, 'USER'); // Use USER role for guests for now
+    }
+    catch (error) {
+        // If USER role doesn't exist, continue without roles for guest
+    }
+    // Get user roles for response
+    const userRoles = await authService_1.AuthService.getUserRoles(newGuest[0].id);
     const token = generateToken(newGuest[0].id);
     res.status(201).json({
         success: true,
         data: {
             user: {
                 id: newGuest[0].id,
-                role: newGuest[0].role,
-                roles: newGuest[0].roles,
+                roles: userRoles.map(r => r.name),
                 isGuest: newGuest[0].isGuest,
                 mustChangePassword: newGuest[0].mustChangePassword,
             },

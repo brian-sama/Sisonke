@@ -1,8 +1,8 @@
-export declare const userRoleEnum: import("drizzle-orm/pg-core").PgEnum<["guest", "user", "counselor", "moderator", "admin"]>;
 export declare const ageGroupEnum: import("drizzle-orm/pg-core").PgEnum<["13-15", "16-17", "18-24", "25+"]>;
 export declare const chatbotPersonaEnum: import("drizzle-orm/pg-core").PgEnum<["male", "female"]>;
 export declare const riskLevelEnum: import("drizzle-orm/pg-core").PgEnum<["low", "medium", "high"]>;
-export declare const counselorCaseStatusEnum: import("drizzle-orm/pg-core").PgEnum<["requested", "assigned", "live", "follow-up", "resolved", "emergency"]>;
+export declare const roleNameEnum: import("drizzle-orm/pg-core").PgEnum<["USER", "COUNSELOR", "MODERATOR", "CONTENT_ADMIN", "ADMIN", "SYSTEM_ADMIN", "SUPER_ADMIN"]>;
+export declare const counselorCaseStatusEnum: import("drizzle-orm/pg-core").PgEnum<["requested", "assigned", "accepted", "live", "waiting_for_client", "callback_requested", "follow_up", "resolved", "escalated", "closed"]>;
 export declare const communityPostStatusEnum: import("drizzle-orm/pg-core").PgEnum<["pending", "approved", "removed"]>;
 export declare const cmsContentTypeEnum: import("drizzle-orm/pg-core").PgEnum<["article", "srhr", "event", "helpline", "faq", "video", "daily-prompt", "announcement"]>;
 export declare const resourceCategoryEnum: import("drizzle-orm/pg-core").PgEnum<["mental-health", "srhr", "emergency", "substance-use", "wellness", "guide"]>;
@@ -10,6 +10,152 @@ export declare const questionCategoryEnum: import("drizzle-orm/pg-core").PgEnum<
 export declare const reportStatusEnum: import("drizzle-orm/pg-core").PgEnum<["pending", "reviewed", "resolved", "dismissed"]>;
 export declare const contentStatusEnum: import("drizzle-orm/pg-core").PgEnum<["draft", "review", "published", "archived"]>;
 export declare const analyticsEventEnum: import("drizzle-orm/pg-core").PgEnum<["app_opened", "resource_viewed", "resource_saved", "emergency_opened", "category_opened", "chatbot_session_started", "counselor_escalated", "community_post_submitted", "mood_logged", "sync_completed", "sync_failed"]>;
+export declare const roles: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "roles";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "roles";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        name: import("drizzle-orm/pg-core").PgColumn<{
+            name: "name";
+            tableName: "roles";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "USER" | "COUNSELOR" | "MODERATOR" | "CONTENT_ADMIN" | "ADMIN" | "SYSTEM_ADMIN" | "SUPER_ADMIN";
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: ["USER", "COUNSELOR", "MODERATOR", "CONTENT_ADMIN", "ADMIN", "SYSTEM_ADMIN", "SUPER_ADMIN"];
+            baseColumn: never;
+        }, {}, {}>;
+        description: import("drizzle-orm/pg-core").PgColumn<{
+            name: "description";
+            tableName: "roles";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        permissions: import("drizzle-orm/pg-core").PgColumn<{
+            name: "permissions";
+            tableName: "roles";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: unknown;
+            driverParam: unknown;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "roles";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "roles";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const userRoles: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "user_roles";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "user_roles";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "user_roles";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        roleId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "role_id";
+            tableName: "user_roles";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        assignedBy: import("drizzle-orm/pg-core").PgColumn<{
+            name: "assigned_by";
+            tableName: "user_roles";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        assignedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "assigned_at";
+            tableName: "user_roles";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "users";
     schema: undefined;
@@ -49,41 +195,6 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             hasDefault: false;
             enumValues: [string, ...string[]];
             baseColumn: never;
-        }, {}, {}>;
-        role: import("drizzle-orm/pg-core").PgColumn<{
-            name: "role";
-            tableName: "users";
-            dataType: "string";
-            columnType: "PgEnumColumn";
-            data: "counselor" | "admin" | "guest" | "user" | "moderator";
-            driverParam: string;
-            notNull: false;
-            hasDefault: true;
-            enumValues: ["guest", "user", "counselor", "moderator", "admin"];
-            baseColumn: never;
-        }, {}, {}>;
-        roles: import("drizzle-orm/pg-core").PgColumn<{
-            name: "roles";
-            tableName: "users";
-            dataType: "array";
-            columnType: "PgArray";
-            data: string[];
-            driverParam: string | string[];
-            notNull: false;
-            hasDefault: true;
-            enumValues: [string, ...string[]];
-            baseColumn: import("drizzle-orm").Column<{
-                name: "roles";
-                tableName: "users";
-                dataType: "string";
-                columnType: "PgVarchar";
-                data: string;
-                driverParam: string;
-                notNull: false;
-                hasDefault: false;
-                enumValues: [string, ...string[]];
-                baseColumn: never;
-            }, object, object>;
         }, {}, {}>;
         deviceId: import("drizzle-orm/pg-core").PgColumn<{
             name: "device_id";
@@ -147,6 +258,53 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
         }, {}, {}>;
         mustChangePassword: import("drizzle-orm/pg-core").PgColumn<{
             name: "must_change_password";
+            tableName: "users";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        counselorStatus: import("drizzle-orm/pg-core").PgColumn<{
+            name: "counselor_status";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        counselorSpecializations: import("drizzle-orm/pg-core").PgColumn<{
+            name: "counselor_specializations";
+            tableName: "users";
+            dataType: "array";
+            columnType: "PgArray";
+            data: string[];
+            driverParam: string | string[];
+            notNull: false;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: import("drizzle-orm").Column<{
+                name: "counselor_specializations";
+                tableName: "users";
+                dataType: "string";
+                columnType: "PgVarchar";
+                data: string;
+                driverParam: string;
+                notNull: false;
+                hasDefault: false;
+                enumValues: [string, ...string[]];
+                baseColumn: never;
+            }, object, object>;
+        }, {}, {}>;
+        isOnCall: import("drizzle-orm/pg-core").PgColumn<{
+            name: "is_on_call";
             tableName: "users";
             dataType: "boolean";
             columnType: "PgBoolean";
@@ -555,7 +713,7 @@ export declare const resources: import("drizzle-orm/pg-core").PgTableWithColumns
             tableName: "resources";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
+            data: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide";
             driverParam: string;
             notNull: true;
             hasDefault: false;
@@ -789,7 +947,7 @@ export declare const questions: import("drizzle-orm/pg-core").PgTableWithColumns
             tableName: "questions";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
+            data: "srhr" | "mental-health" | "emergency" | "relationships" | "general";
             driverParam: string;
             notNull: true;
             hasDefault: false;
@@ -2021,11 +2179,11 @@ export declare const counselorCases: import("drizzle-orm/pg-core").PgTableWithCo
             tableName: "counselor_cases";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "requested" | "assigned" | "live" | "follow-up" | "resolved" | "emergency";
+            data: "requested" | "assigned" | "accepted" | "live" | "waiting_for_client" | "callback_requested" | "follow_up" | "resolved" | "escalated" | "closed";
             driverParam: string;
             notNull: true;
             hasDefault: true;
-            enumValues: ["requested", "assigned", "live", "follow-up", "resolved", "emergency"];
+            enumValues: ["requested", "assigned", "accepted", "live", "waiting_for_client", "callback_requested", "follow_up", "resolved", "escalated", "closed"];
             baseColumn: never;
         }, {}, {}>;
         riskLevel: import("drizzle-orm/pg-core").PgColumn<{
@@ -2049,6 +2207,42 @@ export declare const counselorCases: import("drizzle-orm/pg-core").PgTableWithCo
             driverParam: string;
             notNull: false;
             hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        callbackPhone: import("drizzle-orm/pg-core").PgColumn<{
+            name: "callback_phone";
+            tableName: "counselor_cases";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        preferredContactMethod: import("drizzle-orm/pg-core").PgColumn<{
+            name: "preferred_contact_method";
+            tableName: "counselor_cases";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        callbackStatus: import("drizzle-orm/pg-core").PgColumn<{
+            name: "callback_status";
+            tableName: "counselor_cases";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
             enumValues: [string, ...string[]];
             baseColumn: never;
         }, {}, {}>;
@@ -2163,6 +2357,30 @@ export declare const counselingMessages: import("drizzle-orm/pg-core").PgTableWi
             data: string;
             driverParam: string;
             notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        messageType: import("drizzle-orm/pg-core").PgColumn<{
+            name: "message_type";
+            tableName: "counseling_messages";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        mediaUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "media_url";
+            tableName: "counseling_messages";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
             hasDefault: false;
             enumValues: [string, ...string[]];
             baseColumn: never;
@@ -2735,6 +2953,10 @@ export declare const securityLogs: import("drizzle-orm/pg-core").PgTableWithColu
 }>;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Role = typeof roles.$inferSelect;
+export type NewRole = typeof roles.$inferInsert;
+export type UserRole = typeof userRoles.$inferSelect;
+export type NewUserRole = typeof userRoles.$inferInsert;
 export type Resource = typeof resources.$inferSelect;
 export type NewResource = typeof resources.$inferInsert;
 export type Question = typeof questions.$inferSelect;

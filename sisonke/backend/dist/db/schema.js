@@ -1,13 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.auditLogs = exports.users = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.ageGroupEnum = exports.userRoleEnum = void 0;
+exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.auditLogs = exports.users = exports.userRoles = exports.roles = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.roleNameEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.ageGroupEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Enums
-exports.userRoleEnum = (0, pg_core_1.pgEnum)('user_role', ['guest', 'user', 'counselor', 'moderator', 'admin']);
 exports.ageGroupEnum = (0, pg_core_1.pgEnum)('age_group', ['13-15', '16-17', '18-24', '25+']);
 exports.chatbotPersonaEnum = (0, pg_core_1.pgEnum)('chatbot_persona', ['male', 'female']);
 exports.riskLevelEnum = (0, pg_core_1.pgEnum)('risk_level', ['low', 'medium', 'high']);
-exports.counselorCaseStatusEnum = (0, pg_core_1.pgEnum)('counselor_case_status', ['requested', 'assigned', 'live', 'follow-up', 'resolved', 'emergency']);
+// Role enum for the new roles table
+exports.roleNameEnum = (0, pg_core_1.pgEnum)('role_name', ['USER', 'COUNSELOR', 'MODERATOR', 'CONTENT_ADMIN', 'ADMIN', 'SYSTEM_ADMIN', 'SUPER_ADMIN']);
+exports.counselorCaseStatusEnum = (0, pg_core_1.pgEnum)('counselor_case_status', [
+    'requested',
+    'assigned',
+    'accepted',
+    'live',
+    'waiting_for_client',
+    'callback_requested',
+    'follow_up',
+    'resolved',
+    'escalated',
+    'closed',
+]);
 exports.communityPostStatusEnum = (0, pg_core_1.pgEnum)('community_post_status', ['pending', 'approved', 'removed']);
 exports.cmsContentTypeEnum = (0, pg_core_1.pgEnum)('cms_content_type', ['article', 'srhr', 'event', 'helpline', 'faq', 'video', 'daily-prompt', 'announcement']);
 exports.resourceCategoryEnum = (0, pg_core_1.pgEnum)('resource_category', [
@@ -40,19 +52,37 @@ exports.analyticsEventEnum = (0, pg_core_1.pgEnum)('analytics_event', [
     'sync_completed',
     'sync_failed'
 ]);
+// Roles table
+exports.roles = (0, pg_core_1.pgTable)('roles', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    name: (0, exports.roleNameEnum)('name').notNull().unique(),
+    description: (0, pg_core_1.text)('description'),
+    permissions: (0, pg_core_1.jsonb)('permissions').notNull().default({}),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at'),
+});
+// User roles junction table for multi-role support
+exports.userRoles = (0, pg_core_1.pgTable)('user_roles', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    roleId: (0, pg_core_1.uuid)('role_id').references(() => exports.roles.id, { onDelete: 'cascade' }).notNull(),
+    assignedBy: (0, pg_core_1.uuid)('assigned_by').references(() => exports.users.id),
+    assignedAt: (0, pg_core_1.timestamp)('assigned_at').defaultNow(),
+});
 // Users (optional accounts)
 exports.users = (0, pg_core_1.pgTable)('users', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     email: (0, pg_core_1.varchar)('email', { length: 255 }).unique(),
     passwordHash: (0, pg_core_1.varchar)('password_hash', { length: 255 }),
-    role: (0, exports.userRoleEnum)('role').default('guest'),
-    roles: (0, pg_core_1.varchar)('roles', { length: 40 }).array().default(['guest']),
     deviceId: (0, pg_core_1.varchar)('device_id', { length: 255 }).unique(),
     isGuest: (0, pg_core_1.boolean)('is_guest').default(true),
     isSuspended: (0, pg_core_1.boolean)('is_suspended').default(false),
     suspensionReason: (0, pg_core_1.text)('suspension_reason'),
     suspendedAt: (0, pg_core_1.timestamp)('suspended_at'),
     mustChangePassword: (0, pg_core_1.boolean)('must_change_password').default(false),
+    counselorStatus: (0, pg_core_1.varchar)('counselor_status', { length: 40 }).default('offline'),
+    counselorSpecializations: (0, pg_core_1.varchar)('counselor_specializations', { length: 80 }).array().default([]),
+    isOnCall: (0, pg_core_1.boolean)('is_on_call').default(false),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at'),
     deletedAt: (0, pg_core_1.timestamp)('deleted_at'),
@@ -237,6 +267,9 @@ exports.counselorCases = (0, pg_core_1.pgTable)('counselor_cases', {
     status: (0, exports.counselorCaseStatusEnum)('status').default('requested').notNull(),
     riskLevel: (0, exports.riskLevelEnum)('risk_level').default('medium').notNull(),
     source: (0, pg_core_1.varchar)('source', { length: 40 }).default('mobile'),
+    callbackPhone: (0, pg_core_1.varchar)('callback_phone', { length: 80 }),
+    preferredContactMethod: (0, pg_core_1.varchar)('preferred_contact_method', { length: 40 }).default('live_chat'),
+    callbackStatus: (0, pg_core_1.varchar)('callback_status', { length: 40 }),
     summary: (0, pg_core_1.text)('summary'),
     followUpAt: (0, pg_core_1.timestamp)('follow_up_at'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
@@ -248,6 +281,8 @@ exports.counselingMessages = (0, pg_core_1.pgTable)('counseling_messages', {
     caseId: (0, pg_core_1.uuid)('case_id').references(() => exports.counselorCases.id, { onDelete: 'cascade' }).notNull(),
     senderUserId: (0, pg_core_1.uuid)('sender_user_id').references(() => exports.users.id),
     senderRole: (0, pg_core_1.varchar)('sender_role', { length: 30 }).notNull(),
+    messageType: (0, pg_core_1.varchar)('message_type', { length: 30 }).default('text').notNull(),
+    mediaUrl: (0, pg_core_1.text)('media_url'),
     content: (0, pg_core_1.text)('content').notNull(),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
 });

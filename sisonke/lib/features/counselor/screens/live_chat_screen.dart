@@ -31,13 +31,13 @@ class _LiveChatScreenState extends ConsumerState<LiveChatScreen> {
     final api = ApiService();
     final token = await api.getCurrentToken();
     final user = await api.getCurrentUser();
-    
+
     if (token != null && mounted) {
       _userId = user?['id'];
       final chatService = ref.read(chatServiceProvider);
       chatService.connect(token);
       chatService.joinCase(widget.caseId);
-      
+
       setState(() => _isConnected = true);
 
       // Listen for new messages
@@ -64,12 +64,9 @@ class _LiveChatScreenState extends ConsumerState<LiveChatScreen> {
     });
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
-    final chatService = ref.read(chatServiceProvider);
-    chatService.sendMessage(widget.caseId, text);
 
     setState(() {
       _messages.add({
@@ -80,6 +77,14 @@ class _LiveChatScreenState extends ConsumerState<LiveChatScreen> {
       });
       _messageController.clear();
     });
+    try {
+      await ApiService().sendCaseMessage(caseId: widget.caseId, content: text);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Message could not be saved.')),
+      );
+    }
     _scrollToBottom();
   }
 
@@ -104,7 +109,11 @@ class _LiveChatScreenState extends ConsumerState<LiveChatScreen> {
           else
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+              child: SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
         ],
       ),
@@ -129,10 +138,7 @@ class _LiveChatScreenState extends ConsumerState<LiveChatScreen> {
                     },
                   ),
           ),
-          _InputArea(
-            controller: _messageController,
-            onSend: _send,
-          ),
+          _InputArea(controller: _messageController, onSend: () => _send()),
         ],
       ),
     );
@@ -171,9 +177,16 @@ class _EmptyChat extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.grey.shade300),
+          Icon(
+            Icons.chat_bubble_outline_rounded,
+            size: 48,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
-          const Text('Waiting for counselor to join...', style: TextStyle(color: Colors.grey)),
+          const Text(
+            'Waiting for counselor to join...',
+            style: TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -185,7 +198,11 @@ class _ChatBubble extends StatelessWidget {
   final bool isMe;
   final String role;
 
-  const _ChatBubble({required this.content, required this.isMe, required this.role});
+  const _ChatBubble({
+    required this.content,
+    required this.isMe,
+    required this.role,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -195,12 +212,18 @@ class _ChatBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         decoration: BoxDecoration(
           color: isMe ? theme.colorScheme.primary : Colors.white,
           borderRadius: BorderRadius.circular(18).copyWith(
-            bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(18),
-            bottomLeft: isMe ? const Radius.circular(18) : const Radius.circular(0),
+            bottomRight: isMe
+                ? const Radius.circular(0)
+                : const Radius.circular(18),
+            bottomLeft: isMe
+                ? const Radius.circular(18)
+                : const Radius.circular(0),
           ),
           boxShadow: [
             BoxShadow(
@@ -211,7 +234,9 @@ class _ChatBubble extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             if (!isMe)
               Padding(
@@ -267,7 +292,10 @@ class _InputArea extends StatelessWidget {
                   ),
                   filled: true,
                   fillColor: Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                 ),
                 maxLines: null,
                 textCapitalization: TextCapitalization.sentences,

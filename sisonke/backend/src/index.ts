@@ -10,6 +10,7 @@ import { SocketService } from './services/socketService';
 
 // Import routes
 import authRoutes from './routes/auth';
+import rolesRoutes from './routes/roles';
 import resourceRoutes from './routes/resources';
 import questionRoutes from './routes/questions';
 import emergencyRoutes from './routes/emergency';
@@ -21,6 +22,7 @@ import profileRoutes from './routes/profiles';
 import chatbotRoutes from './routes/chatbot';
 import counselorRoutes from './routes/counselor';
 import communityRoutes from './routes/community';
+import notificationRoutes from './routes/notifications';
 
 // Load environment variables
 dotenv.config();
@@ -67,6 +69,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/roles', rolesRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/emergency', emergencyRoutes);
@@ -76,6 +79,7 @@ app.use('/api/profiles', profileRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/counselor', counselorRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Root endpoint

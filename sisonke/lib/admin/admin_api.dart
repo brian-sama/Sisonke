@@ -1,28 +1,35 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminApi {
   static const _tokenKey = 'admin_token';
+  static const _userKey = 'admin_user';
   final Dio _dio;
   final SharedPreferences _prefs;
 
   AdminApi(this._prefs)
-      : _dio = Dio(BaseOptions(
+    : _dio = Dio(
+        BaseOptions(
           baseUrl: _adminApiBaseUrl,
           connectTimeout: const Duration(seconds: 20),
           receiveTimeout: const Duration(seconds: 20),
           headers: const {'Content-Type': 'application/json'},
-        )) {
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        final token = _prefs.getString(_tokenKey);
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        handler.next(options);
-      },
-    ));
+        ),
+      ) {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = _prefs.getString(_tokenKey);
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+      ),
+    );
   }
 
   static String get _adminApiBaseUrl {
@@ -31,21 +38,69 @@ class AdminApi {
 
   bool get isAuthenticated => (_prefs.getString(_tokenKey) ?? '').isNotEmpty;
 
+  Map<String, dynamic>? get currentUser {
+    final raw = _prefs.getString(_userKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return Map<String, dynamic>.from(_decode(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<String> get currentRoles {
+    final user = currentUser;
+    final roles = user?['roles'];
+    if (roles is List)
+      return roles.map((item) => _normalizeRole('$item')).toList();
+    return [_normalizeRole('${user?['role'] ?? ''}')];
+  }
+
   Future<void> login(String email, String password) async {
-    final response = await _dio.post('/auth/login', data: {
-      'email': email.trim().toLowerCase(),
-      'password': password,
-    });
+    final response = await _dio.post(
+      '/auth/login',
+      data: {'email': email.trim().toLowerCase(), 'password': password},
+    );
     final data = response.data['data'] as Map<String, dynamic>;
     final user = data['user'] as Map<String, dynamic>;
-    if (user['role'] != 'admin') {
-      throw Exception('This account does not have admin access.');
+    final roles = _rolesFor(user);
+    const allowedRoles = [
+      'admin',
+      'system-admin',
+      'super-admin',
+      'counselor',
+      'moderator',
+      'content-admin',
+      'content-manager',
+      'safety-reviewer',
+      'analyst',
+    ];
+    if (!roles.any(allowedRoles.contains)) {
+      throw Exception('You do not have dashboard access.');
     }
     await _prefs.setString(_tokenKey, data['token'] as String);
+    await _prefs.setString(_userKey, _encode(user));
   }
 
   Future<void> logout() async {
     await _prefs.remove(_tokenKey);
+    await _prefs.remove(_userKey);
+  }
+
+  static List<String> _rolesFor(Map<String, dynamic> user) {
+    final roles = user['roles'];
+    if (roles is List)
+      return roles.map((item) => _normalizeRole('$item')).toList();
+    return [_normalizeRole('${user['role'] ?? ''}')];
+  }
+
+  static String _normalizeRole(String value) =>
+      value.trim().toLowerCase().replaceAll('_', '-');
+
+  static String _encode(Map<String, dynamic> value) => jsonEncode(value);
+
+  static Map<String, dynamic> _decode(String value) {
+    return Map<String, dynamic>.from(jsonDecode(value) as Map);
   }
 
   Future<Map<String, dynamic>> overview() async {
@@ -54,7 +109,10 @@ class AdminApi {
   }
 
   Future<Map<String, dynamic>> analytics({int days = 30}) async {
-    final response = await _dio.get('/admin/analytics', queryParameters: {'days': days});
+    final response = await _dio.get(
+      '/admin/analytics',
+      queryParameters: {'days': days},
+    );
     return Map<String, dynamic>.from(response.data['data'] as Map);
   }
 
@@ -88,7 +146,10 @@ class AdminApi {
         .toList();
   }
 
-  Future<void> saveEmergencyContact(Map<String, dynamic> payload, {String? id}) async {
+  Future<void> saveEmergencyContact(
+    Map<String, dynamic> payload, {
+    String? id,
+  }) async {
     if (id == null) {
       await _dio.post('/admin/emergency-contacts', data: payload);
     } else {
@@ -103,8 +164,39 @@ class AdminApi {
         .toList();
   }
 
+  Future<Map<String, dynamic>> counselorOperations() async {
+    final response = await _dio.get('/admin/counselor-operations');
+    return Map<String, dynamic>.from(response.data['data'] as Map);
+  }
+
+  Future<void> assignCounselorCase(String id, String counselorId) async {
+    await _dio.post(
+      '/admin/counselor-cases/$id/assign',
+      data: {'counselorId': counselorId},
+    );
+  }
+
+  Future<void> setCounselorAvailability(
+    String id, {
+    required String status,
+    required bool isOnCall,
+    List<String> specializations = const [],
+  }) async {
+    await _dio.post(
+      '/admin/counselors/$id/availability',
+      data: {
+        'status': status,
+        'isOnCall': isOnCall,
+        'specializations': specializations,
+      },
+    );
+  }
+
   Future<void> updateCounselorCaseStatus(String id, String status) async {
-    await _dio.post('/admin/counselor-cases/$id/status', data: {'status': status});
+    await _dio.post(
+      '/admin/counselor-cases/$id/status',
+      data: {'status': status},
+    );
   }
 
   Future<void> addCounselorNote(String id, String note) async {
@@ -118,7 +210,11 @@ class AdminApi {
         .toList();
   }
 
-  Future<void> moderateCommunityPost(String id, String status, {String? reason}) async {
+  Future<void> moderateCommunityPost(
+    String id,
+    String status, {
+    String? reason,
+  }) async {
     final data = <String, dynamic>{'status': status};
     if (reason != null) data['reason'] = reason;
     await _dio.post('/admin/community-posts/$id/moderate', data: data);
@@ -146,7 +242,10 @@ class AdminApi {
     await _dio.post('/admin/cms-content', data: payload);
   }
 
-  Future<void> saveCmsContent(Map<String, dynamic> payload, {String? id}) async {
+  Future<void> saveCmsContent(
+    Map<String, dynamic> payload, {
+    String? id,
+  }) async {
     if (id == null) {
       await _dio.post('/admin/cms-content', data: payload);
     } else {
@@ -161,7 +260,11 @@ class AdminApi {
         .toList();
   }
 
-  Future<void> setUserSuspension(String id, bool suspended, {String? reason}) async {
+  Future<void> setUserSuspension(
+    String id,
+    bool suspended, {
+    String? reason,
+  }) async {
     final data = <String, dynamic>{'suspended': suspended};
     if (reason != null) data['reason'] = reason;
     await _dio.post('/admin/users/$id/suspension', data: data);

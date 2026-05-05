@@ -2,12 +2,12 @@ export declare class QAService {
     static getQuestions(category?: any, isAdmin?: boolean): Promise<{
         description: string;
         id: string;
-        deviceId: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
+        deviceId: string | null;
         deletedAt: Date | null;
         title: string;
-        category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
+        category: "srhr" | "mental-health" | "emergency" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
         viewCount: number | null;
@@ -31,12 +31,12 @@ export declare class QAService {
         }[];
         description: string;
         id: string;
-        deviceId: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
+        deviceId: string | null;
         deletedAt: Date | null;
         title: string;
-        category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
+        category: "srhr" | "mental-health" | "emergency" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
         viewCount: number | null;
@@ -54,12 +54,12 @@ export declare class QAService {
     }): Promise<{
         description: string;
         id: string;
-        deviceId: string | null;
         createdAt: Date | null;
         updatedAt: Date | null;
+        deviceId: string | null;
         deletedAt: Date | null;
         title: string;
-        category: "emergency" | "srhr" | "mental-health" | "relationships" | "general";
+        category: "srhr" | "mental-health" | "emergency" | "relationships" | "general";
         status: "draft" | "review" | "published" | "archived";
         isPublished: boolean | null;
         viewCount: number | null;

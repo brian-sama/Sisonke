@@ -9,15 +9,17 @@ class QuickExitSettingsScreen extends ConsumerStatefulWidget {
   const QuickExitSettingsScreen({super.key});
 
   @override
-  ConsumerState<QuickExitSettingsScreen> createState() => _QuickExitSettingsScreenState();
+  ConsumerState<QuickExitSettingsScreen> createState() =>
+      _QuickExitSettingsScreenState();
 }
 
-class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScreen> {
+class _QuickExitSettingsScreenState
+    extends ConsumerState<QuickExitSettingsScreen> {
   late QuickExitService _quickExitService;
   bool _isEnabled = true;
-  QuickExitDestination _selectedDestination = QuickExitDestination.weather;
+  QuickExitDestination _selectedDestination = QuickExitDestination.blank;
   bool _showButton = true;
-  bool _enableBackPress = true;
+  bool _enableBackPress = false;
   bool _enableShake = false;
   bool _enableVolumeKeys = false;
 
@@ -30,11 +32,11 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
   void _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _quickExitService = QuickExitService(prefs);
-    
+
     setState(() {
       _isEnabled = _quickExitService.isQuickExitEnabled;
       _selectedDestination = _quickExitService.getQuickExitDestination();
-      
+
       // Load trigger methods
       final methods = _quickExitService.getQuickExitMethods();
       _showButton = methods.contains(QuickExitMethod.button);
@@ -83,7 +85,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
                   Text(
                     'Quickly exit the app and show neutral content for privacy and safety.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacingMedium),
@@ -121,21 +125,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
                     ),
                     const SizedBox(height: AppConstants.spacingMedium),
                     RadioListTile<QuickExitDestination>(
-                      title: const Text('Weather'),
-                      subtitle: const Text('Show weather information'),
-                      value: QuickExitDestination.weather,
-                      groupValue: _selectedDestination,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedDestination = value!;
-                        });
-                        _saveSettings();
-                      },
-                    ),
-                    RadioListTile<QuickExitDestination>(
-                      title: const Text('News'),
-                      subtitle: const Text('Show news headlines'),
-                      value: QuickExitDestination.news,
+                      title: const Text('Blank screen'),
+                      subtitle: const Text('Show a neutral empty screen'),
+                      value: QuickExitDestination.blank,
                       groupValue: _selectedDestination,
                       onChanged: (value) {
                         setState(() {
@@ -203,7 +195,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
                     ),
                     SwitchListTile(
                       title: const Text('Back Button'),
-                      subtitle: const Text('Press back twice to Quick Exit'),
+                      subtitle: const Text(
+                        'Off by default so back stays normal navigation',
+                      ),
                       value: _enableBackPress,
                       onChanged: (value) {
                         setState(() {
@@ -225,7 +219,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
                     ),
                     SwitchListTile(
                       title: const Text('Volume Keys'),
-                      subtitle: const Text('Press volume keys 3 times to Quick Exit'),
+                      subtitle: const Text(
+                        'Press volume keys 3 times to Quick Exit',
+                      ),
                       value: _enableVolumeKeys,
                       onChanged: (value) {
                         setState(() {
@@ -259,7 +255,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
                     Text(
                       'Try the Quick Exit feature to make sure it works as expected.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(height: AppConstants.spacingMedium),
@@ -327,10 +325,11 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
                       const SizedBox(width: AppConstants.spacingSmall),
                       Text(
                         'Safety Information',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                       ),
                     ],
                   ),
@@ -360,7 +359,7 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
 
   Widget _buildUsageStats() {
     final stats = _quickExitService.getQuickExitUsageStats();
-    
+
     if (stats.isEmpty) {
       return const Text('No Quick Exit usage recorded yet.');
     }
@@ -405,7 +404,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Test Quick Exit'),
-        content: const Text('This will activate the Quick Exit feature and show neutral content. Continue?'),
+        content: const Text(
+          'This will activate the Quick Exit feature and show neutral content. Continue?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -423,7 +424,7 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
       try {
         await _quickExitService.logQuickExitUsage('test');
         final content = await _quickExitService.getQuickExitContent();
-        
+
         if (mounted) {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -449,7 +450,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Usage Data'),
-        content: const Text('This will delete all Quick Exit usage statistics. This action cannot be undone.'),
+        content: const Text(
+          'This will delete all Quick Exit usage statistics. This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -467,9 +470,9 @@ class _QuickExitSettingsScreenState extends ConsumerState<QuickExitSettingsScree
       await _quickExitService.clearUsageData();
       setState(() {}); // Refresh to show cleared stats
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usage data cleared')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Usage data cleared')));
       }
     }
   }

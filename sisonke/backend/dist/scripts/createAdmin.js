@@ -9,6 +9,7 @@ const db_1 = require("../db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const env_1 = require("../env");
+const authService_1 = require("../services/authService");
 async function main() {
     (0, env_1.validateEnv)();
     const email = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -18,19 +19,23 @@ async function main() {
     }
     const existing = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, email)).limit(1);
     if (existing.length > 0) {
-        await db_1.db.update(schema_1.users).set({ role: 'admin', roles: ['super-admin', 'admin'], isGuest: false, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.users.id, existing[0].id));
+        await db_1.db.update(schema_1.users).set({ isGuest: false, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.users.id, existing[0].id));
+        // Assign SUPER_ADMIN and ADMIN roles to existing user
+        await authService_1.AuthService.assignRole(existing[0].id, 'SUPER_ADMIN');
+        await authService_1.AuthService.assignRole(existing[0].id, 'ADMIN');
         console.log(`Promoted existing user ${email} to super admin.`);
         return;
     }
     const passwordHash = await bcryptjs_1.default.hash(password, 12);
-    await db_1.db.insert(schema_1.users).values({
+    const [newUser] = await db_1.db.insert(schema_1.users).values({
         email,
         passwordHash,
-        role: 'admin',
-        roles: ['super-admin', 'admin'],
         isGuest: false,
         updatedAt: new Date(),
-    });
+    }).returning();
+    // Assign SUPER_ADMIN and ADMIN roles to new user
+    await authService_1.AuthService.assignRole(newUser.id, 'SUPER_ADMIN');
+    await authService_1.AuthService.assignRole(newUser.id, 'ADMIN');
     console.log(`Created admin user ${email}.`);
 }
 main().catch((error) => {

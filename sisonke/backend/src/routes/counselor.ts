@@ -1,51 +1,167 @@
 import { Router } from 'express';
 import { desc, eq, sql } from 'drizzle-orm';
 import { db } from '../db';
-import { counselingMessages, counselorCases, counselorNotes, users } from '../db/schema';
+import { auditLogs, counselingMessages, counselorCases, counselorNotes, users } from '../db/schema';
 import { authMiddleware, hasAnyRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CounselorRequestSchema } from '../types';
 import { SocketService } from '../services/socketService';
+import { AuthService } from '../services/authService';
 
 const router = Router();
 
+const isAssignedCounselor = async (caseId: string, userId: string) => {
+  const [item] = await db.select().from(counselorCases).where(eq(counselorCases.id, caseId)).limit(1);
+  return item && item.counselorId === userId ? item : null;
+};
+
 router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
   const input = CounselorRequestSchema.parse(req.body);
-  const availableCounselors = await db
+  const staffUsers = await db
     .select()
-    .from(users)
-    .where(sql`${users.roles} && ARRAY['counselor', 'admin', 'super-admin']::varchar(40)[]`)
-    .limit(1);
+    .from(users);
+  // Filter users who have counselor or admin roles
+  const counselors: typeof staffUsers = [];
+  for (const user of staffUsers) {
+    const userRoles = await AuthService.getUserRoles(user.id);
+    const roleNames = userRoles.map(r => r.name.toLowerCase().replace(/_/g, '-'));
+    if (roleNames.some((role: string) => ['counselor', 'admin', 'system-admin', 'super-admin'].includes(role))) {
+      counselors.push(user);
+    }
+  }
+
+  const preferredContactMethod = input.preferredContactMethod;
+  const activeStatuses = ['assigned', 'accepted', 'live', 'waiting_for_client', 'callback_requested', 'follow_up'];
+  const activeCases = await db
+    .select()
+    .from(counselorCases);
+  const workloadFor = (id: string) => activeCases.filter((item) => item.counselorId === id && activeStatuses.includes(item.status)).length;
+  const matchesCategory = (counselor: typeof counselors[number]) => {
+    const specs = counselor.counselorSpecializations ?? [];
+    return specs.length === 0 || specs.some((spec) => input.issueCategory.toLowerCase().includes(spec.toLowerCase()));
+  };
+  const availableCounselors = counselors
+    .filter((counselor) => counselor.counselorStatus === 'online' || counselor.isOnCall)
+    .filter(matchesCategory)
+    .sort((a, b) => workloadFor(a.id) - workloadFor(b.id));
+  const autoAssign = input.riskLevel === 'high' && availableCounselors.length > 0;
+  const initialStatus = preferredContactMethod === 'callback'
+    ? 'callback_requested'
+    : autoAssign
+      ? 'assigned'
+      : 'requested';
 
   const [createdCase] = await db.insert(counselorCases).values({
     userId: req.user!.id,
-    counselorId: availableCounselors[0]?.id,
+    counselorId: autoAssign ? availableCounselors[0]?.id : undefined,
     issueCategory: input.issueCategory,
     summary: input.summary,
     riskLevel: input.riskLevel,
-    status: availableCounselors.length ? 'assigned' : 'requested',
-    source: 'mobile',
+    status: initialStatus as any,
+    source: preferredContactMethod,
+    callbackPhone: input.callbackPhone,
+    preferredContactMethod,
+    callbackStatus: preferredContactMethod === 'callback' ? 'requested' : undefined,
     updatedAt: new Date(),
   }).returning();
+
+  await db.insert(auditLogs).values({
+    actorId: req.user!.id,
+    action: 'case_created',
+    entityType: 'counselor_case',
+    entityId: createdCase.id,
+    metadata: {
+      riskLevel: createdCase.riskLevel,
+      status: createdCase.status,
+      assignment: autoAssign ? 'auto_high_risk' : 'queue_claiming',
+      counselorId: createdCase.counselorId,
+    },
+  });
   
-  SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'created' });
+  SocketService.emitCaseEvent(createdCase.id, createdCase.userId, 'case:created', { case: createdCase });
+  if (createdCase.counselorId) {
+    SocketService.emitCaseEvent(createdCase.id, createdCase.userId, 'case:assigned', { case: createdCase });
+  }
+  if (preferredContactMethod === 'callback') {
+    SocketService.emitCaseEvent(createdCase.id, createdCase.userId, 'callback:requested', { case: createdCase });
+  }
+  if (input.riskLevel === 'high') {
+    SocketService.notifyCounselors('case:escalated', { case: createdCase, assignment: autoAssign ? 'auto_assigned' : 'needs_claim' });
+  }
 
   res.status(201).json({
     success: true,
     data: {
       case: createdCase,
-      connected: availableCounselors.length > 0,
-      message: availableCounselors.length
+      connected: Boolean(createdCase.counselorId),
+      message: createdCase.counselorId
         ? 'A counselor has been assigned.'
-        : 'No counselor is available right now. A request has been created.',
+        : 'Your request has been added to the counselor queue.',
     },
   });
 }));
 
 router.use(authMiddleware);
 
+router.post('/me/availability', asyncHandler(async (req, res) => {
+  if (!hasAnyRole(req.user, ['counselor'])) {
+    return res.status(403).json({ success: false, error: 'Counselor access required.' });
+  }
+
+  const status = String(req.body.status || 'offline');
+  if (!['online', 'busy', 'offline'].includes(status)) {
+    return res.status(400).json({ success: false, error: 'Invalid counselor status.' });
+  }
+
+  const [updated] = await db.update(users).set({
+    counselorStatus: status,
+    isOnCall: typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : undefined,
+    lastActiveAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(users.id, req.user!.id)).returning();
+
+  await db.insert(auditLogs).values({
+    actorId: req.user!.id,
+    action: 'counselor_availability_changed',
+    entityType: 'user',
+    entityId: req.user!.id,
+    metadata: { status, isOnCall: updated?.isOnCall },
+  });
+
+  SocketService.notifyStaff(status === 'online' ? 'counselor:online' : 'counselor:offline', {
+    counselorId: req.user!.id,
+    status,
+    isOnCall: updated?.isOnCall,
+  });
+  SocketService.broadcastDashboardUpdate({ type: 'counselor', action: 'availability_changed', counselorId: req.user!.id });
+
+  res.json({ success: true, data: updated });
+}));
+
+router.get('/my-cases', asyncHandler(async (req, res) => {
+  const rows = await db
+    .select()
+    .from(counselorCases)
+    .where(eq(counselorCases.userId, req.user!.id))
+    .orderBy(desc(counselorCases.createdAt))
+    .limit(50);
+
+  res.json({ success: true, data: rows });
+}));
+
+router.get('/my-cases/:id', asyncHandler(async (req, res) => {
+  const rows = await db
+    .select()
+    .from(counselorCases)
+    .where(sql`${counselorCases.id} = ${req.params.id} and ${counselorCases.userId} = ${req.user!.id}`)
+    .limit(1);
+
+  if (!rows[0]) return res.status(404).json({ success: false, error: 'Case not found.' });
+  res.json({ success: true, data: rows[0] });
+}));
+
 router.get('/cases', asyncHandler(async (req, res) => {
-  if (!hasAnyRole(req.user, ['counselor', 'admin', 'super-admin'])) {
+  if (!hasAnyRole(req.user, ['counselor', 'admin', 'system-admin', 'super-admin'])) {
     return res.status(403).json({ success: false, error: 'Counselor access required.' });
   }
 
@@ -55,25 +171,73 @@ router.get('/cases', asyncHandler(async (req, res) => {
     .orderBy(desc(counselorCases.createdAt))
     .limit(100);
 
-  res.json({ success: true, data: rows });
+  const visibleRows = hasAnyRole(req.user, ['admin', 'system-admin', 'super-admin'])
+    ? rows.map((item) => ({
+        id: item.id,
+        issueCategory: item.issueCategory,
+        status: item.status,
+        riskLevel: item.riskLevel,
+        source: item.source,
+        counselorId: item.counselorId,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }))
+    : rows.filter((item) => item.counselorId === req.user!.id);
+
+  res.json({ success: true, data: visibleRows });
 }));
 
 router.post('/cases/:id/messages', asyncHandler(async (req, res) => {
+  const [messageCase] = await db.select().from(counselorCases).where(eq(counselorCases.id, req.params.id)).limit(1);
+  const isAssigned = messageCase?.counselorId === req.user!.id;
+  const isClient = messageCase?.userId === req.user!.id;
+  if (!messageCase || (!isAssigned && !isClient)) {
+    return res.status(403).json({ success: false, error: 'You cannot message this case.' });
+  }
+
   const content = String(req.body.content || '').trim();
-  if (!content) return res.status(400).json({ success: false, error: 'Message is required.' });
+  const messageType = String(req.body.messageType || 'text');
+  const mediaUrl = req.body.mediaUrl ? String(req.body.mediaUrl) : undefined;
+  if (!content && !mediaUrl) return res.status(400).json({ success: false, error: 'Message or media is required.' });
 
   const [message] = await db.insert(counselingMessages).values({
     caseId: req.params.id,
     senderUserId: req.user!.id,
     senderRole: req.user!.role,
-    content,
+    messageType,
+    mediaUrl,
+    content: content || 'Voice note uploaded',
   }).returning();
+
+  SocketService.emitCaseEvent(req.params.id, messageCase.userId, 'case:message', { caseId: req.params.id, message });
+  if (messageType === 'voice_note') {
+    SocketService.emitCaseEvent(req.params.id, messageCase.userId, 'voice_note:uploaded', { caseId: req.params.id, message });
+  }
 
   res.status(201).json({ success: true, data: message });
 }));
 
+router.post('/cases/:id/callback', asyncHandler(async (req, res) => {
+  const callbackPhone = String(req.body.callbackPhone || '').trim();
+  if (!callbackPhone) return res.status(400).json({ success: false, error: 'Callback phone is required.' });
+
+  const [updated] = await db.update(counselorCases).set({
+    status: 'callback_requested' as any,
+    callbackPhone,
+    callbackStatus: 'requested',
+    preferredContactMethod: 'callback',
+    updatedAt: new Date(),
+  }).where(eq(counselorCases.id, req.params.id)).returning();
+
+  if (!updated) return res.status(404).json({ success: false, error: 'Case not found.' });
+  SocketService.emitCaseEvent(req.params.id, updated.userId, 'callback:requested', { case: updated });
+  SocketService.emitCaseEvent(req.params.id, updated.userId, 'case:status_changed', { case: updated });
+  res.json({ success: true, data: updated });
+}));
+
 router.post('/cases/:id/notes', asyncHandler(async (req, res) => {
-  if (!hasAnyRole(req.user, ['counselor', 'admin', 'super-admin'])) {
+  const caseRow = await isAssignedCounselor(req.params.id, req.user!.id);
+  if (!caseRow) {
     return res.status(403).json({ success: false, error: 'Counselor access required.' });
   }
 
@@ -90,22 +254,28 @@ router.post('/cases/:id/notes', asyncHandler(async (req, res) => {
 }));
 
 router.post('/cases/:id/status', asyncHandler(async (req, res) => {
-  if (!hasAnyRole(req.user, ['counselor', 'admin', 'super-admin'])) {
+  const caseRow = await isAssignedCounselor(req.params.id, req.user!.id);
+  if (!caseRow && !hasAnyRole(req.user, ['system-admin', 'super-admin'])) {
     return res.status(403).json({ success: false, error: 'Counselor access required.' });
   }
 
   const status = String(req.body.status || '');
-  const allowed = ['requested', 'assigned', 'live', 'follow-up', 'resolved', 'emergency'];
+  const allowed = ['requested', 'assigned', 'accepted', 'live', 'waiting_for_client', 'callback_requested', 'follow_up', 'resolved', 'escalated', 'closed'];
   if (!allowed.includes(status)) return res.status(400).json({ success: false, error: 'Invalid case status.' });
 
   const [updated] = await db.update(counselorCases).set({
     status: status as any,
     followUpAt: req.body.followUpAt ? new Date(req.body.followUpAt) : undefined,
-    resolvedAt: status === 'resolved' ? new Date() : undefined,
+    resolvedAt: status === 'resolved' || status === 'closed' ? new Date() : undefined,
     updatedAt: new Date(),
   }).where(eq(counselorCases.id, req.params.id)).returning();
   
-  SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'status_updated' });
+  const event = status === 'escalated'
+    ? 'case:escalated'
+    : status === 'accepted'
+      ? 'case:accepted'
+      : 'case:status_changed';
+  SocketService.emitCaseEvent(req.params.id, updated?.userId, event, { case: updated });
 
   res.json({ success: true, data: updated });
 }));

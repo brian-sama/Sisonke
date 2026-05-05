@@ -40,7 +40,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
 
   void _setupScrollListener() {
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= 
+      if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
         ref.read(resourceListProvider.notifier).loadMoreResources();
       }
@@ -72,7 +72,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Resources'),
+        title: const Text('Learn & Grow'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -85,144 +85,148 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
-            // Search Bar
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.spacingMedium),
-                child: ResourceSearchBar(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  onSubmitted: _onSearchSubmitted,
-                ),
-              ),
-            ),
-
-            // Category Filter
-            if (categoriesState.categories.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.spacingMedium,
-                  ),
-                  child: CategoryFilter(
-                    categories: categoriesState.categories,
-                    onCategorySelected: _onCategorySelected,
-                  ),
-                ),
-              ),
-
-            // Error Message
-            if (resourceListState.error != null)
+              // Search Bar
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(AppConstants.spacingMedium),
-                  child: Card(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppConstants.spacingMedium),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(width: AppConstants.spacingSmall),
-                          Expanded(
-                            child: Text(
-                              resourceListState.error!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                  child: ResourceSearchBar(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    onSubmitted: _onSearchSubmitted,
+                  ),
+                ),
+              ),
+
+              // Category Filter
+              if (categoriesState.categories.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spacingMedium,
+                    ),
+                    child: CategoryFilter(
+                      categories: categoriesState.categories,
+                      onCategorySelected: _onCategorySelected,
+                    ),
+                  ),
+                ),
+
+              // Error Message
+              if (resourceListState.error != null)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppConstants.spacingMedium),
+                    child: Card(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(
+                          AppConstants.spacingMedium,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: AppConstants.spacingSmall),
+                            Expanded(
+                              child: Text(
+                                resourceListState.error!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              ref.read(resourceListProvider.notifier).clearError();
-                            },
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
+                            IconButton(
+                              onPressed: () {
+                                ref
+                                    .read(resourceListProvider.notifier)
+                                    .clearError();
+                              },
+                              icon: const Icon(Icons.close),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-            // Loading Indicator
-            if (resourceListState.isLoading && resourceListState.resources.isEmpty)
-              const SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(),
+              // Loading Indicator
+              if (resourceListState.isLoading &&
+                  resourceListState.resources.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-              ),
 
-            // Resources List
-            if (resourceListState.resources.isNotEmpty)
-              SliverPadding(
-                padding: const EdgeInsets.all(AppConstants.spacingMedium),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (index == resourceListState.resources.length) {
-                        // Loading More Indicator
-                        return resourceListState.isLoadingMore
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(AppConstants.spacingMedium),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : const SizedBox.shrink();
-                      }
+              // Resources List
+              if (resourceListState.resources.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.all(AppConstants.spacingMedium),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index == resourceListState.resources.length) {
+                          // Loading More Indicator
+                          return resourceListState.isLoadingMore
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(
+                                      AppConstants.spacingMedium,
+                                    ),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : const SizedBox.shrink();
+                        }
 
-                      final resource = resourceListState.resources[index];
-                      return ResourceCard(
-                        resource: resource,
-                        onTap: () {
-                          context.push('/resources/${resource.id}');
-                        },
-                      );
-                    },
-                    childCount: resourceListState.resources.length + 
-                        (resourceListState.hasMore ? 1 : 0),
+                        final resource = resourceListState.resources[index];
+                        return ResourceCard(
+                          resource: resource,
+                          onTap: () {
+                            context.push('/resources/${resource.id}');
+                          },
+                        );
+                      },
+                      childCount:
+                          resourceListState.resources.length +
+                          (resourceListState.hasMore ? 1 : 0),
+                    ),
                   ),
                 ),
-              ),
 
-            // Empty State
-            if (!resourceListState.isLoading && 
-                resourceListState.resources.isEmpty && 
-                resourceListState.error == null)
-              const SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.menu_book_outlined,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: AppConstants.spacingMedium),
-                      Text(
-                        'No resources found',
-                        style: TextStyle(
-                          fontSize: AppConstants.textLarge,
+              // Empty State
+              if (!resourceListState.isLoading &&
+                  resourceListState.resources.isEmpty &&
+                  resourceListState.error == null)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.menu_book_outlined,
+                          size: 64,
                           color: Colors.grey,
                         ),
-                      ),
-                      SizedBox(height: AppConstants.spacingSmall),
-                      Text(
-                        'Try adjusting your search or filters',
-                        style: TextStyle(
-                          color: Colors.grey,
+                        SizedBox(height: AppConstants.spacingMedium),
+                        Text(
+                          'No resources found',
+                          style: TextStyle(
+                            fontSize: AppConstants.textLarge,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: AppConstants.spacingSmall),
+                        Text(
+                          'Try adjusting your search or filters',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
           ),
         ),
       ),

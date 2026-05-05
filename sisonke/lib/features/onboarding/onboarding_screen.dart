@@ -20,6 +20,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   var _persona = 'female';
   var _pinEnabled = true;
   var _biometricEnabled = false;
+  var _consentAccepted = false;
   var _saving = false;
   String? _error;
   int _currentPage = 0;
@@ -35,8 +36,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<OnboardingPage> pages = [
     OnboardingPage(
       title: 'Name or nickname',
-      description:
-          'Choose what the app should call you. A nickname is okay.',
+      description: 'Choose what the app should call you. A nickname is okay.',
       icon: Icons.badge_outlined,
     ),
     OnboardingPage(
@@ -173,11 +173,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            page.icon,
-            size: 100,
-            color: Theme.of(context).primaryColor,
-          ),
+          Icon(page.icon, size: 100, color: Theme.of(context).primaryColor),
           const SizedBox(height: 32),
           Text(
             page.title,
@@ -194,7 +190,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _buildStepFields(),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
         ],
       ),
@@ -217,26 +216,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             TextField(
               controller: _age,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Age', prefixIcon: Icon(Icons.cake_outlined)),
+              decoration: const InputDecoration(
+                labelText: 'Age',
+                prefixIcon: Icon(Icons.cake_outlined),
+              ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _gender,
-              decoration: const InputDecoration(labelText: 'Gender', prefixIcon: Icon(Icons.person_outline_rounded)),
+              decoration: const InputDecoration(
+                labelText: 'Gender',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
               items: const ['Female', 'Male', 'Non-binary', 'Prefer not to say']
-                  .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                  .map(
+                    (value) =>
+                        DropdownMenuItem(value: value, child: Text(value)),
+                  )
                   .toList(),
               onChanged: (value) => setState(() => _gender = value ?? _gender),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _location,
-              decoration: const InputDecoration(labelText: 'Location', prefixIcon: Icon(Icons.location_on_outlined)),
+              decoration: const InputDecoration(
+                labelText: 'Location',
+                prefixIcon: Icon(Icons.location_on_outlined),
+              ),
             ),
           ],
         );
       case 2:
-        return const _ConsentPanel();
+        return _ConsentPanel(
+          accepted: _consentAccepted,
+          onChanged: (value) => setState(() => _consentAccepted = value),
+        );
       case 3:
         return Column(
           children: [
@@ -255,19 +269,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case 4:
         return Column(
           children: [
-            _CheckTile(label: 'Have you felt overwhelmed recently?', value: _screeningAnswers['overwhelmed']!, onChanged: (value) => _setAnswer('overwhelmed', value)),
-            _CheckTile(label: 'Have you struggled to sleep?', value: _screeningAnswers['sleep']!, onChanged: (value) => _setAnswer('sleep', value)),
-            _CheckTile(label: 'Have you felt alone or unsupported?', value: _screeningAnswers['alone']!, onChanged: (value) => _setAnswer('alone', value)),
-            _CheckTile(label: 'Have you lost interest in things you enjoy?', value: _screeningAnswers['lostInterest']!, onChanged: (value) => _setAnswer('lostInterest', value)),
-            _CheckTile(label: 'Have you felt unsafe or at risk?', value: _screeningAnswers['unsafe']!, onChanged: (value) => _setAnswer('unsafe', value)),
-            _CheckTile(label: 'Would you like to speak to someone?', value: _screeningAnswers['speakToSomeone']!, onChanged: (value) => _setAnswer('speakToSomeone', value)),
+            _CheckTile(
+              label: 'Have you felt overwhelmed recently?',
+              value: _screeningAnswers['overwhelmed']!,
+              onChanged: (value) => _setAnswer('overwhelmed', value),
+            ),
+            _CheckTile(
+              label: 'Have you struggled to sleep?',
+              value: _screeningAnswers['sleep']!,
+              onChanged: (value) => _setAnswer('sleep', value),
+            ),
+            _CheckTile(
+              label: 'Have you felt alone or unsupported?',
+              value: _screeningAnswers['alone']!,
+              onChanged: (value) => _setAnswer('alone', value),
+            ),
+            _CheckTile(
+              label: 'Have you lost interest in things you enjoy?',
+              value: _screeningAnswers['lostInterest']!,
+              onChanged: (value) => _setAnswer('lostInterest', value),
+            ),
+            _CheckTile(
+              label: 'Have you felt unsafe or at risk?',
+              value: _screeningAnswers['unsafe']!,
+              onChanged: (value) => _setAnswer('unsafe', value),
+            ),
+            _CheckTile(
+              label: 'Would you like to speak to someone?',
+              value: _screeningAnswers['speakToSomeone']!,
+              onChanged: (value) => _setAnswer('speakToSomeone', value),
+            ),
           ],
         );
       case 5:
         return SegmentedButton<String>(
           segments: const [
-            ButtonSegment(value: 'female', icon: Icon(Icons.face_3_rounded), label: Text('Female')),
-            ButtonSegment(value: 'male', icon: Icon(Icons.face_rounded), label: Text('Male')),
+            ButtonSegment(
+              value: 'female',
+              icon: Icon(Icons.face_3_rounded),
+              label: Text('Female'),
+            ),
+            ButtonSegment(
+              value: 'male',
+              icon: Icon(Icons.face_rounded),
+              label: Text('Male'),
+            ),
           ],
           selected: {_persona},
           onSelectionChanged: (value) => setState(() => _persona = value.first),
@@ -283,7 +329,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _finishOnboarding() async {
     final age = int.tryParse(_age.text.trim()) ?? 18;
-    final nickname = _nickname.text.trim().isEmpty ? 'Friend' : _nickname.text.trim();
+    final nickname = _nickname.text.trim().isEmpty
+        ? 'Friend'
+        : _nickname.text.trim();
+
+    if (!_consentAccepted) {
+      setState(
+        () => _error = 'Please review and accept consent before continuing.',
+      );
+      _pageController.animateToPage(
+        2,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
 
     setState(() {
       _saving = true;
@@ -299,13 +359,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         screeningAnswers: _screeningAnswers,
         pinEnabled: _pinEnabled,
         biometricEnabled: _biometricEnabled,
+        consentAccepted: _consentAccepted,
       );
       if (mounted) context.go('/home');
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Could not save your profile. Check that the backend is running.';
+        _error =
+            'Could not save your profile. Check that the backend is running.';
       });
     }
   }
@@ -324,18 +386,64 @@ class OnboardingPage {
 }
 
 class _ConsentPanel extends StatelessWidget {
-  const _ConsentPanel();
+  final bool accepted;
+  final ValueChanged<bool> onChanged;
+
+  const _ConsentPanel({required this.accepted, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Text(
-          'By continuing, you agree that private spaces stay private, public posts go through moderation, and serious safety concerns may be escalated to authorized support roles.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
+        child: Column(
+          children: [
+            const _ConsentLine(
+              icon: Icons.lock_rounded,
+              text:
+                  'Mood, journal, and counselor spaces are private and access-controlled.',
+            ),
+            const _ConsentLine(
+              icon: Icons.groups_rounded,
+              text:
+                  'Community posts are anonymous, age-grouped, and moderated before public display.',
+            ),
+            const _ConsentLine(
+              icon: Icons.health_and_safety_rounded,
+              text:
+                  'Sisonke is not an emergency or medical service. Serious safety concerns may be escalated to authorized support roles.',
+            ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: accepted,
+              onChanged: (value) => onChanged(value ?? false),
+              title: const Text('I understand and agree'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _ConsentLine extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _ConsentLine({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ],
       ),
     );
   }
@@ -362,4 +470,3 @@ class _CheckTile extends StatelessWidget {
     );
   }
 }
-

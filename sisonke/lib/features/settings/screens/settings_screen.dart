@@ -25,9 +25,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _dailyReminder = prefs.getBool(AppConstants.enableNotificationsKey) ?? false;
-      _quickExitEnabled = prefs.getBool(AppConstants.quickExitEnabledKey) ?? true;
-      _anonymousAnalytics = prefs.getBool(AppConstants.dataCollectionKey) ?? true;
+      _dailyReminder =
+          prefs.getBool(AppConstants.enableNotificationsKey) ?? false;
+      _quickExitEnabled =
+          prefs.getBool(AppConstants.quickExitEnabledKey) ?? true;
+      _anonymousAnalytics =
+          prefs.getBool(AppConstants.dataCollectionKey) ?? true;
     });
   }
 
@@ -39,113 +42,135 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingMedium),
         children: [
-          _buildSettingsSection(
-            context,
-            'Privacy & Security',
-            [
-              _buildSettingsItem(
+          _buildSettingsSection(context, 'Privacy & Security', [
+            _buildSettingsItem(
+              context,
+              'Privacy Center',
+              Icons.lock_rounded,
+              () => context.push('/settings/privacy'),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.exit_to_app_rounded),
+              title: const Text('Quick Exit'),
+              subtitle: const Text(
+                'Keep the private exit button available on sensitive screens.',
+              ),
+              value: _quickExitEnabled,
+              onChanged: (value) {
+                setState(() => _quickExitEnabled = value);
+                _setBool(AppConstants.quickExitEnabledKey, value);
+              },
+            ),
+          ]),
+          _buildSettingsSection(context, 'Notifications', [
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_rounded),
+              title: const Text('Daily reminder'),
+              subtitle: const Text('Get a gentle check-in reminder.'),
+              value: _dailyReminder,
+              onChanged: (value) {
+                setState(() => _dailyReminder = value);
+                _setBool(AppConstants.enableNotificationsKey, value);
+                _showSaved(context);
+              },
+            ),
+          ]),
+          _buildSettingsSection(context, 'Data', [
+            SwitchListTile(
+              secondary: const Icon(Icons.query_stats_rounded),
+              title: const Text('Anonymous analytics'),
+              subtitle: const Text(
+                'Help improve Sisonke with aggregate, non-private usage signals.',
+              ),
+              value: _anonymousAnalytics,
+              onChanged: (value) {
+                setState(() => _anonymousAnalytics = value);
+                _setBool(AppConstants.dataCollectionKey, value);
+                _showSaved(context);
+              },
+            ),
+            _buildSettingsItem(
+              context,
+              'Sync public content',
+              Icons.sync_rounded,
+              () => _showSaved(
                 context,
-                'Privacy Center',
-                Icons.lock_rounded,
-                () => context.push('/settings/privacy'),
+                message:
+                    'Sisonke will sync public content when you are online.',
               ),
-              SwitchListTile(
-                secondary: const Icon(Icons.exit_to_app_rounded),
-                title: const Text('Quick Exit'),
-                subtitle: const Text('Keep the private exit button available on sensitive screens.'),
-                value: _quickExitEnabled,
-                onChanged: (value) {
-                  setState(() => _quickExitEnabled = value);
-                  _setBool(AppConstants.quickExitEnabledKey, value);
-                },
-              ),
-            ],
-          ),
-          _buildSettingsSection(
-            context,
-            'Notifications',
-            [
-              SwitchListTile(
-                secondary: const Icon(Icons.notifications_rounded),
-                title: const Text('Daily reminder'),
-                subtitle: const Text('Get a gentle check-in reminder.'),
-                value: _dailyReminder,
-                onChanged: (value) {
-                  setState(() => _dailyReminder = value);
-                  _setBool(AppConstants.enableNotificationsKey, value);
-                  _showSaved(context);
-                },
-              ),
-            ],
-          ),
-          _buildSettingsSection(
-            context,
-            'Data',
-            [
-              SwitchListTile(
-                secondary: const Icon(Icons.query_stats_rounded),
-                title: const Text('Anonymous analytics'),
-                subtitle: const Text('Help improve Sisonke with aggregate, non-private usage signals.'),
-                value: _anonymousAnalytics,
-                onChanged: (value) {
-                  setState(() => _anonymousAnalytics = value);
-                  _setBool(AppConstants.dataCollectionKey, value);
-                  _showSaved(context);
-                },
-              ),
-              _buildSettingsItem(
+            ),
+            _buildSettingsItem(
+              context,
+              'Delete personal data',
+              Icons.delete_outline_rounded,
+              () => _showInfo(
                 context,
-                'Sync public content',
-                Icons.sync_rounded,
-                () => _showSaved(context, message: 'Sisonke will sync public content when you are online.'),
+                title: 'Delete personal data',
+                body:
+                    'A production account should support verified deletion of profile, counselor cases, device tokens, and private records. Journal and mood entries stored only on this device can be removed from the device.',
               ),
-            ],
-          ),
-          _buildSettingsSection(
-            context,
-            'About',
-            [
-              _buildSettingsItem(
+            ),
+            _buildSettingsItem(
+              context,
+              'Export my support report',
+              Icons.ios_share_rounded,
+              () => _showInfo(
                 context,
-                'About Sisonke',
-                Icons.info_rounded,
-                () => _showInfo(
-                  context,
-                  title: 'About Sisonke',
-                  body: 'Sisonke is a privacy-conscious mental health and SRHR support app. Emergency content works offline, and private journal/check-in data stays on your phone by default.',
-                ),
+                title: 'Export support report',
+                body:
+                    'Authorized exports should include case status, counselor notes visible to authorized staff, and safety timeline metadata without exposing private journal content.',
               ),
-              _buildSettingsItem(
+            ),
+          ]),
+          _buildSettingsSection(context, 'About', [
+            _buildSettingsItem(
+              context,
+              'About Sisonke',
+              Icons.info_rounded,
+              () => _showInfo(
                 context,
-                'Help & Support',
-                Icons.help_rounded,
-                () => context.push('/support'),
+                title: 'About Sisonke',
+                body:
+                    'Sisonke is a privacy-conscious mental health and SRHR support app. Emergency content works offline, and private journal/check-in data stays on your phone by default.',
               ),
-            ],
-          ),
+            ),
+            _buildSettingsItem(
+              context,
+              'Help & Support',
+              Icons.help_rounded,
+              () => context.push('/support'),
+            ),
+          ]),
         ],
       ),
     );
   }
 
   void _showSaved(BuildContext context, {String message = 'Setting saved'}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _showInfo(BuildContext context, {required String title, required String body}) {
+  void _showInfo(
+    BuildContext context, {
+    required String title,
+    required String body,
+  }) {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
         content: Text(body),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -169,11 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ),
-        Card(
-          child: Column(
-            children: children,
-          ),
-        ),
+        Card(child: Column(children: children)),
         const SizedBox(height: AppConstants.spacingMedium),
       ],
     );

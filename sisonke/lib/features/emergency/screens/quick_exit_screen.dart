@@ -9,8 +9,8 @@ class QuickExitScreen extends StatefulWidget {
 }
 
 class _QuickExitScreenState extends State<QuickExitScreen> {
-  String _trigger = 'Back Button (x2)';
-  String _fakeScreen = 'Weather App';
+  String _trigger = 'Quick Exit Button';
+  String _fakeScreen = 'Blank Screen';
   bool _stealthMode = true;
 
   @override
@@ -34,12 +34,24 @@ class _QuickExitScreenState extends State<QuickExitScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildTriggerOption('Back Button (x2)', 'Tap back twice quickly', Icons.history_rounded),
-          _buildTriggerOption('Volume Buttons', 'Hold both volume buttons', Icons.volume_up_rounded),
-          _buildTriggerOption('Shake Device', 'Vigorously shake your phone', Icons.vibration_rounded),
+          _buildTriggerOption(
+            'Quick Exit Button',
+            'Tap the floating safety button',
+            Icons.exit_to_app_rounded,
+          ),
+          _buildTriggerOption(
+            'Volume Buttons',
+            'Hold both volume buttons',
+            Icons.volume_up_rounded,
+          ),
+          _buildTriggerOption(
+            'Shake Device',
+            'Vigorously shake your phone',
+            Icons.vibration_rounded,
+          ),
           const SizedBox(height: 32),
           Text(
-            'FAKE LANDING PAGE',
+            'NEUTRAL LANDING PAGE',
             style: theme.textTheme.labelLarge?.copyWith(
               color: colorScheme.primary,
               letterSpacing: 1.2,
@@ -47,12 +59,22 @@ class _QuickExitScreenState extends State<QuickExitScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildLandingOption('Weather App', 'Shows local weather forecast', Icons.wb_sunny_rounded),
-          _buildLandingOption('News Feed', 'Shows latest neutral news', Icons.article_rounded),
-          _buildLandingOption('Calculator', 'Basic calculator interface', Icons.calculate_rounded),
+          _buildLandingOption(
+            'Blank Screen',
+            'Shows a neutral empty screen',
+            Icons.crop_square_rounded,
+          ),
+          _buildLandingOption(
+            'Calculator',
+            'Basic calculator interface',
+            Icons.calculate_rounded,
+          ),
           const SizedBox(height: 32),
           SwitchListTile(
-            title: const Text('Stealth Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text(
+              'Stealth Mode',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: const Text('No haptic feedback when activating'),
             value: _stealthMode,
             onChanged: (val) => setState(() => _stealthMode = val),
@@ -87,7 +109,7 @@ class _QuickExitScreenState extends State<QuickExitScreen> {
           const SizedBox(width: 16),
           const Expanded(
             child: Text(
-              'Quick Exit immediately hides Sisonke and opens a fake screen if someone enters the room.',
+              'Quick Exit immediately hides Sisonke without taking over normal back navigation.',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
@@ -120,4 +142,3 @@ class _QuickExitScreenState extends State<QuickExitScreen> {
     );
   }
 }
-

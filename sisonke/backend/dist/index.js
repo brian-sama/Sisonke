@@ -14,6 +14,7 @@ const env_1 = require("./env");
 const socketService_1 = require("./services/socketService");
 // Import routes
 const auth_1 = __importDefault(require("./routes/auth"));
+const roles_1 = __importDefault(require("./routes/roles"));
 const resources_1 = __importDefault(require("./routes/resources"));
 const questions_1 = __importDefault(require("./routes/questions"));
 const emergency_1 = __importDefault(require("./routes/emergency"));
@@ -25,6 +26,7 @@ const profiles_1 = __importDefault(require("./routes/profiles"));
 const chatbot_1 = __importDefault(require("./routes/chatbot"));
 const counselor_1 = __importDefault(require("./routes/counselor"));
 const community_1 = __importDefault(require("./routes/community"));
+const notifications_1 = __importDefault(require("./routes/notifications"));
 // Load environment variables
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
@@ -65,6 +67,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/health', health_1.default);
 app.use('/api/auth', auth_1.default);
+app.use('/api/roles', roles_1.default);
 app.use('/api/resources', resources_1.default);
 app.use('/api/questions', questions_1.default);
 app.use('/api/emergency', emergency_1.default);
@@ -74,6 +77,7 @@ app.use('/api/profiles', profiles_1.default);
 app.use('/api/chatbot', chatbot_1.default);
 app.use('/api/counselor', counselor_1.default);
 app.use('/api/community', community_1.default);
+app.use('/api/notifications', notifications_1.default);
 app.use('/api/admin', admin_1.default);
 // Root endpoint
 app.get('/', (req, res) => {

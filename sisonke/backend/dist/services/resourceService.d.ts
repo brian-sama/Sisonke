@@ -8,7 +8,7 @@ export declare class ResourceService {
             deletedAt: Date | null;
             title: string;
             content: string | null;
-            category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
+            category: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide";
             tags: string[] | null;
             authorId: string | null;
             imageUrl: string | null;
@@ -32,7 +32,7 @@ export declare class ResourceService {
         deletedAt: Date | null;
         title: string;
         content: string | null;
-        category: "emergency" | "srhr" | "mental-health" | "substance-use" | "wellness" | "guide";
+        category: "srhr" | "mental-health" | "emergency" | "substance-use" | "wellness" | "guide";
         tags: string[] | null;
         authorId: string | null;
         imageUrl: string | null;

@@ -25,7 +25,9 @@ import 'package:sisonke/features/settings/screens/privacy_center_screen.dart';
 import 'package:sisonke/features/efriend/screens/efriend_screen.dart';
 import 'package:sisonke/features/community/screens/community_feed_screen.dart';
 import 'package:sisonke/features/counselor/screens/talk_to_counselor_screen.dart';
-import 'package:sisonke/features/counselor/screens/live_chat_screen.dart';
+import 'package:sisonke/features/counselor/screens/case_chat_screen.dart';
+import 'package:sisonke/features/counselor/screens/counselor_flow_screens.dart';
+import 'package:sisonke/features/counselor/screens/counselor_mobile_workspace_screen.dart';
 import 'package:sisonke/features/settings/screens/profile_safety_screen.dart';
 
 // Placeholder imports for remaining deleted all_screens.dart members
@@ -41,10 +43,7 @@ final GoRouter router = GoRouter(
   initialLocation: '/home',
   routes: [
     /// ==================== Onboarding & Auth ====================
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
@@ -53,9 +52,10 @@ final GoRouter router = GoRouter(
       path: '/topic-selection',
       builder: (context, state) => const TopicSelectionScreen(),
     ),
+    GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
     GoRoute(
-      path: '/auth',
-      builder: (context, state) => const AuthScreen(),
+      path: '/counselor-mode',
+      builder: (context, state) => const CounselorMobileWorkspaceScreen(),
     ),
     GoRoute(
       path: '/language',
@@ -253,8 +253,36 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const TalkToCounselorScreen(),
     ),
     GoRoute(
+      path: '/counselor-request',
+      builder: (context, state) => const CounselorRequestScreen(),
+    ),
+    GoRoute(
+      path: '/counselor-request-status/:caseId',
+      builder: (context, state) =>
+          CounselorRequestStatusScreen(caseId: state.pathParameters['caseId']!),
+    ),
+    GoRoute(
+      path: '/callback-request/:caseId',
+      builder: (context, state) =>
+          CallbackRequestScreen(caseId: state.pathParameters['caseId']!),
+    ),
+    GoRoute(
+      path: '/voice-note-request/:caseId',
+      builder: (context, state) =>
+          VoiceNoteRecorderScreen(caseId: state.pathParameters['caseId']!),
+    ),
+    GoRoute(
+      path: '/case-history',
+      builder: (context, state) => const CaseHistoryScreen(),
+    ),
+    GoRoute(
+      path: '/emergency-escalation/:caseId',
+      builder: (context, state) =>
+          EmergencyEscalationScreen(caseId: state.pathParameters['caseId']!),
+    ),
+    GoRoute(
       path: '/live-chat/:caseId',
-      builder: (context, state) => LiveChatScreen(
+      builder: (context, state) => CaseChatScreen(
         caseId: state.pathParameters['caseId']!,
         title: (state.extra as Map?)?['title'] ?? 'Live Support',
       ),

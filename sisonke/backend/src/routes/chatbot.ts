@@ -86,7 +86,7 @@ router.post('/message', asyncHandler(async (req, res) => {
     const [createdCase] = await db.insert(counselorCases).values({
       userId: req.user?.id,
       issueCategory: 'High-risk chatbot escalation',
-      status: 'emergency',
+      status: 'escalated',
       riskLevel: 'high',
       source: 'chatbot',
       summary: input.message.slice(0, 2000),

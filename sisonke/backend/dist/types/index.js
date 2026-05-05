@@ -14,17 +14,20 @@ exports.RegisterSchema = zod_1.z.object({
 exports.GuestSessionSchema = zod_1.z.object({
     deviceId: zod_1.z.string().min(10),
 });
-exports.AdminRoleSchema = zod_1.z.enum([
+const AdminRoleValueSchema = zod_1.z.enum([
     'guest',
     'user',
     'counselor',
     'moderator',
+    'content-admin',
     'admin',
     'super-admin',
+    'system-admin',
     'content-manager',
     'safety-reviewer',
     'analyst',
 ]);
+exports.AdminRoleSchema = zod_1.z.preprocess((value) => typeof value === 'string' ? value.trim().toLowerCase().replace(/_/g, '-') : value, AdminRoleValueSchema);
 exports.CreateAdminUserSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(1),
@@ -141,6 +144,8 @@ exports.CounselorRequestSchema = zod_1.z.object({
     issueCategory: zod_1.z.string().min(1).max(120),
     summary: zod_1.z.string().max(2000).optional(),
     riskLevel: zod_1.z.enum(['low', 'medium', 'high']).default('medium'),
+    preferredContactMethod: zod_1.z.enum(['live_chat', 'leave_message', 'voice_note', 'callback']).default('live_chat'),
+    callbackPhone: zod_1.z.string().max(80).optional(),
 });
 exports.CommunityPostSchema = zod_1.z.object({
     ageGroup: zod_1.z.enum(['13-15', '16-17', '18-24', '25+']),

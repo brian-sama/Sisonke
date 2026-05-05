@@ -12,6 +12,7 @@ import 'package:sisonke/core/providers/app_providers.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/core/services/bootstrap_content_service.dart';
 import 'package:sisonke/core/services/public_content_sync_service.dart';
+import 'package:sisonke/core/services/push_notification_service.dart';
 import 'package:sisonke/l10n/app_localizations.dart';
 
 void main() async {
@@ -25,7 +26,9 @@ void main() async {
       WidgetsFlutterBinding.ensureInitialized();
 
       final sharedPreferences = await SharedPreferences.getInstance();
-      final bootstrapContentService = BootstrapContentService(sharedPreferences);
+      final bootstrapContentService = BootstrapContentService(
+        sharedPreferences,
+      );
       await bootstrapContentService.ensureSeeded();
 
       final localDatabaseService = LocalDatabaseService();
@@ -44,13 +47,25 @@ void main() async {
         await Sentry.captureException(e, stackTrace: stackTrace);
       });
 
-      runApp(ProviderScope(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-          localDatabaseServiceProvider.overrideWithValue(localDatabaseService),
-        ],
-        child: const MyApp(),
-      ));
+      PushNotificationService(ApiService()).initialize().catchError((
+        Object e,
+        StackTrace stackTrace,
+      ) async {
+        if (kDebugMode) debugPrint('Push notification setup skipped: $e');
+        await Sentry.captureException(e, stackTrace: stackTrace);
+      });
+
+      runApp(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+            localDatabaseServiceProvider.overrideWithValue(
+              localDatabaseService,
+            ),
+          ],
+          child: const MyApp(),
+        ),
+      );
     },
   );
 }
@@ -72,11 +87,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('sn'),
-        Locale('nd'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('sn'), Locale('nd')],
     );
   }
 }

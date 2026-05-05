@@ -22,6 +22,7 @@ export declare class SocketService {
      * Broadcast dashboard updates to all connected staff (admins/counselors)
      */
     static broadcastDashboardUpdate(data: any): void;
+    static emitCaseEvent(caseId: string, userId: string | null | undefined, event: string, data: any): void;
     /**
      * Send a direct notification to a specific user
      */

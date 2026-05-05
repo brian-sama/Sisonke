@@ -1,11 +1,24 @@
 import { pgTable, uuid, varchar, text, boolean, timestamp, integer, jsonb, pgEnum } from 'drizzle-orm/pg-core';
 
 // Enums
-export const userRoleEnum = pgEnum('user_role', ['guest', 'user', 'counselor', 'moderator', 'admin']);
 export const ageGroupEnum = pgEnum('age_group', ['13-15', '16-17', '18-24', '25+']);
 export const chatbotPersonaEnum = pgEnum('chatbot_persona', ['male', 'female']);
 export const riskLevelEnum = pgEnum('risk_level', ['low', 'medium', 'high']);
-export const counselorCaseStatusEnum = pgEnum('counselor_case_status', ['requested', 'assigned', 'live', 'follow-up', 'resolved', 'emergency']);
+
+// Role enum for the new roles table
+export const roleNameEnum = pgEnum('role_name', ['USER', 'COUNSELOR', 'MODERATOR', 'CONTENT_ADMIN', 'ADMIN', 'SYSTEM_ADMIN', 'SUPER_ADMIN']);
+export const counselorCaseStatusEnum = pgEnum('counselor_case_status', [
+  'requested',
+  'assigned',
+  'accepted',
+  'live',
+  'waiting_for_client',
+  'callback_requested',
+  'follow_up',
+  'resolved',
+  'escalated',
+  'closed',
+]);
 export const communityPostStatusEnum = pgEnum('community_post_status', ['pending', 'approved', 'removed']);
 export const cmsContentTypeEnum = pgEnum('cms_content_type', ['article', 'srhr', 'event', 'helpline', 'faq', 'video', 'daily-prompt', 'announcement']);
 export const resourceCategoryEnum = pgEnum('resource_category', [
@@ -39,19 +52,39 @@ export const analyticsEventEnum = pgEnum('analytics_event', [
   'sync_failed'
 ]);
 
+// Roles table
+export const roles = pgTable('roles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: roleNameEnum('name').notNull().unique(),
+  description: text('description'),
+  permissions: jsonb('permissions').notNull().default({}),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at'),
+});
+
+// User roles junction table for multi-role support
+export const userRoles = pgTable('user_roles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  roleId: uuid('role_id').references(() => roles.id, { onDelete: 'cascade' }).notNull(),
+  assignedBy: uuid('assigned_by').references(() => users.id),
+  assignedAt: timestamp('assigned_at').defaultNow(),
+});
+
 // Users (optional accounts)
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).unique(),
   passwordHash: varchar('password_hash', { length: 255 }),
-  role: userRoleEnum('role').default('guest'),
-  roles: varchar('roles', { length: 40 }).array().default(['guest']),
   deviceId: varchar('device_id', { length: 255 }).unique(),
   isGuest: boolean('is_guest').default(true),
   isSuspended: boolean('is_suspended').default(false),
   suspensionReason: text('suspension_reason'),
   suspendedAt: timestamp('suspended_at'),
   mustChangePassword: boolean('must_change_password').default(false),
+  counselorStatus: varchar('counselor_status', { length: 40 }).default('offline'),
+  counselorSpecializations: varchar('counselor_specializations', { length: 80 }).array().default([]),
+  isOnCall: boolean('is_on_call').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at'),
   deletedAt: timestamp('deleted_at'),
@@ -250,6 +283,9 @@ export const counselorCases = pgTable('counselor_cases', {
   status: counselorCaseStatusEnum('status').default('requested').notNull(),
   riskLevel: riskLevelEnum('risk_level').default('medium').notNull(),
   source: varchar('source', { length: 40 }).default('mobile'),
+  callbackPhone: varchar('callback_phone', { length: 80 }),
+  preferredContactMethod: varchar('preferred_contact_method', { length: 40 }).default('live_chat'),
+  callbackStatus: varchar('callback_status', { length: 40 }),
   summary: text('summary'),
   followUpAt: timestamp('follow_up_at'),
   createdAt: timestamp('created_at').defaultNow(),
@@ -262,6 +298,8 @@ export const counselingMessages = pgTable('counseling_messages', {
   caseId: uuid('case_id').references(() => counselorCases.id, { onDelete: 'cascade' }).notNull(),
   senderUserId: uuid('sender_user_id').references(() => users.id),
   senderRole: varchar('sender_role', { length: 30 }).notNull(),
+  messageType: varchar('message_type', { length: 30 }).default('text').notNull(),
+  mediaUrl: text('media_url'),
   content: text('content').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
@@ -326,6 +364,10 @@ export const securityLogs = pgTable('security_logs', {
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Role = typeof roles.$inferSelect;
+export type NewRole = typeof roles.$inferInsert;
+export type UserRole = typeof userRoles.$inferSelect;
+export type NewUserRole = typeof userRoles.$inferInsert;
 export type Resource = typeof resources.$inferSelect;
 export type NewResource = typeof resources.$inferInsert;
 export type Question = typeof questions.$inferSelect;

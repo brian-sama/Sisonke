@@ -4,6 +4,7 @@ import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { validateEnv } from '../env';
+import { AuthService } from '../services/authService';
 
 async function main() {
   validateEnv();
@@ -17,20 +18,28 @@ async function main() {
 
   const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
-    await db.update(users).set({ role: 'admin', roles: ['super-admin', 'admin'], isGuest: false, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
+    await db.update(users).set({ isGuest: false, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
+    
+    // Assign SUPER_ADMIN and ADMIN roles to existing user
+    await AuthService.assignRole(existing[0].id, 'SUPER_ADMIN');
+    await AuthService.assignRole(existing[0].id, 'ADMIN');
+    
     console.log(`Promoted existing user ${email} to super admin.`);
     return;
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await db.insert(users).values({
+  const [newUser] = await db.insert(users).values({
     email,
     passwordHash,
-    role: 'admin',
-    roles: ['super-admin', 'admin'],
     isGuest: false,
     updatedAt: new Date(),
-  });
+  }).returning();
+
+  // Assign SUPER_ADMIN and ADMIN roles to new user
+  await AuthService.assignRole(newUser.id, 'SUPER_ADMIN');
+  await AuthService.assignRole(newUser.id, 'ADMIN');
+  
   console.log(`Created admin user ${email}.`);
 }
 

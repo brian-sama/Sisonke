@@ -38,14 +38,16 @@ class _QuickExitWrapperState extends ConsumerState<QuickExitWrapper> {
     final prefs = ref.read(sharedPreferencesProvider);
     _quickExitService = QuickExitService(prefs);
     _options = widget.options ?? const QuickExitOptions();
-    
+
     // Check if Quick Exit should be shown
     _updateQuickExitVisibility();
   }
 
   void _updateQuickExitVisibility() {
-    final route = widget.currentRoute ?? ModalRoute.of(context)?.settings.name ?? '';
-    _showQuickExit = widget.forceShow || _quickExitService.shouldShowQuickExit(route);
+    final route =
+        widget.currentRoute ?? ModalRoute.of(context)?.settings.name ?? '';
+    _showQuickExit =
+        widget.forceShow || _quickExitService.shouldShowQuickExit(route);
   }
 
   @override
@@ -61,13 +63,9 @@ class _QuickExitWrapperState extends ConsumerState<QuickExitWrapper> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             right: 16,
-            child: QuickExitButton(
-              onExit: _handleQuickExit,
-              size: 40,
-            ),
+            child: QuickExitButton(onExit: _handleQuickExit, size: 40),
           ),
-        if (_options.showAppBarButton)
-          _buildAppBarWithQuickExit(),
+        if (_options.showAppBarButton) _buildAppBarWithQuickExit(),
         if (_options.enableBackPress || _options.enableVolumeKeys)
           QuickExitDetector(
             onExit: _handleQuickExit,
@@ -89,10 +87,10 @@ class _QuickExitWrapperState extends ConsumerState<QuickExitWrapper> {
     try {
       // Log usage
       await _quickExitService.logQuickExitUsage('button');
-      
+
       // Get Quick Exit content
       final content = await _quickExitService.getQuickExitContent();
-      
+
       // Navigate to Quick Exit screen
       if (mounted) {
         Navigator.of(context).push(
@@ -128,7 +126,7 @@ class QuickExitOptions {
   const QuickExitOptions({
     this.showFloatingButton = true,
     this.showAppBarButton = false,
-    this.enableBackPress = true,
+    this.enableBackPress = false,
     this.enableVolumeKeys = false,
     this.onReturn,
   });
@@ -165,26 +163,26 @@ extension QuickExitScaffoldExtension on Scaffold {
 class QuickExitPresets {
   static const QuickExitOptions sensitive = QuickExitOptions(
     showFloatingButton: true,
-    enableBackPress: true,
+    enableBackPress: false,
     enableVolumeKeys: false,
   );
 
   static const QuickExitOptions emergency = QuickExitOptions(
     showFloatingButton: true,
-    enableBackPress: true,
+    enableBackPress: false,
     enableVolumeKeys: true,
   );
 
   static const QuickExitOptions minimal = QuickExitOptions(
     showFloatingButton: false,
-    enableBackPress: true,
+    enableBackPress: false,
     enableVolumeKeys: false,
   );
 
   static const QuickExitOptions comprehensive = QuickExitOptions(
     showFloatingButton: true,
     showAppBarButton: true,
-    enableBackPress: true,
+    enableBackPress: false,
     enableVolumeKeys: true,
   );
 }

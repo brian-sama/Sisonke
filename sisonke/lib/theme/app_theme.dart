@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 
 class AppTheme {
   static const Color primary = Color(0xFF168AAD);
   static const Color secondary = Color(0xFF7B61FF);
   static const Color tertiary = Color(0xFFFF5A8A);
-  static const Color calmSurface = Color(0xFFF7F4FF);
-  static const Color ink = Color(0xFF14213D);
+  static const Color calmSurface = SisonkeColors.cream;
+  static const Color ink = SisonkeColors.charcoal;
   static const Color darkSurface = Color(0xFF10131C);
   static const Color darkSurfaceHigh = Color(0xFF1A1D29);
   static const Color darkInk = Color(0xFFEDEBFF);
 
   static ThemeData lightTheme = ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: primary,
-      secondary: secondary,
-      tertiary: tertiary,
-      surface: Colors.white,
-      surfaceContainerHighest: const Color(0xFFEDE9FF),
-      error: const Color(0xFFBA1A1A),
-    ),
+    colorScheme:
+        ColorScheme.fromSeed(
+          seedColor: primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: primary,
+          secondary: secondary,
+          tertiary: tertiary,
+          surface: Colors.white,
+          surfaceContainerHighest: SisonkeColors.mint,
+          error: const Color(0xFFBA1A1A),
+        ),
     scaffoldBackgroundColor: calmSurface,
     textTheme: GoogleFonts.nunitoSansTextTheme().apply(
       bodyColor: ink,
@@ -38,14 +40,20 @@ class AppTheme {
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
           size: 25,
-          color: states.contains(WidgetState.selected) ? primary : ink.withValues(alpha: 0.68),
+          color: states.contains(WidgetState.selected)
+              ? primary
+              : ink.withValues(alpha: 0.68),
         ),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => GoogleFonts.nunitoSans(
           fontSize: 12.5,
-          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
-          color: states.contains(WidgetState.selected) ? ink : ink.withValues(alpha: 0.72),
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w800
+              : FontWeight.w600,
+          color: states.contains(WidgetState.selected)
+              ? ink
+              : ink.withValues(alpha: 0.72),
         ),
       ),
     ),
@@ -53,12 +61,12 @@ class AppTheme {
       elevation: 0,
       color: Colors.white,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         textStyle: GoogleFonts.nunitoSans(fontWeight: FontWeight.w800),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
     ),
     appBarTheme: const AppBarTheme(
@@ -88,23 +96,23 @@ class AppTheme {
   );
 
   static ThemeData darkTheme = ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: const Color(0xFF6DD5F2),
-      secondary: const Color(0xFFC6BFFF),
-      tertiary: const Color(0xFFFFB1C8),
-      surface: darkSurfaceHigh,
-      surfaceContainerHighest: const Color(0xFF25293A),
-      onSurface: darkInk,
-      error: const Color(0xFFFFB4AB),
-    ),
+    colorScheme:
+        ColorScheme.fromSeed(
+          seedColor: primary,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: const Color(0xFF6DD5F2),
+          secondary: const Color(0xFFC6BFFF),
+          tertiary: const Color(0xFFFFB1C8),
+          surface: darkSurfaceHigh,
+          surfaceContainerHighest: const Color(0xFF25293A),
+          onSurface: darkInk,
+          error: const Color(0xFFFFB4AB),
+        ),
     scaffoldBackgroundColor: darkSurface,
-    textTheme: GoogleFonts.nunitoSansTextTheme(ThemeData.dark().textTheme).apply(
-      bodyColor: darkInk,
-      displayColor: darkInk,
-    ),
+    textTheme: GoogleFonts.nunitoSansTextTheme(
+      ThemeData.dark().textTheme,
+    ).apply(bodyColor: darkInk, displayColor: darkInk),
     useMaterial3: true,
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: darkSurfaceHigh,
@@ -123,8 +131,12 @@ class AppTheme {
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => GoogleFonts.nunitoSans(
           fontSize: 12.5,
-          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
-          color: states.contains(WidgetState.selected) ? darkInk : darkInk.withValues(alpha: 0.72),
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w800
+              : FontWeight.w600,
+          color: states.contains(WidgetState.selected)
+              ? darkInk
+              : darkInk.withValues(alpha: 0.72),
         ),
       ),
     ),
