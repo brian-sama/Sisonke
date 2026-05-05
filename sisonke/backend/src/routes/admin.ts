@@ -38,7 +38,7 @@ import { SocketService } from '../services/socketService';
 
 const router = Router();
 
-router.use(authMiddleware, dashboardAccess);
+router.use(authMiddleware);
 
 const roleList = (user: any) =>
   (user?.roles?.length ? user.roles : ['guest']).map((role: string) =>
@@ -76,7 +76,7 @@ router.get('/me', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { user: req.user } });
 }));
 
-router.get('/analytics/health', asyncHandler(async (_req, res) => {
+router.get('/analytics/health', dashboardAccess, asyncHandler(async (_req, res) => {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -92,7 +92,7 @@ router.get('/analytics/health', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: stats });
 }));
 
-router.get('/overview', asyncHandler(async (_req, res) => {
+router.get('/overview', dashboardAccess, asyncHandler(async (_req, res) => {
   const results = await Promise.all([
     db.select({ value: count() }).from(users),
     db.select({ value: count() }).from(resources).where(isNull(resources.deletedAt)),
@@ -133,7 +133,7 @@ router.get('/overview', asyncHandler(async (_req, res) => {
   });
 }));
 
-router.get('/community-posts', asyncHandler(async (_req, res) => {
+router.get('/community-posts', dashboardAccess, asyncHandler(async (_req, res) => {
   const rows = await db
     .select()
     .from(communityPosts)
@@ -142,7 +142,7 @@ router.get('/community-posts', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: rows });
 }));
 
-router.post('/community-posts/:id/moderate', asyncHandler(async (req, res) => {
+router.post('/community-posts/:id/moderate', dashboardAccess, asyncHandler(async (req, res) => {
   const status = String(req.body.status || '');
   if (!['approved', 'removed'].includes(status)) {
     return res.status(400).json({ success: false, error: 'Status must be approved or removed.' });
@@ -162,7 +162,7 @@ router.post('/community-posts/:id/moderate', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.get('/reports', asyncHandler(async (_req, res) => {
+router.get('/reports', dashboardAccess, asyncHandler(async (_req, res) => {
   const rows = await db
     .select()
     .from(reports)
@@ -171,7 +171,7 @@ router.get('/reports', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: rows });
 }));
 
-router.post('/reports/:id/status', asyncHandler(async (req, res) => {
+router.post('/reports/:id/status', dashboardAccess, asyncHandler(async (req, res) => {
   const status = String(req.body.status || '');
   if (!['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
     return res.status(400).json({ success: false, error: 'Invalid report status' });
@@ -189,7 +189,7 @@ router.post('/reports/:id/status', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.get('/resources', asyncHandler(async (_req, res) => {
+router.get('/resources', dashboardAccess, asyncHandler(async (_req, res) => {
   const rows = await db
     .select()
     .from(resources)
@@ -199,7 +199,7 @@ router.get('/resources', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: rows });
 }));
 
-router.post('/resources', asyncHandler(async (req, res) => {
+router.post('/resources', dashboardAccess, asyncHandler(async (req, res) => {
   const input = CreateResourceSchema.parse(req.body);
   const isPublished = input.status === 'published';
   const [created] = await db.insert(resources).values({
@@ -213,7 +213,7 @@ router.post('/resources', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: created });
 }));
 
-router.put('/resources/:id', asyncHandler(async (req, res) => {
+router.put('/resources/:id', dashboardAccess, asyncHandler(async (req, res) => {
   const input = UpdateResourceSchema.parse(req.body);
   const isPublishing = input.status === 'published';
   const [updated] = await db
@@ -233,7 +233,7 @@ router.put('/resources/:id', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.post('/resources/:id/publish', asyncHandler(async (req, res) => {
+router.post('/resources/:id/publish', dashboardAccess, asyncHandler(async (req, res) => {
   const [updated] = await db
     .update(resources)
     .set({ status: 'published', isPublished: true, publishedAt: new Date(), updatedAt: new Date() })
@@ -246,7 +246,7 @@ router.post('/resources/:id/publish', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.post('/resources/:id/archive', asyncHandler(async (req, res) => {
+router.post('/resources/:id/archive', dashboardAccess, asyncHandler(async (req, res) => {
   const [updated] = await db
     .update(resources)
     .set({ status: 'archived', isPublished: false, deletedAt: new Date(), updatedAt: new Date() })
@@ -259,7 +259,7 @@ router.post('/resources/:id/archive', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.get('/emergency-contacts', asyncHandler(async (_req, res) => {
+router.get('/emergency-contacts', dashboardAccess, asyncHandler(async (_req, res) => {
   const rows = await db
     .select()
     .from(emergencyContacts)
@@ -269,7 +269,7 @@ router.get('/emergency-contacts', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: rows });
 }));
 
-router.post('/emergency-contacts', asyncHandler(async (req, res) => {
+router.post('/emergency-contacts', dashboardAccess, asyncHandler(async (req, res) => {
   const input = CreateEmergencyContactSchema.parse(req.body);
   const isPublished = input.status === 'published';
   const [created] = await db.insert(emergencyContacts).values({
@@ -282,7 +282,7 @@ router.post('/emergency-contacts', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: created });
 }));
 
-router.put('/emergency-contacts/:id', asyncHandler(async (req, res) => {
+router.put('/emergency-contacts/:id', dashboardAccess, asyncHandler(async (req, res) => {
   const input = UpdateEmergencyContactSchema.parse(req.body);
   const [updated] = await db
     .update(emergencyContacts)
@@ -300,7 +300,7 @@ router.put('/emergency-contacts/:id', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.get('/analytics', asyncHandler(async (req, res) => {
+router.get('/analytics', dashboardAccess, asyncHandler(async (req, res) => {
   const days = Number(req.query.days || 30);
   const since = new Date(Date.now() - Math.max(1, Math.min(days, 365)) * 24 * 60 * 60 * 1000);
   const [rows, profiles, moodRows, chatRows, cases] = await Promise.all([
@@ -366,7 +366,7 @@ router.get('/analytics', asyncHandler(async (req, res) => {
   });
 }));
 
-router.get('/counselor-cases', asyncHandler(async (req, res) => {
+router.get('/counselor-cases', dashboardAccess, asyncHandler(async (req, res) => {
   const rows = await db
     .select()
     .from(counselorCases)
@@ -382,7 +382,7 @@ router.get('/counselor-cases', asyncHandler(async (req, res) => {
   res.json({ success: true, data: visibleRows });
 }));
 
-router.get('/counselor-operations', asyncHandler(async (req, res) => {
+router.get('/counselor-operations', dashboardAccess, asyncHandler(async (req, res) => {
   const [cases, counselors, auditRows] = await Promise.all([
     db.select().from(counselorCases).orderBy(desc(counselorCases.createdAt)).limit(100),
     db.select().from(users),
@@ -445,7 +445,7 @@ router.get('/counselor-operations', asyncHandler(async (req, res) => {
   });
 }));
 
-router.post('/counselor-cases/:id/assign', asyncHandler(async (req, res) => {
+router.post('/counselor-cases/:id/assign', dashboardAccess, asyncHandler(async (req, res) => {
   const counselorId = String(req.body.counselorId || '').trim();
   if (!counselorId) return res.status(400).json({ success: false, error: 'Counselor is required' });
 
@@ -477,7 +477,7 @@ router.post('/counselor-cases/:id/assign', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.post('/counselors/:id/availability', asyncHandler(async (req, res) => {
+router.post('/counselors/:id/availability', dashboardAccess, asyncHandler(async (req, res) => {
   const status = String(req.body.status || 'offline');
   if (!['online', 'busy', 'offline'].includes(status)) {
     return res.status(400).json({ success: false, error: 'Invalid counselor status' });
@@ -511,7 +511,7 @@ router.post('/counselors/:id/availability', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.post('/counselor-cases/:id/status', asyncHandler(async (req, res) => {
+router.post('/counselor-cases/:id/status', dashboardAccess, asyncHandler(async (req, res) => {
   const status = String(req.body.status || '');
   const allowed = [
     'requested',
@@ -562,7 +562,7 @@ router.post('/counselor-cases/:id/status', asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.post('/counselor-cases/:id/notes', asyncHandler(async (req, res) => {
+router.post('/counselor-cases/:id/notes', dashboardAccess, asyncHandler(async (req, res) => {
   const note = String(req.body.note || '').trim();
   if (!note) return res.status(400).json({ success: false, error: 'Note is required' });
 
@@ -591,12 +591,12 @@ router.post('/counselor-cases/:id/notes', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true });
 }));
 
-router.get('/cms-content', asyncHandler(async (_req, res) => {
+router.get('/cms-content', dashboardAccess, asyncHandler(async (_req, res) => {
   const rows = await db.select().from(cmsContent).orderBy(desc(cmsContent.createdAt)).limit(100);
   res.json({ success: true, data: rows });
 }));
 
-router.get('/faqs', asyncHandler(async (_req, res) => {
+router.get('/faqs', dashboardAccess, asyncHandler(async (_req, res) => {
   res.json({
     success: true,
     data: goldFaqCards.map((card) => ({
@@ -612,7 +612,7 @@ router.get('/faqs', asyncHandler(async (_req, res) => {
   });
 }));
 
-router.get('/safety-rules', asyncHandler(async (_req, res) => {
+router.get('/safety-rules', dashboardAccess, asyncHandler(async (_req, res) => {
   res.json({
     success: true,
     data: safetyRules.map((rule, index) => ({
@@ -628,7 +628,7 @@ router.get('/safety-rules', asyncHandler(async (_req, res) => {
   });
 }));
 
-router.post('/safety-rules/test', asyncHandler(async (req, res) => {
+router.post('/safety-rules/test', dashboardAccess, asyncHandler(async (req, res) => {
   const message = String(req.body.message || '');
   const detection = detectRisk(message);
   res.json({
@@ -642,7 +642,7 @@ router.post('/safety-rules/test', asyncHandler(async (req, res) => {
   });
 }));
 
-router.post('/cms-content', asyncHandler(async (req, res) => {
+router.post('/cms-content', dashboardAccess, asyncHandler(async (req, res) => {
   const input = CmsContentSchema.parse(req.body);
   const [created] = await db.insert(cmsContent).values({
     ...input,
@@ -654,7 +654,7 @@ router.post('/cms-content', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: created });
 }));
 
-router.put('/cms-content/:id', asyncHandler(async (req, res) => {
+router.put('/cms-content/:id', dashboardAccess, asyncHandler(async (req, res) => {
   const input = CmsContentSchema.partial().parse(req.body);
   const [updated] = await db.update(cmsContent).set({
     ...input,
@@ -668,9 +668,7 @@ router.put('/cms-content/:id', asyncHandler(async (req, res) => {
 
 router.get('/users', adminOnly, asyncHandler(async (_req, res) => {
   const rows = await db.select().from(users).orderBy(desc(users.createdAt)).limit(100);
-  res.json({
-    success: true,
-    data: rows.map(async (user) => {
+  const usersWithRoles = await Promise.all(rows.map(async (user) => {
       const userRoles = await AuthService.getUserRoles(user.id);
       const roleNames = userRoles.map(r => r.name);
       return {
@@ -684,7 +682,10 @@ router.get('/users', adminOnly, asyncHandler(async (_req, res) => {
         createdAt: user.createdAt,
         lastActiveAt: user.lastActiveAt,
       };
-    }),
+    }));
+  res.json({
+    success: true,
+    data: usersWithRoles,
   });
 }));
 

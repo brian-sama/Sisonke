@@ -62,10 +62,13 @@ const useAuth = () => {
       method: 'POST',
       body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
     });
-    const roles = data.user?.roles?.length ? data.user.roles : [data.user?.role];
-    if (!roles.includes('admin') && !roles.includes('super-admin')) {
-      throw new Error('This account does not have admin access.');
+    const roles = (data.user?.roles?.length ? data.user.roles : [data.user?.role])
+      .map((r: any) => String(r || '').toLowerCase().replace(/_/g, '-'));
+    const allowedRoles = ['admin', 'super-admin', 'system-admin', 'counselor', 'moderator', 'content-admin'];
+    if (!roles.some((r: string) => allowedRoles.includes(r))) {
+      throw new Error('This account does not have dashboard access.');
     }
+
     const u = { email: data.user.email || email, mustChangePassword: Boolean(data.user.mustChangePassword) };
     setUser(u);
     localStorage.setItem(userKey, JSON.stringify(u));

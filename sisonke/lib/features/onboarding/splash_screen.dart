@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/core/services/api_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -16,9 +19,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateToHome() async {
     await Future.delayed(const Duration(seconds: 3));
-    if (mounted) {
-      // Navigation will be handled by router based on auth state
-      // For now, just pop or navigate
+    if (!mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final apiService = ApiService();
+    final hasCompletedOnboarding = prefs.getBool('onboarding_completed') ?? false;
+
+    if (apiService.isAuthenticated) {
+      context.go('/home');
+    } else if (!hasCompletedOnboarding) {
+      context.go('/onboarding');
+    } else {
+      context.go('/auth');
     }
   }
 
