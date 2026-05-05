@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/services/api_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -24,8 +24,11 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final apiService = ApiService();
     final hasCompletedOnboarding = prefs.getBool('onboarding_completed') ?? false;
+    final isAuthenticated = await apiService.isAuthenticated;
 
-    if (apiService.isAuthenticated) {
+    if (!mounted) return;
+
+    if (isAuthenticated) {
       context.go('/home');
     } else if (!hasCompletedOnboarding) {
       context.go('/onboarding');

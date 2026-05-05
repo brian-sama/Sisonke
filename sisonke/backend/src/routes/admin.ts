@@ -17,6 +17,7 @@ import {
   securityLogs,
   userProfiles,
   users,
+  userRoles,
   auditLogs,
 } from '../db/schema';
 import { authMiddleware, adminOnly, dashboardAccess, hasRole, superAdminOnly } from '../middleware/auth';
@@ -741,7 +742,8 @@ router.post('/users', superAdminOnly, asyncHandler(async (req, res) => {
       mustChangePassword: created.mustChangePassword,
       createdAt: created.createdAt,
     },
-  }));
+  });
+}));
 
 router.put('/users/:id', superAdminOnly, asyncHandler(async (req, res) => {
   const input = UpdateAdminUserSchema.parse(req.body);
@@ -854,17 +856,20 @@ router.put('/users/:id/roles', superAdminOnly, asyncHandler(async (req, res) => 
     metadata: { targetUserId: req.params.id, roles: input.roles },
   });
 
+  // Fetch full user with roles for the response
+  const userRolesList = await AuthService.getUserRoles(updated.id);
+  const roleNames = userRolesList.map(r => r.name);
+
   res.json({
     success: true,
     data: {
       id: updated.id,
       email: updated.email,
-      role: updated.role,
-    roles: updated.roles,
-    isGuest: updated.isGuest,
-    mustChangePassword: updated.mustChangePassword,
-    updatedAt: updated.updatedAt,
-  },
+      roles: roleNames,
+      isGuest: updated.isGuest,
+      mustChangePassword: updated.mustChangePassword,
+      updatedAt: updated.updatedAt,
+    },
   });
 }));
 

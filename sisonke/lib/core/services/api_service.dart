@@ -165,6 +165,11 @@ class ApiService {
     }
   }
 
+  Future<bool> get isAuthenticated async {
+    final token = await _secureStorage.read(key: AppConstants.tokenKey);
+    return token != null && token.isNotEmpty;
+  }
+
   Future<String?> getCurrentToken() async {
     return await _secureStorage.read(key: AppConstants.tokenKey);
   }
