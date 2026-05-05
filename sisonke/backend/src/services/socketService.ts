@@ -32,8 +32,8 @@ export class SocketService {
 
     this.io.on('connection', (socket) => {
       const user = socket.data.user;
-      console.log(`User connected: ${user.id} (${user.role})`);
-      const roles = Array.isArray(user.roles) ? user.roles : [user.role];
+      const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
+      console.log(`User connected: ${user.id} (Roles: ${roles.join(', ')})`);
 
       // Users join their own private room for notifications
       socket.join(`user:${user.id}`);
@@ -75,7 +75,7 @@ export class SocketService {
         socket.to(`case:${data.caseId}`).emit('new_message', {
           caseId: data.caseId,
           senderId: user.id,
-          senderRole: user.role,
+          senderRole: roles[0] || 'user',
           content: data.content,
           timestamp: new Date().toISOString()
         });

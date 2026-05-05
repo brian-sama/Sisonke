@@ -4,11 +4,10 @@ declare global {
       user?: {
         id: string;
         email?: string;
-      role: string;
-      roles: string[];
-      isGuest: boolean;
-      mustChangePassword: boolean;
-      deviceId?: string;
+        roles: string[];
+        isGuest: boolean;
+        mustChangePassword: boolean;
+        deviceId?: string;
       };
     }
   }
