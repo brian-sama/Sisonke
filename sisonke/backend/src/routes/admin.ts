@@ -515,18 +515,21 @@ router.post('/counselors/:id/availability', dashboardAccess, asyncHandler(async 
 
   if (!updated) return res.status(404).json({ success: false, error: 'Counselor not found' });
 
+  const isOnCall = typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : false;
+  const specializations = Array.isArray(req.body.specializations) ? req.body.specializations : [];
+
   await db.insert(auditLogs).values({
     actorId: req.user!.id,
     action: 'counselor_availability_changed',
     entityType: 'user',
     entityId: updated.id,
-    metadata: { status, isOnCall: updated.isOnCall, specializations: updated.counselorSpecializations },
+    metadata: { status, isOnCall, specializations },
   });
 
   SocketService.notifyStaff(status === 'online' ? 'counselor:online' : 'counselor:offline', {
     counselorId: updated.id,
     status,
-    isOnCall: updated.isOnCall,
+    isOnCall,
   });
   SocketService.broadcastDashboardUpdate({ type: 'counselor', action: 'availability_changed', counselorId: updated.id });
 

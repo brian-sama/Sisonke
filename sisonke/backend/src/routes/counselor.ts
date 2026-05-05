@@ -136,18 +136,20 @@ router.post('/me/availability', asyncHandler(async (req, res) => {
 
   const [updated] = await db.select({ id: users.id }).from(users).where(eq(users.id, req.user!.id)).limit(1);
 
+  const isOnCall = typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : false;
+
   await db.insert(auditLogs).values({
     actorId: req.user!.id,
     action: 'counselor_availability_changed',
     entityType: 'user',
     entityId: req.user!.id,
-    metadata: { status, isOnCall: updated?.isOnCall },
+    metadata: { status, isOnCall },
   });
 
   SocketService.notifyStaff(status === 'online' ? 'counselor:online' : 'counselor:offline', {
     counselorId: req.user!.id,
     status,
-    isOnCall: updated?.isOnCall,
+    isOnCall,
   });
   SocketService.broadcastDashboardUpdate({ type: 'counselor', action: 'availability_changed', counselorId: req.user!.id });
 
