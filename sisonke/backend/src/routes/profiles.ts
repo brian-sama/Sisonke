@@ -57,9 +57,15 @@ router.put('/me', asyncHandler(async (req, res) => {
     updatedAt: new Date(),
   };
 
+  const selectFields = {
+    id: userProfiles.id,
+    nickname: userProfiles.nickname,
+    chatbotPersona: userProfiles.chatbotPersona,
+  };
+
   const [profile] = existing.length
-    ? await db.update(userProfiles).set(payload).where(eq(userProfiles.userId, req.user!.id)).returning()
-    : await db.insert(userProfiles).values({ ...payload, userId: req.user!.id }).returning();
+    ? await db.update(userProfiles).set(payload).where(eq(userProfiles.userId, req.user!.id)).returning(selectFields)
+    : await db.insert(userProfiles).values({ ...payload, userId: req.user!.id }).returning(selectFields);
 
   res.json({ success: true, data: profile });
 }));

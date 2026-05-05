@@ -53,11 +53,18 @@ app.use(cors({
       return;
     }
     const allowedOrigins = getAllowedOrigins();
-    if (!origin || allowedOrigins.includes(origin)) {
+    const isAllowed = !origin || allowedOrigins.some((allowed) => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+
+    if (isAllowed) {
       callback(null, true);
       return;
     }
-    callback(new Error('Origin not allowed by CORS'));
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
 }));
