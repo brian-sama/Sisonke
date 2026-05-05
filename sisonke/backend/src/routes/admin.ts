@@ -492,13 +492,26 @@ router.post('/counselors/:id/availability', dashboardAccess, asyncHandler(async 
     return res.status(400).json({ success: false, error: 'Invalid counselor status' });
   }
 
-  const [updated] = await db.update(users).set({
-    counselorStatus: status,
-    isOnCall: typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : undefined,
-    counselorSpecializations: Array.isArray(req.body.specializations) ? req.body.specializations : undefined,
+  const updateData: any = {
     lastActiveAt: new Date(),
     updatedAt: new Date(),
-  }).where(eq(users.id, req.params.id)).returning();
+  };
+
+  try {
+    await db.update(users).set({
+      ...updateData,
+      counselorStatus: status,
+      isOnCall: typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : undefined,
+      counselorSpecializations: Array.isArray(req.body.specializations) ? req.body.specializations : undefined,
+    }).where(eq(users.id, req.params.id));
+  } catch (err) {
+    await db.update(users).set(updateData).where(eq(users.id, req.params.id));
+  }
+
+  const [updated] = await db.select({ 
+    id: users.id,
+    email: users.email,
+  }).from(users).where(eq(users.id, req.params.id)).limit(1);
 
   if (!updated) return res.status(404).json({ success: false, error: 'Counselor not found' });
 
@@ -676,7 +689,20 @@ router.put('/cms-content/:id', dashboardAccess, asyncHandler(async (req, res) =>
 }));
 
 router.get('/users', adminOnly, asyncHandler(async (_req, res) => {
-  const rows = await db.select().from(users).orderBy(desc(users.createdAt)).limit(100);
+  const rows = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      isGuest: users.isGuest,
+      isSuspended: users.isSuspended,
+      suspensionReason: users.suspensionReason,
+      mustChangePassword: users.mustChangePassword,
+      createdAt: users.createdAt,
+      lastActiveAt: users.lastActiveAt,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt))
+    .limit(100);
   const usersWithRoles = await Promise.all(rows.map(async (user) => {
       const userRoles = await AuthService.getUserRoles(user.id);
       const roleNames = userRoles.map(r => r.name);

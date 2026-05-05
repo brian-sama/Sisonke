@@ -67,7 +67,18 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     
     // Get user from database
-    const user = await db.select().from(users).where(eq(users.id, decoded.userId)).limit(1);
+    const user = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        isGuest: users.isGuest,
+        mustChangePassword: users.mustChangePassword,
+        deviceId: users.deviceId,
+        isSuspended: users.isSuspended,
+      })
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .limit(1);
     
     if (!user.length) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -113,7 +124,18 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     
     // Get user from database
-    const user = await db.select().from(users).where(eq(users.id, decoded.userId)).limit(1);
+    const user = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        isGuest: users.isGuest,
+        mustChangePassword: users.mustChangePassword,
+        deviceId: users.deviceId,
+        isSuspended: users.isSuspended,
+      })
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .limit(1);
     
     if (user.length) {
       if (user[0].isSuspended) return next();

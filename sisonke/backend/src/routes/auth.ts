@@ -83,7 +83,13 @@ router.post('/login', asyncHandler(async (req, res) => {
 
   // Find user
   const user = await db
-    .select()
+    .select({
+      id: users.id,
+      email: users.email,
+      passwordHash: users.passwordHash,
+      isGuest: users.isGuest,
+      mustChangePassword: users.mustChangePassword,
+    })
     .from(users)
     .where(eq(users.email, validatedData.email))
     .limit(1);
@@ -133,7 +139,15 @@ router.post('/login', asyncHandler(async (req, res) => {
 
 router.post('/change-password', authMiddleware, asyncHandler(async (req, res) => {
   const input = ChangePasswordSchema.parse(req.body);
-  const [user] = await db.select().from(users).where(eq(users.id, req.user!.id)).limit(1);
+  const [user] = await db
+    .select({
+      id: users.id,
+      passwordHash: users.passwordHash,
+      mustChangePassword: users.mustChangePassword,
+    })
+    .from(users)
+    .where(eq(users.id, req.user!.id))
+    .limit(1);
 
   if (!user || !user.passwordHash) {
     return res.status(404).json({ success: false, error: 'Account not found.' });
@@ -165,7 +179,11 @@ router.post('/guest', asyncHandler(async (req, res) => {
 
   // Check if guest session already exists
   const existingGuest = await db
-    .select()
+    .select({
+      id: users.id,
+      isGuest: users.isGuest,
+      mustChangePassword: users.mustChangePassword,
+    })
     .from(users)
     .where(and(eq(users.deviceId, validatedData.deviceId), eq(users.isGuest, true)))
     .limit(1);
@@ -252,7 +270,9 @@ router.post('/refresh', asyncHandler(async (req, res) => {
   
   // Get user
   const user = await db
-    .select()
+    .select({
+      id: users.id,
+    })
     .from(users)
     .where(eq(users.id, decoded.userId))
     .limit(1);

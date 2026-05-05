@@ -16,7 +16,7 @@ async function main() {
     throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required.');
   }
 
-  const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
     await db.update(users).set({ isGuest: false, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
     
