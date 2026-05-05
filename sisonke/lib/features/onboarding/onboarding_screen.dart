@@ -168,7 +168,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -195,6 +195,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
+          const SizedBox(height: 120), // Extra space for the floating buttons
         ],
       ),
     );

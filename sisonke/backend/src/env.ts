@@ -12,15 +12,16 @@ export function validateEnv() {
 }
 
 export function getAllowedOrigins() {
-  const configured = process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000';
-  const origins = configured.split(',').map((origin) => origin.trim()).filter(Boolean);
+  const configured = process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const origins: (string | RegExp)[] = configured.split(',').map((o) => o.trim()).filter(Boolean);
   
-  // Always allow the production domain if we're in production
-  if (process.env.NODE_ENV === 'production') {
-    if (!origins.includes('https://sisonke.mmpzmne.co.zw')) {
-      origins.push('https://sisonke.mmpzmne.co.zw');
-    }
+  // Add production domain
+  if (!origins.includes('https://sisonke.mmpzmne.co.zw')) {
+    origins.push('https://sisonke.mmpzmne.co.zw');
   }
+
+  // Always allow any localhost port for easier dev/debug
+  origins.push(/^http:\/\/localhost:\d+$/);
   
   return origins;
 }

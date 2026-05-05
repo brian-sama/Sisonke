@@ -28,7 +28,7 @@ router.post('/register', asyncHandler(async (req, res) => {
   
   // Check if user already exists
   const existingUser = await db
-    .select()
+    .select({ id: users.id })
     .from(users)
     .where(eq(users.email, validatedData.email))
     .limit(1);
@@ -52,7 +52,12 @@ router.post('/register', asyncHandler(async (req, res) => {
       passwordHash,
       isGuest: false,
     })
-    .returning();
+    .returning({
+      id: users.id,
+      email: users.email,
+      isGuest: users.isGuest,
+      mustChangePassword: users.mustChangePassword,
+    });
 
   // Assign USER role
   await AuthService.assignRole(newUser[0].id, 'USER');
@@ -221,7 +226,11 @@ router.post('/guest', asyncHandler(async (req, res) => {
       deviceId: validatedData.deviceId,
       isGuest: true,
     })
-    .returning();
+    .returning({
+      id: users.id,
+      isGuest: users.isGuest,
+      mustChangePassword: users.mustChangePassword,
+    });
 
   // Assign GUEST role (we'll need to add this to the role system)
   try {
