@@ -48,6 +48,10 @@ app.use(helmet()); // Security headers
 app.use(limiter); // Rate limiting
 app.use(cors({
   origin(origin, callback) {
+    if (process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+      return;
+    }
     const allowedOrigins = getAllowedOrigins();
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);

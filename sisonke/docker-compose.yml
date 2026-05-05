@@ -32,7 +32,7 @@ services:
 
 
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-sisonke}
@@ -41,7 +41,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sisonke"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-sisonke}"]
       interval: 10s
       timeout: 5s
       retries: 5

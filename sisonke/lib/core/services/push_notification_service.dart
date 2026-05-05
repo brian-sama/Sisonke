@@ -17,13 +17,16 @@ class PushNotificationService {
   PushNotificationService(this._api);
 
   final ApiService _api;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  late FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
+    if (kIsWeb) return; // Skip for now on web to avoid configuration errors
+
     try {
       await Firebase.initializeApp();
+      _messaging = FirebaseMessaging.instance;
     } catch (e) {
       if (kDebugMode) debugPrint('Push notifications not configured yet: $e');
       return;
