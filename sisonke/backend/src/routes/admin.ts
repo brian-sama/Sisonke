@@ -93,16 +93,22 @@ router.get('/analytics/health', dashboardAccess, asyncHandler(async (_req, res) 
   res.json({ success: true, data: stats });
 }));
 
-router.get('/overview', dashboardAccess, asyncHandler(async (_req, res) => {
+router.get('/overview', dashboardAccess, asyncHandler(async (req, res) => {
+  const isAdmin = hasAny(req.user, ['admin', 'system-admin', 'super-admin']);
+
   const results = await Promise.all([
     db.select({ value: count() }).from(users),
     db.select({ value: count() }).from(resources).where(isNull(resources.deletedAt)),
     db.select({ value: count() }).from(emergencyContacts).where(isNull(emergencyContacts.deletedAt)),
     db.select({ value: count() }).from(questions).where(isNull(questions.deletedAt)),
-    db.select({ value: count() }).from(counselorCases),
+    isAdmin 
+      ? db.select({ value: count() }).from(counselorCases)
+      : db.select({ value: count() }).from(counselorCases).where(eq(counselorCases.counselorId, req.user!.id)),
     db.select({ value: count() }).from(chatbotSessions),
     db.select({ value: count() }).from(communityPosts).where(eq(communityPosts.status, 'pending')),
-    db.select({ value: count() }).from(counselorCases).where(eq(counselorCases.riskLevel, 'high')),
+    isAdmin
+      ? db.select({ value: count() }).from(counselorCases).where(eq(counselorCases.riskLevel, 'high'))
+      : db.select({ value: count() }).from(counselorCases).where(and(eq(counselorCases.counselorId, req.user!.id), eq(counselorCases.riskLevel, 'high'))),
     db.select().from(analyticsEvents).orderBy(desc(analyticsEvents.occurredAt)).limit(10),
   ]);
 
@@ -119,7 +125,7 @@ router.get('/overview', dashboardAccess, asyncHandler(async (_req, res) => {
   res.json({
     success: true,
     data: {
-      users: { total: userCount },
+      users: { total: isAdmin ? userCount : 1 }, // If counselor, just show '1' (themselves)
       resources: { total: resourceCount },
       emergencyContacts: { total: contactCount },
       questions: { total: questionCount },
@@ -129,7 +135,7 @@ router.get('/overview', dashboardAccess, asyncHandler(async (_req, res) => {
       },
       chatbotSessions: { total: sessionCount },
       communityPosts: { pending: pendingPostsCount },
-      latestEvents
+      latestEvents: isAdmin ? latestEvents : [] // Hide system events from counselors
     },
   });
 }));
@@ -368,17 +374,19 @@ router.get('/analytics', dashboardAccess, asyncHandler(async (req, res) => {
 }));
 
 router.get('/counselor-cases', dashboardAccess, asyncHandler(async (req, res) => {
-  const rows = await db
+  const isAdmin = hasAny(req.user, ['admin', 'system-admin', 'super-admin']);
+  
+  let query = db
     .select()
-    .from(counselorCases)
-    .orderBy(desc(counselorCases.createdAt))
-    .limit(100);
+    .from(counselorCases);
 
-  const visibleRows = hasAny(req.user, ['admin', 'system-admin', 'super-admin'])
-    ? rows.map((item) => sanitizeCaseForUser(req.user, item))
-    : rows
-        .filter((item) => item.counselorId === req.user!.id)
-        .map((item) => sanitizeCaseForUser(req.user, item));
+  if (!isAdmin) {
+    // @ts-ignore - Ensure counselorId type compatibility
+    query = query.where(eq(counselorCases.counselorId, req.user!.id));
+  }
+
+  const rows = await query.orderBy(desc(counselorCases.createdAt)).limit(100);
+  const visibleRows = rows.map((item) => sanitizeCaseForUser(req.user, item));
 
   res.json({ success: true, data: visibleRows });
 }));

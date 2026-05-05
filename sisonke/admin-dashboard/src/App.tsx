@@ -1,545 +1,364 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
-} from 'recharts';
-import { 
-  Users, MessageSquare, AlertTriangle, Clock, BookOpen, 
-  ShieldAlert, Phone, HelpCircle, UserCheck, Shield,
-  Settings as SettingsIcon, LogOut, Menu, X, Search,
-  Plus, Edit2, Trash2, Check, ExternalLink, Filter, ChevronRight,
-  Tag, Globe, PieChart as PieChartIcon, Activity, Lock, Mail
+  Users, 
+  MessageSquare, 
+  ShieldAlert, 
+  BookOpen, 
+  AlertTriangle, 
+  Activity, 
+  Search, 
+  Check, 
+  X, 
+  Plus, 
+  ChevronRight, 
+  LayoutDashboard, 
+  Shield, 
+  Settings as SettingsIcon,
+  LogOut,
+  Mail,
+  Lock,
+  PieChart,
+  Tag,
+  Globe,
+  Clock,
+  UserCheck,
+  ChevronDown,
+  Menu,
+  MoreVertical,
+  ArrowRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { 
   BrowserRouter as Router, 
   Routes, 
   Route, 
+  Navigate, 
   Link, 
-  useLocation, 
-  useNavigate,
-  Navigate
+  useLocation,
+  useNavigate
 } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line
+} from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// --- Utils ---
+// --- Utilities ---
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// --- API/Auth helpers ---
-const tokenKey = 'sisonke_admin_token';
-const userKey = 'sisonke_admin_user';
+const timeAgo = (date: string) => {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + "y ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + "mo ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + "d ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + "h ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + "m ago";
+  return Math.floor(seconds) + "s ago";
+};
 
-async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = localStorage.getItem(tokenKey);
-  const response = await fetch(path, {
+const dayLabel = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+};
+
+const emptyChart = (days: number) => Array.from({ length: days }).map((_, i) => ({
+  name: '',
+  appUse: 0,
+  urgent: 0,
+}));
+
+// --- API Service ---
+const apiFetch = async (endpoint: string, options: any = {}) => {
+  const token = localStorage.getItem('auth_token');
+  const response = await fetch(endpoint, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
+      'Authorization': `Bearer ${token}`,
+      ...options.headers,
     },
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || `Request failed: ${response.status}`);
+  if (response.status === 401) {
+    localStorage.removeItem('auth_token');
+    window.location.href = '/';
   }
-  return payload.data ?? payload;
-}
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Something went wrong');
+  return data.data;
+};
 
-// --- Auth Context ---
+// --- Auth Hook ---
 const useAuth = () => {
-  const [user, setUser] = useState<{ email: string; mustChangePassword?: boolean } | null>(() => {
-    const saved = localStorage.getItem(userKey);
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem('auth_token')));
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      apiFetch('/api/auth/me')
+        .then(data => setUser(data))
+        .catch(() => setIsAuthenticated(false));
+    }
+  }, [isAuthenticated]);
 
   const login = async (email: string, password: string) => {
-    const data = await apiFetch('/api/auth/login', {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
-    const roles = (data.user?.roles?.length ? data.user.roles : [data.user?.role])
-      .map((r: any) => String(r || '').toLowerCase().replace(/_/g, '-'));
-    const allowedRoles = ['admin', 'super-admin', 'system-admin', 'counselor', 'moderator', 'content-admin'];
-    if (!roles.some((r: string) => allowedRoles.includes(r))) {
-      throw new Error('This account does not have dashboard access.');
-    }
-
-    const u = { email: data.user.email || email, mustChangePassword: Boolean(data.user.mustChangePassword) };
-    setUser(u);
-    localStorage.setItem(userKey, JSON.stringify(u));
-    localStorage.setItem(tokenKey, data.token);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    
+    // Check for staff permissions
+    const staffRoles = ['admin', 'super-admin', 'system-admin', 'counselor', 'moderator', 'content-manager', 'safety-reviewer'];
+    const roles = data.data.user.roles || [];
+    const isStaff = roles.some((r: string) => staffRoles.includes(r));
+    
+    if (!isStaff) throw new Error('Access denied. This portal is for support staff only.');
+    
+    localStorage.setItem('auth_token', data.data.token);
+    setUser(data.data.user);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
+    localStorage.removeItem('auth_token');
     setUser(null);
-    localStorage.removeItem(userKey);
-    localStorage.removeItem(tokenKey);
+    setIsAuthenticated(false);
   };
 
   const finishPasswordChange = () => {
-    if (!user) return;
-    const updated = { ...user, mustChangePassword: false };
-    setUser(updated);
-    localStorage.setItem(userKey, JSON.stringify(updated));
+    if (user) setUser({ ...user, mustChangePassword: false });
   };
 
-  return { user, login, logout, finishPasswordChange, isAuthenticated: !!user };
+  return { user, login, logout, isAuthenticated, finishPasswordChange };
 };
 
-// --- Components ---
+const hasAny = (user: any, roles: string[]) => {
+  if (!user || !user.roles) return false;
+  return user.roles.some((r: string) => roles.includes(r));
+};
 
-const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+// --- Base Components ---
+const Card = ({ children, className }: any) => (
+  <div className={cn("bg-white border border-zinc-100 rounded-[2rem] transition-all", className)}>
+    {children}
+  </div>
+);
+
+const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const location = useLocation();
+  const { user } = useAuth();
   
-  const navGroups = [
-    {
-      label: 'Main',
-      items: [
-        { name: 'Home', path: '/', icon: BarChart },
-        { name: 'Reports', path: '/analytics', icon: Activity },
-      ]
-    },
-    {
-      label: 'Safety',
-      items: [
-        { name: 'Help Contacts', path: '/emergency', icon: Phone },
-        { name: 'Safety Rules', path: '/safety', icon: ShieldAlert },
-        { name: 'Community Posts', path: '/moderation', icon: MessageSquare },
-      ]
-    },
-    {
-      label: 'Learning',
-      items: [
-        { name: 'Resources', path: '/resources', icon: BookOpen },
-        { name: 'Questions', path: '/faq', icon: HelpCircle },
-      ]
-    },
-    {
-      label: 'Support',
-      items: [
-        { name: 'Support Requests', path: '/cases', icon: UserCheck },
-      ]
-    },
-    {
-      label: 'Team',
-      items: [
-        { name: 'People', path: '/users', icon: Users },
-        { name: 'Settings', path: '/settings', icon: SettingsIcon },
-      ]
-    }
+  const navItems = [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Reports', path: '/analytics', icon: PieChart, roles: ['admin', 'super-admin', 'system-admin', 'analyst'] },
+    { name: 'Support', path: '/cases', icon: MessageSquare },
+    { name: 'Resources', path: '/resources', icon: BookOpen },
+    { name: 'Questions', path: '/faq', icon: Globe },
+    { name: 'Community', path: '/moderation', icon: Users },
+    { name: 'Safety', path: '/safety', icon: ShieldAlert, roles: ['admin', 'super-admin', 'system-admin', 'safety-reviewer'] },
+    { name: 'People', path: '/users', icon: Users, roles: ['admin', 'super-admin', 'system-admin'] },
+    { name: 'Settings', path: '/settings', icon: SettingsIcon },
   ];
+
+  const visibleItems = navItems.filter(item => !item.roles || hasAny(user, item.roles));
 
   return (
     <>
-      <div 
-        className={cn(
-          "fixed inset-0 bg-indigo-900/10 backdrop-blur-sm z-40 lg:hidden transition-opacity",
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        )} 
-        onClick={onClose}
-      />
-      <motion.aside
-        initial={false}
-        className={cn(
-          "fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-zinc-100 z-50 lg:translate-x-0 transition-transform shadow-2xl lg:shadow-none",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-[40] lg:hidden" 
+          />
         )}
-      >
-        <div className="p-8 pb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <SisonkeLogo />
-            <h1 className="text-2xl font-display font-black text-zinc-900 tracking-tight italic uppercase">Sisonke</h1>
-          </div>
-          <button onClick={onClose} className="lg:hidden p-2 text-zinc-400 hover:text-zinc-900 transition-colors">
-            <X size={20} strokeWidth={3} />
-          </button>
+      </AnimatePresence>
+      
+      <div className={cn(
+        "fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-zinc-100 z-[50] flex flex-col transition-transform lg:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-8 flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-lg shadow-indigo-100">S</div>
+          <h1 className="text-xl font-display font-black text-zinc-900 tracking-tight italic uppercase">Sisonke</h1>
         </div>
-
-        <nav className="p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-160px)] custom-scrollbar">
-          {navGroups.map((group) => (
-            <div key={group.label} className="space-y-2">
-              <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4">{group.label}</p>
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const isOn = location.pathname === item.path;
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => onClose()}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all group relative overflow-hidden",
-                        isOn 
-                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" 
-                          : "text-zinc-500 hover:bg-indigo-50 hover:text-indigo-600"
-                      )}
-                    >
-                      {isOn && (
-                        <motion.div 
-                          layoutId="sidebar-active"
-                          className="absolute inset-0 bg-indigo-600 -z-10"
-                        />
-                      )}
-                      <Icon size={20} strokeWidth={isOn ? 3 : 2.5} className={cn(
-                        "transition-transform group-hover:scale-110",
-                        isOn ? "text-white" : "text-zinc-400 group-hover:text-indigo-500"
-                      )} />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
         
-        <div className="absolute bottom-6 left-6 right-6">
-           <div className="p-5 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex items-center justify-between">
-              <div className="flex flex-col">
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Place</p>
-                <p className="text-sm font-display font-bold text-zinc-900">Bulawayo</p>
+        <nav className="flex-1 px-4 py-6 space-y-1">
+          {visibleItems.map(item => {
+            const active = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path} onClick={() => onClose()}>
+                <motion.div 
+                  whileHover={{ x: 4 }}
+                  className={cn(
+                    "flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm transition-all",
+                    active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "text-zinc-500 hover:bg-zinc-50"
+                  )}
+                >
+                  <item.icon size={20} strokeWidth={active ? 3 : 2} />
+                  {item.name}
+                </motion.div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-8 bg-zinc-50/50">
+           <div className="p-5 bg-white rounded-3xl border border-zinc-100 shadow-sm flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center font-black">
+                {(user as any)?.email?.[0].toUpperCase() || 'A'}
               </div>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="flex flex-col min-w-0">
+                 <span className="text-xs font-black text-zinc-900 truncate">{(user as any)?.email}</span>
+                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Active</span>
+              </div>
            </div>
         </div>
-      </motion.aside>
+      </div>
     </>
   );
 };
 
 const TopBar = ({ title, user, onLogout, onMenuOpen }: any) => (
-  <header className="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30">
+  <header className="h-20 bg-white/80 backdrop-blur-md border-b border-zinc-100 px-8 flex items-center justify-between sticky top-0 z-[30]">
     <div className="flex items-center gap-4">
-      <button onClick={onMenuOpen} className="lg:hidden p-2 text-zinc-500 hover:bg-zinc-100 rounded-xl">
-        <Menu size={24} />
-      </button>
-      <h2 className="text-xl font-display font-bold text-zinc-900">{title}</h2>
+      <button onClick={onMenuOpen} className="p-2 lg:hidden text-zinc-400"><Menu /></button>
+      <h2 className="text-xl font-display font-black text-zinc-900">{title}</h2>
     </div>
     <div className="flex items-center gap-6">
-      <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-2xl">
-        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold ring-4 ring-white shadow-sm">
-          {user?.email?.[0].toUpperCase()}
-        </div>
-        <div className="flex flex-col text-sm">
-          <span className="font-semibold text-indigo-900 leading-none mb-0.5">{user?.email?.split('@')[0]}</span>
-          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Team Lead</span>
-        </div>
-      </div>
-      <button 
-        onClick={onLogout}
-        className="p-3 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all hover:rotate-12"
-      >
-        <LogOut size={22} />
-      </button>
+       <button onClick={onLogout} className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 text-white rounded-2xl text-xs font-black hover:scale-105 active:scale-95 transition-all">
+         <LogOut size={14} strokeWidth={3} /> Sign out
+       </button>
     </div>
   </header>
 );
 
-const Card = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-  <div className={cn("bg-white border border-zinc-100 rounded-[2rem] shadow-sm hover:shadow-md transition-shadow", className)}>
-    {children}
+const SisonkeLogo = ({ className }: { className?: string }) => (
+  <div className={cn("bg-indigo-600 flex items-center justify-center text-white", className)}>
+    <ShieldAlert size={32} strokeWidth={3} />
   </div>
 );
 
-const SisonkeLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
-  <img src="/sisonke-logo.png" alt="Sisonke" className={cn("rounded-2xl object-cover shadow-lg", className)} />
-);
-
-const dayLabel = (value: string) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-};
-
-const timeAgo = (value?: string) => {
-  if (!value) return 'recently';
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-};
-
-const emptyChart = (days = 7) => Array.from({ length: days }, (_, index) => {
-  const date = new Date(Date.now() - (days - index - 1) * 24 * 60 * 60 * 1000);
-  const iso = date.toISOString().split('T')[0];
-  return { date: iso, name: dayLabel(iso), appUse: 0, urgent: 0 };
-});
-
-// --- Pages ---
+// --- Page Components ---
 
 const Home = () => {
-  const emptyStats = {
-    totalUsers: 0,
-    guestSessions: 0,
-    chatbotSessions: 0,
-    highRiskEscalations: 0,
-    counselorCasesWaiting: 0,
-    communityPostsPending: 0,
-  };
-  const [stats, setStats] = useState<any>(emptyStats);
-  const [activity, setActivity] = useState<any[]>(emptyChart(7));
-  const [loadError, setLoadError] = useState('');
-  const [loading, setLoading] = useState(true);
-
+  const [stats, setStats] = useState<any>(null);
   useEffect(() => {
-    Promise.all([
-      apiFetch('/api/admin/overview'),
-      apiFetch('/api/admin/analytics?days=7').catch(() => null),
-    ]).then(([data, analytics]) => {
-      setStats({
-        totalUsers: data.users?.total ?? 0,
-        guestSessions: data.users?.guests ?? 0,
-        chatbotSessions: data.chatbotSessions?.total ?? 0,
-        highRiskEscalations: data.counselorCases?.highRisk ?? 0,
-        counselorCasesWaiting: data.counselorCases?.waiting ?? data.counselorCases?.total ?? 0,
-        communityPostsPending: data.communityPosts?.pending ?? 0,
-      });
-      const series = Array.isArray(analytics?.timeSeries) ? analytics.timeSeries : [];
-      setActivity(series.length ? series.map((item: any) => ({
-        ...item,
-        name: dayLabel(item.date),
-        appUse: Number(item.appUse || 0),
-        urgent: Number(item.urgent || 0),
-      })) : emptyChart(7));
-      setLoadError('');
-      setLoading(false);
-    }).catch((error) => {
-      setStats(emptyStats);
-      setLoadError(error instanceof Error ? error.message : 'Could not load the latest numbers.');
-      setLoading(false);
-    });
+    apiFetch('/api/admin/overview').then(data => setStats(data));
   }, []);
 
-  if (loading) return (
-    <div className="p-10 space-y-8 animate-pulse max-w-7xl mx-auto">
-      <div className="h-10 w-48 bg-zinc-200 rounded-xl" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1,2,3,4,5,6].map(i => <div key={i} className="h-32 bg-zinc-100 rounded-3xl" />)}
-      </div>
-    </div>
-  );
-
-  const cards = [
-    { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { title: 'Guest visits', value: stats.guestSessions, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: 'AI chats', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Urgent alerts', value: stats.highRiskEscalations, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { title: 'Open cases', value: stats.counselorCasesWaiting, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { title: 'Posts waiting', value: stats.communityPostsPending, icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
-  ];
+  if (!stats) return null;
 
   return (
     <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
-      {loadError && (
-        <div className="p-4 bg-amber-50 border border-amber-100 text-amber-800 rounded-2xl font-bold">
-          We could not load the latest numbers yet. The page is still usable.
+      <div className="bg-indigo-600 p-10 lg:p-16 rounded-[4rem] shadow-2xl relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
+        <div className="relative z-10 space-y-4">
+          <h1 className="text-4xl lg:text-6xl font-display font-black text-white leading-tight">Welcome to the<br />Sisonke Command Center.</h1>
+          <p className="text-indigo-100 text-lg lg:text-xl font-medium max-w-xl">Real-time youth safety monitoring and resource management for Zimbabwe.</p>
         </div>
-      )}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        {cards.map((card, i) => (
-          <Card key={i} className="p-8 group">
-            <div className="flex items-center gap-4 mb-4">
-              <div className={cn("p-3 rounded-2xl transition-transform group-hover:scale-110 group-hover:rotate-6", card.bg, card.color)}>
-                <card.icon size={28} strokeWidth={2.5} />
-              </div>
-              <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.1em]">{card.title}</p>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-4xl font-display font-black text-zinc-900 tracking-tight">{Number(card.value || 0).toLocaleString()}</h3>
-            </div>
-          </Card>
-        ))}
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="p-8">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-display font-bold">Recent activity</h3>
-            <div className="flex gap-2">
-               <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                 <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                 App visits
-               </div>
-               <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                 <div className="w-3 h-3 rounded-full bg-blue-400" />
-                 App use
-               </div>
-            </div>
-          </div>
-          <div className="h-[320px]">
-             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activity}>
-                  <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Bar dataKey="appUse" fill="#6366f1" radius={[8, 8, 0, 0]} maxBarSize={32} />
-                </BarChart>
-             </ResponsiveContainer>
-          </div>
-        </Card>
-
-        <Card className="p-8">
-          <h3 className="text-xl font-display font-bold mb-8">Urgent help requests</h3>
-          <div className="h-[320px]">
-             <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={activity}>
-                  <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8' }} />
-                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                  <defs>
-                    <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Line 
-                    type="monotone" 
-                    dataKey="urgent" 
-                    stroke="#f43f5e" 
-                    strokeWidth={4} 
-                    dot={{ r: 6, fill: '#f43f5e', strokeWidth: 3, stroke: '#fff' }} 
-                    activeDot={{ r: 8, strokeWidth: 0 }}
-                  />
-                </LineChart>
-             </ResponsiveContainer>
-          </div>
-        </Card>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {[
+          { label: 'Total Users', value: stats.users.total, color: 'bg-emerald-50 text-emerald-700' },
+          { label: 'High Risk Alerts', value: stats.counselorCases.highRisk, color: 'bg-rose-50 text-rose-700' },
+          { label: 'Support Requests', value: stats.counselorCases.total, color: 'bg-indigo-50 text-indigo-700' },
+          { label: 'Pending Posts', value: stats.communityPosts.pending, color: 'bg-amber-50 text-amber-700' },
+        ].map((item, i) => (
+          <motion.div key={i} whileHover={{ y: -5 }}>
+            <Card className="p-8 h-full flex flex-col justify-between">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-8">{item.label}</span>
+              <div className="flex items-end justify-between">
+                <span className="text-4xl font-display font-black text-zinc-900">{item.value}</span>
+                <div className={cn("px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest", item.color)}>
+                  Active
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {stats.latestEvents && stats.latestEvents.length > 0 && (
+        <Card className="p-10">
+          <h3 className="text-2xl font-display font-black text-zinc-900 mb-8">Latest activity</h3>
+          <div className="space-y-6">
+            {stats.latestEvents.map((ev: any, i: number) => (
+              <div key={i} className="flex items-center justify-between py-4 border-b border-zinc-50 last:border-0">
+                <div className="flex items-center gap-5">
+                   <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center text-zinc-400">
+                     <Activity size={20} strokeWidth={3} />
+                   </div>
+                   <div className="flex flex-col">
+                     <span className="font-bold text-zinc-800">{ev.eventType}</span>
+                     <span className="text-xs text-zinc-400">{timeAgo(ev.occurredAt)}</span>
+                   </div>
+                </div>
+                <div className="px-4 py-1.5 bg-zinc-50 rounded-xl text-[10px] font-black text-zinc-400 uppercase tracking-widest">Logged</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
 
 const EmergencyContacts = () => {
   const [contacts, setContacts] = useState<any[]>([]);
-  const [editingContact, setEditingContact] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  const loadContacts = () => apiFetch('/api/admin/emergency-contacts').then(data => {
-    setContacts(Array.isArray(data) ? data : []);
-    setLoading(false);
-  });
-
   useEffect(() => {
-    loadContacts().catch(() => setLoading(false));
+    apiFetch('/api/admin/emergency-contacts').then(data => setContacts(Array.isArray(data) ? data : []));
   }, []);
 
-  const filtered = contacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-
   return (
-    <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="relative flex-1 max-w-lg">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Find help contacts..." 
-            className="w-full pl-12 pr-6 py-4 bg-white border border-zinc-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all placeholder:text-zinc-400"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div>
+          <h3 className="text-3xl font-display font-black text-zinc-900">Help Hotlines</h3>
+          <p className="text-zinc-500 font-medium">Zimbabwe's critical support network for youth.</p>
         </div>
-        <button
-          onClick={() => setEditingContact({ name: '', phoneNumber: '', category: 'crisis', description: '', isActive: true, status: 'published', country: 'ZW' })}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all"
-        >
-          <Plus size={20} strokeWidth={3} /> Add contact
+        <button className="flex items-center gap-2 px-6 py-3.5 bg-zinc-900 text-white rounded-2xl text-sm font-black shadow-xl shadow-zinc-900/20 active:scale-95 transition-all">
+          <Plus size={18} strokeWidth={3} /> Add contact
         </button>
       </div>
 
-      {editingContact && (
-        <Card className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input className="px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="Name" value={editingContact.name} onChange={e => setEditingContact({ ...editingContact, name: e.target.value })} />
-            <input className="px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="Phone" value={editingContact.phoneNumber} onChange={e => setEditingContact({ ...editingContact, phoneNumber: e.target.value })} />
-            <input className="px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="Type" value={editingContact.category} onChange={e => setEditingContact({ ...editingContact, category: e.target.value })} />
-            <label className="flex items-center gap-3 px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold">
-              <input type="checkbox" className="accent-indigo-600" checked={editingContact.isActive} onChange={e => setEditingContact({ ...editingContact, isActive: e.target.checked })} />
-              Contact is on
-            </label>
-            <textarea className="md:col-span-2 px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none" placeholder="What this contact helps with" value={editingContact.description || ''} onChange={e => setEditingContact({ ...editingContact, description: e.target.value })} />
-          </div>
-          <div className="flex justify-end gap-3 mt-5">
-            <button onClick={() => setEditingContact(null)} className="px-5 py-3 bg-zinc-100 rounded-2xl font-bold">Cancel</button>
-            <button
-              onClick={async () => {
-                await apiFetch(editingContact.id ? `/api/admin/emergency-contacts/${editingContact.id}` : '/api/admin/emergency-contacts', {
-                  method: editingContact.id ? 'PUT' : 'POST',
-                  body: JSON.stringify(editingContact),
-                });
-                setEditingContact(null);
-                await loadContacts();
-              }}
-              className="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black"
-            >
-              Save contact
-            </button>
-          </div>
-        </Card>
-      )}
-
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-zinc-50/50 border-b border-zinc-100">
-              <tr>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Contact</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Type</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Phone</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 text-right">Edit</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filtered.map((contact) => (
-                <tr key={contact.id} className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="font-display font-bold text-zinc-900 text-base">{contact.name}</div>
-                    <div className="text-sm text-zinc-500 mt-0.5 line-clamp-1">{contact.description}</div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider bg-white border border-zinc-100 text-zinc-600 shadow-sm">
-                      {contact.category.replace('-', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6 font-mono text-base font-bold text-indigo-600">{contact.phoneNumber}</td>
-                  <td className="px-8 py-6">
-                    <div className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter",
-                      contact.isActive ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"
-                    )}>
-                      <div className={cn("w-1.5 h-1.5 rounded-full", contact.isActive ? "bg-emerald-500 animate-pulse" : "bg-zinc-400")} />
-                      {contact.isActive ? 'On' : 'Off'}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setEditingContact(contact)} className="p-2.5 text-zinc-400 hover:text-indigo-600 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-zinc-100 transition-all">
-                        <Edit2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {contacts.map(contact => (
+          <motion.div key={contact.id} whileHover={{ y: -5 }}>
+            <Card className="p-8 h-full flex flex-col">
+              <div className="flex items-start justify-between mb-8">
+                <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center shadow-inner">
+                  <ShieldAlert size={28} strokeWidth={2.5} />
+                </div>
+                <span className="px-3 py-1 bg-zinc-100 rounded-full text-[9px] font-black text-zinc-500 uppercase tracking-widest">{contact.category}</span>
+              </div>
+              <h4 className="text-xl font-display font-black text-zinc-900 mb-2">{contact.name}</h4>
+              <p className="text-sm text-zinc-500 font-medium flex-1 mb-8 leading-relaxed">{contact.description}</p>
+              <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-black text-indigo-600 text-center text-lg shadow-sm">
+                {contact.phoneNumber}
+              </div>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -553,76 +372,64 @@ const ResourcesCMS = () => {
   }, []);
 
   return (
-    <div className="p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 max-w-screen-2xl mx-auto">
-      <div className="lg:col-span-12 xl:col-span-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-           <div>
-             <h3 className="text-3xl font-display font-black text-zinc-900 leading-tight">Content Library</h3>
-             <p className="text-zinc-500 font-medium">Manage wellness guides and resources for Zimbabwe youth</p>
-           </div>
-           <button onClick={() => setEditing({ title: '', content: '', category: 'wellness', isPublished: false })} className="flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
-              <Plus size={20} strokeWidth={3} /> Add resource
-           </button>
+    <div className="p-6 lg:p-10 grid grid-cols-1 xl:grid-cols-[1fr_450px] gap-10 max-w-7xl mx-auto">
+      <div className="space-y-10">
+        <div className="flex items-center justify-between">
+          <h3 className="text-3xl font-display font-black text-zinc-900">Resource Library</h3>
+          <button 
+            onClick={() => setEditing({ title: '', category: 'mental-health', isPublished: true, content: '' })}
+            className="w-12 h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-zinc-900/20 active:scale-90 transition-all"
+          >
+            <Plus size={24} strokeWidth={3} />
+          </button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {resources.map(r => (
-              <Card key={r.id} className="p-0 border-none bg-white shadow-xl shadow-zinc-200/50 hover:shadow-2xl hover:shadow-indigo-100 transition-all overflow-hidden group">
-                <div className={cn(
-                  "h-32 p-6 flex items-end relative overflow-hidden",
-                  r.category === 'mental-health' ? "bg-indigo-600" : 
-                  r.category === 'srhr' ? "bg-rose-500" : "bg-amber-500"
-                )}>
-                  <div className="absolute top-4 right-4">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                      r.isPublished ? "bg-emerald-400/20 text-white" : "bg-white/20 text-white"
-                    )}>
-                      {r.isPublished ? 'Open' : 'Draft'}
-                    </span>
+          {resources.map(res => (
+            <motion.div key={res.id} whileHover={{ y: -4 }}>
+              <Card 
+                onClick={() => setEditing(res)}
+                className={cn(
+                  "p-8 cursor-pointer group hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-100/50",
+                  editing?.id === res.id && "border-indigo-600 bg-indigo-50/20"
+                )}
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-12 h-12 bg-zinc-50 group-hover:bg-indigo-600 transition-colors rounded-2xl flex items-center justify-center text-zinc-400 group-hover:text-white">
+                    <BookOpen size={24} strokeWidth={3} />
                   </div>
-                  <h4 className="font-display font-black text-white text-xl leading-tight group-hover:translate-x-2 transition-transform">{r.title}</h4>
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm",
+                    res.status === 'published' ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-400"
+                  )}>
+                    {res.status}
+                  </span>
                 </div>
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                    <span className="bg-zinc-100 px-2 py-1 rounded-lg">{r.category}</span>
-                    <span>|</span>
-                    <span>{r.language}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500 font-medium italic">Updated {r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : 'recently'}</span>
-                    <button onClick={() => setEditing(r)} className="w-10 h-10 rounded-xl bg-zinc-50 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                      <Edit2 size={18} />
-                    </button>
-                  </div>
-                </div>
+                <h4 className="text-xl font-display font-black text-zinc-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">{res.title}</h4>
+                <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">{res.category}</p>
               </Card>
-            ))}
+            </motion.div>
+          ))}
         </div>
       </div>
 
-      <div className="lg:col-span-12 xl:col-span-4 self-start">
+      <div className="space-y-10">
         <AnimatePresence mode="wait">
           {editing ? (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
-              <Card className="p-10 space-y-10 sticky top-24 border-indigo-100 ring-4 ring-indigo-50 shadow-2xl">
+            <motion.div key="editor" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <Card className="p-10 bg-white shadow-2xl border-none space-y-10 sticky top-24">
                 <div className="flex items-center justify-between">
-                    <h3 className="font-display font-black text-2xl tracking-tight">{editing.id ? 'Edit resource' : 'Add resource'}</h3>
-                  <button onClick={() => setEditing(null)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-rose-600 transition-colors"><X size={18} strokeWidth={3} /></button>
+                  <h4 className="text-2xl font-display font-black text-zinc-900">Resource Editor</h4>
+                  <button onClick={() => setEditing(null)} className="p-2 text-zinc-300 hover:text-zinc-900"><X /></button>
                 </div>
-                
                 <div className="space-y-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Title</label>
-                    <input autoFocus value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl font-display font-bold text-lg focus:ring-4 focus:ring-indigo-100 outline-none transition-all" placeholder="Enter a catchy title..." />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Content</label>
-                    <textarea 
-                      rows={12} 
-                      value={editing.content} 
-                      onChange={e => setEditing({...editing, content: e.target.value})}
-                      className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl font-mono text-xs leading-relaxed focus:ring-4 focus:ring-indigo-100 outline-none transition-all resize-none"
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Resource Title</label>
+                    <input 
+                      value={editing.title} 
+                      onChange={e => setEditing({...editing, title: e.target.value})} 
+                      className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold text-lg focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
+                      placeholder="e.g. Managing Stress"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-6">
@@ -734,10 +541,6 @@ const FAQBank = () => {
                       <span className="flex items-center gap-1.5"><Tag size={12} strokeWidth={3} className="text-zinc-300" /> {faq.topic}</span>
                       <span className="flex items-center gap-1.5"><Globe size={12} strokeWidth={3} className="text-zinc-300" /> {faq.language}</span>
                     </div>
-                    <div className="flex gap-2">
-                       <button className="px-4 py-2 bg-zinc-100 rounded-xl hover:bg-indigo-600 hover:text-white transition-all">Edit</button>
-                       <button className="px-4 py-2 bg-zinc-100 rounded-xl hover:bg-zinc-900 hover:text-white transition-all">JSON</button>
-                    </div>
                  </div>
                </div>
             </Card>
@@ -746,7 +549,7 @@ const FAQBank = () => {
       </div>
     </div>
   );
-}
+};
 
 const SafetyRules = () => {
   const [rules, setRules] = useState<any[]>([]);
@@ -817,7 +620,7 @@ const SafetyRules = () => {
       </div>
 
       <div className="space-y-10 sticky top-24 self-start">
-        <div className="bg-white p-12 rounded-[3rem] shadow-2xl border-2 border-dashed border-zinc-100 space-y-10">
+        <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border-2 border-dashed border-zinc-100 space-y-10">
            <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-zinc-900 rounded-3xl flex items-center justify-center text-white">
                 <Search size={24} strokeWidth={3} />
@@ -872,11 +675,16 @@ const SafetyRules = () => {
 };
 
 const CounselorCases = () => {
+    const { user } = useAuth();
     const [cases, setCases] = useState<any[]>([]);
+    const [activeChat, setActiveChat] = useState<any>(null);
     const loadCases = () => apiFetch('/api/admin/counselor-cases').then(data => setCases(Array.isArray(data) ? data : []));
+    
     useEffect(() => {
       loadCases();
     }, []);
+
+    const isAssignedToMe = (c: any) => c.counselorId === (user as any)?.id;
 
     return (
       <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
@@ -892,20 +700,26 @@ const CounselorCases = () => {
         <div className="grid gap-6">
           {cases.map(c => (
             <motion.div key={c.id} whileHover={{ scale: 1.01 }}>
-              <Card className="p-8 border-none bg-white shadow-xl shadow-zinc-100/60 flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <Card className={cn(
+                "p-8 border-none shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-8",
+                isAssignedToMe(c) ? "bg-indigo-50/30 ring-2 ring-indigo-500/10 shadow-indigo-100" : "bg-white shadow-zinc-100/60"
+              )}>
                 <div className="flex gap-6 items-start">
                   <div className={cn(
                     "w-16 h-16 rounded-[2rem] flex items-center justify-center shadow-lg relative",
-                    c.riskLevel === 'high' ? "bg-rose-500 text-white shadow-rose-200" : "bg-zinc-100 text-zinc-500 shadow-zinc-100"
+                    c.riskLevel === 'high' ? "bg-rose-500 text-white shadow-rose-200" : 
+                    isAssignedToMe(c) ? "bg-indigo-600 text-white shadow-indigo-200" : "bg-zinc-100 text-zinc-500 shadow-zinc-100"
                   )}>
                     {c.riskLevel === 'high' ? <ShieldAlert size={32} strokeWidth={2.5} /> : <UserCheck size={32} strokeWidth={2.5} />}
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                       <div className={cn("w-2.5 h-2.5 rounded-full", c.riskLevel === 'high' ? "bg-rose-500 animate-ping" : "bg-zinc-300")} />
+                       <div className={cn("w-2.5 h-2.5 rounded-full", c.riskLevel === 'high' ? "bg-rose-500 animate-ping" : isAssignedToMe(c) ? "bg-indigo-500" : "bg-zinc-300")} />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-400 underline decoration-zinc-200 underline-offset-4">HELP REQUEST #{c.id}</span>
+                      <span className="text-[10px] font-black text-zinc-400 underline decoration-zinc-200 underline-offset-4 uppercase">
+                        {isAssignedToMe(c) ? 'Your Case' : `Case #${c.id.substring(0,8)}`}
+                      </span>
                       <span className={cn(
                         "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest",
                         c.riskLevel === 'high' ? "bg-rose-100 text-rose-700" : "bg-zinc-100 text-zinc-500"
@@ -913,14 +727,28 @@ const CounselorCases = () => {
                         {c.riskLevel} level
                       </span>
                     </div>
-                    <h4 className="text-2xl font-display font-black text-zinc-900 line-clamp-1">{c.summary}</h4>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
-                      <Clock size={14} strokeWidth={3} />
-                      Opened {timeAgo(c.createdAt)}
+                    <h4 className="text-2xl font-display font-black text-zinc-900 line-clamp-1">{c.summary || c.issueCategory}</h4>
+                    <div className="flex items-center gap-4 text-xs font-semibold text-zinc-400">
+                      <div className="flex items-center gap-1">
+                        <Clock size={14} strokeWidth={3} />
+                        Opened {timeAgo(c.createdAt)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Tag size={14} strokeWidth={3} />
+                        {c.issueCategory}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
+                   {isAssignedToMe(c) && (
+                     <button 
+                       onClick={() => setActiveChat(c)}
+                       className="px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center gap-2"
+                     >
+                       <MessageSquare size={18} strokeWidth={3} /> Live Chat
+                     </button>
+                   )}
                    <select
                      value={c.status}
                      onChange={async (event) => {
@@ -932,18 +760,62 @@ const CounselorCases = () => {
                      }}
                      className="px-6 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-100 outline-none"
                    >
-                     <option value="requested">New</option>
+                     <option value="requested">New Request</option>
                      <option value="assigned">Assigned</option>
-                     <option value="live">In progress</option>
-                     <option value="follow-up">Follow up</option>
-                     <option value="resolved">Done</option>
-                     <option value="emergency">Emergency</option>
+                     <option value="live">In Chat</option>
+                     <option value="resolved">Resolved</option>
+                     <option value="closed">Closed</option>
                    </select>
                 </div>
               </Card>
             </motion.div>
           ))}
         </div>
+
+        {activeChat && (
+          <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white w-full max-w-2xl h-[600px] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden"
+            >
+              <div className="p-8 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white">
+                    <MessageSquare size={24} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-xl text-zinc-900 leading-tight">Live Support</h3>
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Case #{activeChat.id.substring(0,8)}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setActiveChat(null)}
+                  className="w-10 h-10 bg-white border border-zinc-100 rounded-xl flex items-center justify-center text-zinc-400 hover:text-rose-600 transition-colors"
+                >
+                  <X size={20} strokeWidth={3} />
+                </button>
+              </div>
+              <div className="flex-1 p-8 overflow-y-auto bg-zinc-50/30 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-300">
+                  <Activity size={32} />
+                </div>
+                <h4 className="text-xl font-display font-bold text-zinc-400">Connecting to client...</h4>
+                <p className="text-sm text-zinc-400 max-w-xs">The real-time chat interface is loading. You can start typing as soon as the client responds.</p>
+              </div>
+              <div className="p-8 bg-white border-t border-zinc-100">
+                 <div className="flex gap-4">
+                    <input 
+                      type="text" 
+                      placeholder="Type your message..." 
+                      className="flex-1 px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
+                    />
+                    <button className="px-8 py-4 bg-zinc-900 text-white rounded-2xl font-black shadow-lg shadow-zinc-900/20">Send</button>
+                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     );
 };
@@ -1567,7 +1439,3 @@ export default function App() {
     </Router>
   );
 }
-
-
-
-

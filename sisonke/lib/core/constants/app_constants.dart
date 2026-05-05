@@ -10,15 +10,8 @@ class AppConstants {
   }
 
   static String get devApiBaseUrl {
-    if (kIsWeb) return 'http://localhost:3008/api';
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.android => 'http://10.0.2.2:3008/api',
-      TargetPlatform.iOS ||
-      TargetPlatform.macOS ||
-      TargetPlatform.linux ||
-      TargetPlatform.windows ||
-      TargetPlatform.fuchsia => 'http://localhost:3008/api',
-    };
+    // Since the backend is running on the VPS, we point to the production domain
+    return 'https://sisonke.mmpzmne.co.zw/api';
   }
 
   static const String tokenKey = 'auth_token';
