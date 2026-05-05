@@ -40,7 +40,7 @@ import 'package:sisonke/features/emergency/screens/quick_exit_screen.dart';
 import 'package:sisonke/features/settings/screens/app_lock_screen.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/',
   routes: [
     /// ==================== Onboarding & Auth ====================
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),

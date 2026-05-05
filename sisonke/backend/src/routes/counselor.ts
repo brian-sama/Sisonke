@@ -203,7 +203,7 @@ router.post('/cases/:id/messages', asyncHandler(async (req, res) => {
   const [message] = await db.insert(counselingMessages).values({
     caseId: req.params.id,
     senderUserId: req.user!.id,
-    senderRole: req.user!.role,
+    senderRole: req.user!.roles[0] || 'user',
     messageType,
     mediaUrl,
     content: content || 'Voice note uploaded',
