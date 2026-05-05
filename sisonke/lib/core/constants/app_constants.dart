@@ -10,14 +10,14 @@ class AppConstants {
   }
 
   static String get devApiBaseUrl {
-    if (kIsWeb) return 'http://localhost:3001/api';
+    if (kIsWeb) return 'http://localhost:3008/api';
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => 'http://10.0.2.2:3001/api',
+      TargetPlatform.android => 'http://10.0.2.2:3008/api',
       TargetPlatform.iOS ||
       TargetPlatform.macOS ||
       TargetPlatform.linux ||
       TargetPlatform.windows ||
-      TargetPlatform.fuchsia => 'http://localhost:3001/api',
+      TargetPlatform.fuchsia => 'http://localhost:3008/api',
     };
   }
 
