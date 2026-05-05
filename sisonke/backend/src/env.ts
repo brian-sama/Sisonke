@@ -12,6 +12,15 @@ export function validateEnv() {
 }
 
 export function getAllowedOrigins() {
-  const configured = process.env.FRONTEND_URL || 'http://localhost:3000';
-  return configured.split(',').map((origin) => origin.trim()).filter(Boolean);
+  const configured = process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000';
+  const origins = configured.split(',').map((origin) => origin.trim()).filter(Boolean);
+  
+  // Always allow the production domain if we're in production
+  if (process.env.NODE_ENV === 'production') {
+    if (!origins.includes('https://sisonke.mmpzmne.co.zw')) {
+      origins.push('https://sisonke.mmpzmne.co.zw');
+    }
+  }
+  
+  return origins;
 }

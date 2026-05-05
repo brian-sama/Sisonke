@@ -195,8 +195,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         "fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-zinc-100 z-[50] flex flex-col transition-transform lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="p-8 flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl italic shadow-lg shadow-indigo-100">S</div>
+        <div className="p-8 flex items-center gap-4">
+          <div className="w-10 h-10 overflow-hidden rounded-xl bg-white shadow-sm border border-zinc-50">
+             <img src="/sisonke-logo.png" alt="Sisonke" className="w-full h-full object-contain" />
+          </div>
           <h1 className="text-xl font-display font-black text-zinc-900 tracking-tight italic uppercase">Sisonke</h1>
         </div>
         
@@ -251,8 +253,8 @@ const TopBar = ({ title, user, onLogout, onMenuOpen }: any) => (
 );
 
 const SisonkeLogo = ({ className }: { className?: string }) => (
-  <div className={cn("bg-indigo-600 flex items-center justify-center text-white", className)}>
-    <ShieldAlert size={32} strokeWidth={3} />
+  <div className={cn("bg-white overflow-hidden flex items-center justify-center", className)}>
+    <img src="/sisonke-logo.png" alt="Sisonke Logo" className="w-full h-full object-contain" />
   </div>
 );
 
@@ -1266,7 +1268,9 @@ const LoginPage = ({ onLogin }: { onLogin: (email: string, password: string) => 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Card className="w-full max-w-lg p-12 border-none shadow-2xl relative overflow-hidden bg-white/80 backdrop-blur-xl">
           <div className="text-center mb-12">
-            <SisonkeLogo className="w-20 h-20 mx-auto mb-6 rounded-3xl" />
+            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl overflow-hidden shadow-xl border border-zinc-50">
+               <img src="/sisonke-logo.png" alt="Sisonke" className="w-full h-full object-cover" />
+            </div>
             <h1 className="text-4xl font-display font-black text-zinc-900 tracking-tight mb-2 uppercase italic">SISONKE</h1>
             <p className="text-zinc-500 font-medium tracking-tight">Team sign in for youth support</p>
           </div>
