@@ -61,8 +61,8 @@ services:
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
       GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-15000}
       RAG_DB_TIMEOUT_MS: ${RAG_DB_TIMEOUT_MS:-1500}
-    expose:
-      - "3001"
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-3001}:3001"
 
   ollama:
     image: ollama/ollama:latest
@@ -79,25 +79,9 @@ services:
       args:
         VITE_API_BASE_URL: /api
     restart: unless-stopped
-    expose:
-      - "80"
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - backend
-      - admin
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - "127.0.0.1:${ADMIN_HOST_PORT:-3016}:80"
 
 volumes:
   postgres_data:
   ollama_data:
-  caddy_data:
-  caddy_config:

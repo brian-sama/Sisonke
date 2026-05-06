@@ -1,6 +1,6 @@
 # Sisonke VPS Deployment
 
-This deployment runs PostgreSQL, the Node backend, the Flutter Web admin dashboard, and Caddy HTTPS on one VPS.
+This deployment runs PostgreSQL, Ollama, the Node backend, and the Flutter Web admin dashboard on one VPS. Host Nginx handles public HTTP/HTTPS.
 
 ## 1. DNS
 
@@ -10,7 +10,7 @@ Create an `A` record:
 sisonke.mmpzmne.co.zw -> YOUR_VPS_PUBLIC_IP
 ```
 
-Wait until DNS resolves before starting Caddy.
+Wait until DNS resolves before enabling the Nginx server block.
 
 ## 2. VPS Setup
 
@@ -52,6 +52,46 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d --bui
 ```
 
 The first run creates the PostgreSQL database volume and runs migrations before the backend starts.
+
+The backend and admin dashboard bind only to localhost for host Nginx:
+
+```text
+backend: http://127.0.0.1:3001
+admin:   http://127.0.0.1:3016
+```
+
+Example Nginx server block:
+
+```nginx
+server {
+    server_name sisonke.mmpzmne.co.zw;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3016;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
 
 Pull the local AI model once on the VPS:
 
@@ -124,5 +164,5 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d --bui
 Back up PostgreSQL:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml exec postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > sisonke-backup.sql
+docker compose --env-file .env.production -f docker-compose.prod.yml exec db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > sisonke-backup.sql
 ```
