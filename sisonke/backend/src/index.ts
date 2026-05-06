@@ -31,6 +31,9 @@ validateEnv();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust reverse proxy (Nginx) for correct rate-limiting IP mapping
+app.set('trust proxy', 1);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
