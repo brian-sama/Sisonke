@@ -18,13 +18,18 @@ async function main() {
 
   const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
-    await db.update(users).set({ isGuest: false, updatedAt: new Date() }).where(eq(users.id, existing[0].id));
+    const passwordHash = await bcrypt.hash(password, 12);
+    await db.update(users).set({ 
+      passwordHash, 
+      isGuest: false, 
+      updatedAt: new Date() 
+    }).where(eq(users.id, existing[0].id));
     
     // Assign SUPER_ADMIN and ADMIN roles to existing user
     await AuthService.assignRole(existing[0].id, 'SUPER_ADMIN');
     await AuthService.assignRole(existing[0].id, 'ADMIN');
     
-    console.log(`Promoted existing user ${email} to super admin.`);
+    console.log(`Promoted existing user ${email} to super admin and updated password.`);
     return;
   }
 

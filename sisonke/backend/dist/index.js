@@ -48,12 +48,22 @@ app.use((0, helmet_1.default)()); // Security headers
 app.use(limiter); // Rate limiting
 app.use((0, cors_1.default)({
     origin(origin, callback) {
-        const allowedOrigins = (0, env_1.getAllowedOrigins)();
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (process.env.NODE_ENV !== 'production') {
             callback(null, true);
             return;
         }
-        callback(new Error('Origin not allowed by CORS'));
+        const allowedOrigins = (0, env_1.getAllowedOrigins)();
+        const isAllowed = !origin || allowedOrigins.some((allowed) => {
+            if (allowed instanceof RegExp) {
+                return allowed.test(origin);
+            }
+            return allowed === origin;
+        });
+        if (isAllowed) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     credentials: true,
 }));

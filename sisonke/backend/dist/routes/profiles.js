@@ -54,9 +54,14 @@ router.put('/me', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         hideJournalPreview: input.hideJournalPreview,
         updatedAt: new Date(),
     };
+    const selectFields = {
+        id: schema_1.userProfiles.id,
+        nickname: schema_1.userProfiles.nickname,
+        chatbotPersona: schema_1.userProfiles.chatbotPersona,
+    };
     const [profile] = existing.length
-        ? await db_1.db.update(schema_1.userProfiles).set(payload).where((0, drizzle_orm_1.eq)(schema_1.userProfiles.userId, req.user.id)).returning()
-        : await db_1.db.insert(schema_1.userProfiles).values({ ...payload, userId: req.user.id }).returning();
+        ? await db_1.db.update(schema_1.userProfiles).set(payload).where((0, drizzle_orm_1.eq)(schema_1.userProfiles.userId, req.user.id)).returning(selectFields)
+        : await db_1.db.insert(schema_1.userProfiles).values({ ...payload, userId: req.user.id }).returning(selectFields);
     res.json({ success: true, data: profile });
 }));
 router.patch('/me/safety', (0, errorHandler_1.asyncHandler)(async (req, res) => {

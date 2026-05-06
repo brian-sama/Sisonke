@@ -16,7 +16,7 @@ const riskService_1 = require("../services/riskService");
 const zimbabweRagKnowledge_1 = require("../data/zimbabweRagKnowledge");
 const socketService_1 = require("../services/socketService");
 const router = (0, express_1.Router)();
-router.use(auth_1.authMiddleware, auth_1.dashboardAccess);
+router.use(auth_1.authMiddleware);
 const roleList = (user) => (user?.roles?.length ? user.roles : ['guest']).map((role) => String(role).toLowerCase().replace(/_/g, '-'));
 const hasAny = (user, roles) => {
     const current = roleList(user);
@@ -46,7 +46,7 @@ const sanitizeCaseForUser = (user, item) => {
 router.get('/me', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     res.json({ success: true, data: { user: req.user } });
 }));
-router.get('/analytics/health', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/analytics/health', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const stats = await db_1.db.select({
@@ -59,16 +59,21 @@ router.get('/analytics/health', (0, errorHandler_1.asyncHandler)(async (_req, re
         .orderBy((0, drizzle_orm_1.sql) `DATE(${schema_1.analyticsEvents.occurredAt})`);
     res.json({ success: true, data: stats });
 }));
-router.get('/overview', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/overview', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const isAdmin = hasAny(req.user, ['admin', 'system-admin', 'super-admin']);
     const results = await Promise.all([
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.users),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.resources).where((0, drizzle_orm_1.isNull)(schema_1.resources.deletedAt)),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.emergencyContacts).where((0, drizzle_orm_1.isNull)(schema_1.emergencyContacts.deletedAt)),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.questions).where((0, drizzle_orm_1.isNull)(schema_1.questions.deletedAt)),
-        db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases),
+        isAdmin
+            ? db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases)
+            : db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.counselorId, req.user.id)),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.chatbotSessions),
         db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.communityPosts).where((0, drizzle_orm_1.eq)(schema_1.communityPosts.status, 'pending')),
-        db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.riskLevel, 'high')),
+        isAdmin
+            ? db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.riskLevel, 'high'))
+            : db_1.db.select({ value: (0, drizzle_orm_1.count)() }).from(schema_1.counselorCases).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.counselorCases.counselorId, req.user.id), (0, drizzle_orm_1.eq)(schema_1.counselorCases.riskLevel, 'high'))),
         db_1.db.select().from(schema_1.analyticsEvents).orderBy((0, drizzle_orm_1.desc)(schema_1.analyticsEvents.occurredAt)).limit(10),
     ]);
     const userCount = Number(results[0][0]?.value ?? 0);
@@ -83,7 +88,7 @@ router.get('/overview', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     res.json({
         success: true,
         data: {
-            users: { total: userCount },
+            users: { total: isAdmin ? userCount : 1 }, // If counselor, just show '1' (themselves)
             resources: { total: resourceCount },
             emergencyContacts: { total: contactCount },
             questions: { total: questionCount },
@@ -93,11 +98,11 @@ router.get('/overview', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
             },
             chatbotSessions: { total: sessionCount },
             communityPosts: { pending: pendingPostsCount },
-            latestEvents
+            latestEvents: isAdmin ? latestEvents : [] // Hide system events from counselors
         },
     });
 }));
-router.get('/community-posts', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/community-posts', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db
         .select()
         .from(schema_1.communityPosts)
@@ -105,7 +110,7 @@ router.get('/community-posts', (0, errorHandler_1.asyncHandler)(async (_req, res
         .limit(100);
     res.json({ success: true, data: rows });
 }));
-router.post('/community-posts/:id/moderate', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/community-posts/:id/moderate', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const status = String(req.body.status || '');
     if (!['approved', 'removed'].includes(status)) {
         return res.status(400).json({ success: false, error: 'Status must be approved or removed.' });
@@ -122,7 +127,7 @@ router.post('/community-posts/:id/moderate', (0, errorHandler_1.asyncHandler)(as
     socketService_1.SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'moderated' });
     res.json({ success: true, data: updated });
 }));
-router.get('/reports', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/reports', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db
         .select()
         .from(schema_1.reports)
@@ -130,7 +135,7 @@ router.get('/reports', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
         .limit(100);
     res.json({ success: true, data: rows });
 }));
-router.post('/reports/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/reports/:id/status', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const status = String(req.body.status || '');
     if (!['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
         return res.status(400).json({ success: false, error: 'Invalid report status' });
@@ -145,7 +150,7 @@ router.post('/reports/:id/status', (0, errorHandler_1.asyncHandler)(async (req, 
     socketService_1.SocketService.broadcastDashboardUpdate({ type: 'report', action: 'resolved' });
     res.json({ success: true, data: updated });
 }));
-router.get('/resources', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/resources', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db
         .select()
         .from(schema_1.resources)
@@ -153,7 +158,7 @@ router.get('/resources', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
         .orderBy((0, drizzle_orm_1.desc)(schema_1.resources.updatedAt), (0, drizzle_orm_1.desc)(schema_1.resources.createdAt));
     res.json({ success: true, data: rows });
 }));
-router.post('/resources', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/resources', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.CreateResourceSchema.parse(req.body);
     const isPublished = input.status === 'published';
     const [created] = await db_1.db.insert(schema_1.resources).values({
@@ -165,7 +170,7 @@ router.post('/resources', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     }).returning();
     res.status(201).json({ success: true, data: created });
 }));
-router.put('/resources/:id', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.put('/resources/:id', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.UpdateResourceSchema.parse(req.body);
     const isPublishing = input.status === 'published';
     const [updated] = await db_1.db
@@ -183,7 +188,7 @@ router.put('/resources/:id', (0, errorHandler_1.asyncHandler)(async (req, res) =
     }
     res.json({ success: true, data: updated });
 }));
-router.post('/resources/:id/publish', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/resources/:id/publish', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const [updated] = await db_1.db
         .update(schema_1.resources)
         .set({ status: 'published', isPublished: true, publishedAt: new Date(), updatedAt: new Date() })
@@ -194,7 +199,7 @@ router.post('/resources/:id/publish', (0, errorHandler_1.asyncHandler)(async (re
     }
     res.json({ success: true, data: updated });
 }));
-router.post('/resources/:id/archive', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/resources/:id/archive', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const [updated] = await db_1.db
         .update(schema_1.resources)
         .set({ status: 'archived', isPublished: false, deletedAt: new Date(), updatedAt: new Date() })
@@ -205,7 +210,7 @@ router.post('/resources/:id/archive', (0, errorHandler_1.asyncHandler)(async (re
     }
     res.json({ success: true, data: updated });
 }));
-router.get('/emergency-contacts', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/emergency-contacts', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db
         .select()
         .from(schema_1.emergencyContacts)
@@ -213,7 +218,7 @@ router.get('/emergency-contacts', (0, errorHandler_1.asyncHandler)(async (_req, 
         .orderBy(schema_1.emergencyContacts.category, schema_1.emergencyContacts.name);
     res.json({ success: true, data: rows });
 }));
-router.post('/emergency-contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/emergency-contacts', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.CreateEmergencyContactSchema.parse(req.body);
     const isPublished = input.status === 'published';
     const [created] = await db_1.db.insert(schema_1.emergencyContacts).values({
@@ -224,7 +229,7 @@ router.post('/emergency-contacts', (0, errorHandler_1.asyncHandler)(async (req, 
     }).returning();
     res.status(201).json({ success: true, data: created });
 }));
-router.put('/emergency-contacts/:id', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.put('/emergency-contacts/:id', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.UpdateEmergencyContactSchema.parse(req.body);
     const [updated] = await db_1.db
         .update(schema_1.emergencyContacts)
@@ -240,7 +245,7 @@ router.put('/emergency-contacts/:id', (0, errorHandler_1.asyncHandler)(async (re
     }
     res.json({ success: true, data: updated });
 }));
-router.get('/analytics', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.get('/analytics', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const days = Number(req.query.days || 30);
     const since = new Date(Date.now() - Math.max(1, Math.min(days, 365)) * 24 * 60 * 60 * 1000);
     const [rows, profiles, moodRows, chatRows, cases] = await Promise.all([
@@ -299,20 +304,20 @@ router.get('/analytics', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         },
     });
 }));
-router.get('/counselor-cases', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const rows = await db_1.db
+router.get('/counselor-cases', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const isAdmin = hasAny(req.user, ['admin', 'system-admin', 'super-admin']);
+    let query = db_1.db
         .select()
-        .from(schema_1.counselorCases)
-        .orderBy((0, drizzle_orm_1.desc)(schema_1.counselorCases.createdAt))
-        .limit(100);
-    const visibleRows = hasAny(req.user, ['admin', 'system-admin', 'super-admin'])
-        ? rows.map((item) => sanitizeCaseForUser(req.user, item))
-        : rows
-            .filter((item) => item.counselorId === req.user.id)
-            .map((item) => sanitizeCaseForUser(req.user, item));
+        .from(schema_1.counselorCases);
+    if (!isAdmin) {
+        // @ts-ignore - Ensure counselorId type compatibility
+        query = query.where((0, drizzle_orm_1.eq)(schema_1.counselorCases.counselorId, req.user.id));
+    }
+    const rows = await query.orderBy((0, drizzle_orm_1.desc)(schema_1.counselorCases.createdAt)).limit(100);
+    const visibleRows = rows.map((item) => sanitizeCaseForUser(req.user, item));
     res.json({ success: true, data: visibleRows });
 }));
-router.get('/counselor-operations', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.get('/counselor-operations', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const [cases, counselors, auditRows] = await Promise.all([
         db_1.db.select().from(schema_1.counselorCases).orderBy((0, drizzle_orm_1.desc)(schema_1.counselorCases.createdAt)).limit(100),
         db_1.db.select().from(schema_1.users),
@@ -370,7 +375,7 @@ router.get('/counselor-operations', (0, errorHandler_1.asyncHandler)(async (req,
         },
     });
 }));
-router.post('/counselor-cases/:id/assign', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/counselor-cases/:id/assign', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const counselorId = String(req.body.counselorId || '').trim();
     if (!counselorId)
         return res.status(400).json({ success: false, error: 'Counselor is required' });
@@ -399,36 +404,50 @@ router.post('/counselor-cases/:id/assign', (0, errorHandler_1.asyncHandler)(asyn
     socketService_1.SocketService.emitCaseEvent(req.params.id, updated.userId, 'case:assigned', { case: updated });
     res.json({ success: true, data: updated });
 }));
-router.post('/counselors/:id/availability', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/counselors/:id/availability', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const status = String(req.body.status || 'offline');
     if (!['online', 'busy', 'offline'].includes(status)) {
         return res.status(400).json({ success: false, error: 'Invalid counselor status' });
     }
-    const [updated] = await db_1.db.update(schema_1.users).set({
-        counselorStatus: status,
-        isOnCall: typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : undefined,
-        counselorSpecializations: Array.isArray(req.body.specializations) ? req.body.specializations : undefined,
+    const updateData = {
         lastActiveAt: new Date(),
         updatedAt: new Date(),
-    }).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id)).returning();
+    };
+    try {
+        await db_1.db.update(schema_1.users).set({
+            ...updateData,
+            counselorStatus: status,
+            isOnCall: typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : undefined,
+            counselorSpecializations: Array.isArray(req.body.specializations) ? req.body.specializations : undefined,
+        }).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id));
+    }
+    catch (err) {
+        await db_1.db.update(schema_1.users).set(updateData).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id));
+    }
+    const [updated] = await db_1.db.select({
+        id: schema_1.users.id,
+        email: schema_1.users.email,
+    }).from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.params.id)).limit(1);
     if (!updated)
         return res.status(404).json({ success: false, error: 'Counselor not found' });
+    const isOnCall = typeof req.body.isOnCall === 'boolean' ? req.body.isOnCall : false;
+    const specializations = Array.isArray(req.body.specializations) ? req.body.specializations : [];
     await db_1.db.insert(schema_1.auditLogs).values({
         actorId: req.user.id,
         action: 'counselor_availability_changed',
         entityType: 'user',
         entityId: updated.id,
-        metadata: { status, isOnCall: updated.isOnCall, specializations: updated.counselorSpecializations },
+        metadata: { status, isOnCall, specializations },
     });
     socketService_1.SocketService.notifyStaff(status === 'online' ? 'counselor:online' : 'counselor:offline', {
         counselorId: updated.id,
         status,
-        isOnCall: updated.isOnCall,
+        isOnCall,
     });
     socketService_1.SocketService.broadcastDashboardUpdate({ type: 'counselor', action: 'availability_changed', counselorId: updated.id });
     res.json({ success: true, data: updated });
 }));
-router.post('/counselor-cases/:id/status', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/counselor-cases/:id/status', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const status = String(req.body.status || '');
     const allowed = [
         'requested',
@@ -475,7 +494,7 @@ router.post('/counselor-cases/:id/status', (0, errorHandler_1.asyncHandler)(asyn
     socketService_1.SocketService.emitCaseEvent(req.params.id, updated?.userId, event, { case: updated });
     res.json({ success: true, data: updated });
 }));
-router.post('/counselor-cases/:id/notes', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/counselor-cases/:id/notes', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const note = String(req.body.note || '').trim();
     if (!note)
         return res.status(400).json({ success: false, error: 'Note is required' });
@@ -501,11 +520,11 @@ router.post('/counselor-cases/:id/notes', (0, errorHandler_1.asyncHandler)(async
     });
     res.status(201).json({ success: true });
 }));
-router.get('/cms-content', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/cms-content', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.cmsContent).orderBy((0, drizzle_orm_1.desc)(schema_1.cmsContent.createdAt)).limit(100);
     res.json({ success: true, data: rows });
 }));
-router.get('/faqs', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/faqs', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     res.json({
         success: true,
         data: zimbabweRagKnowledge_1.goldFaqCards.map((card) => ({
@@ -520,7 +539,7 @@ router.get('/faqs', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
         })),
     });
 }));
-router.get('/safety-rules', (0, errorHandler_1.asyncHandler)(async (_req, res) => {
+router.get('/safety-rules', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     res.json({
         success: true,
         data: zimbabweRagKnowledge_1.safetyRules.map((rule, index) => ({
@@ -535,7 +554,7 @@ router.get('/safety-rules', (0, errorHandler_1.asyncHandler)(async (_req, res) =
         })),
     });
 }));
-router.post('/safety-rules/test', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/safety-rules/test', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const message = String(req.body.message || '');
     const detection = (0, riskService_1.detectRisk)(message);
     res.json({
@@ -548,7 +567,7 @@ router.post('/safety-rules/test', (0, errorHandler_1.asyncHandler)(async (req, r
         },
     });
 }));
-router.post('/cms-content', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/cms-content', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.CmsContentSchema.parse(req.body);
     const [created] = await db_1.db.insert(schema_1.cmsContent).values({
         ...input,
@@ -558,7 +577,7 @@ router.post('/cms-content', (0, errorHandler_1.asyncHandler)(async (req, res) =>
     }).returning();
     res.status(201).json({ success: true, data: created });
 }));
-router.put('/cms-content/:id', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.put('/cms-content/:id', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.CmsContentSchema.partial().parse(req.body);
     const [updated] = await db_1.db.update(schema_1.cmsContent).set({
         ...input,
@@ -570,24 +589,38 @@ router.put('/cms-content/:id', (0, errorHandler_1.asyncHandler)(async (req, res)
     res.json({ success: true, data: updated });
 }));
 router.get('/users', auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
-    const rows = await db_1.db.select().from(schema_1.users).orderBy((0, drizzle_orm_1.desc)(schema_1.users.createdAt)).limit(100);
+    const rows = await db_1.db
+        .select({
+        id: schema_1.users.id,
+        email: schema_1.users.email,
+        isGuest: schema_1.users.isGuest,
+        isSuspended: schema_1.users.isSuspended,
+        suspensionReason: schema_1.users.suspensionReason,
+        mustChangePassword: schema_1.users.mustChangePassword,
+        createdAt: schema_1.users.createdAt,
+        lastActiveAt: schema_1.users.lastActiveAt,
+    })
+        .from(schema_1.users)
+        .orderBy((0, drizzle_orm_1.desc)(schema_1.users.createdAt))
+        .limit(100);
+    const usersWithRoles = await Promise.all(rows.map(async (user) => {
+        const userRoles = await authService_1.AuthService.getUserRoles(user.id);
+        const roleNames = userRoles.map(r => r.name);
+        return {
+            id: user.id,
+            email: user.email,
+            roles: roleNames,
+            isGuest: user.isGuest,
+            isSuspended: user.isSuspended,
+            suspensionReason: user.suspensionReason,
+            mustChangePassword: user.mustChangePassword,
+            createdAt: user.createdAt,
+            lastActiveAt: user.lastActiveAt,
+        };
+    }));
     res.json({
         success: true,
-        data: rows.map(async (user) => {
-            const userRoles = await authService_1.AuthService.getUserRoles(user.id);
-            const roleNames = userRoles.map(r => r.name);
-            return {
-                id: user.id,
-                email: user.email,
-                roles: roleNames,
-                isGuest: user.isGuest,
-                isSuspended: user.isSuspended,
-                suspensionReason: user.suspensionReason,
-                mustChangePassword: user.mustChangePassword,
-                createdAt: user.createdAt,
-                lastActiveAt: user.lastActiveAt,
-            };
-        }),
+        data: usersWithRoles,
     });
 }));
 const primaryRoleFor = (roles) => {
@@ -718,7 +751,7 @@ router.put('/users/:id/roles', auth_1.superAdminOnly, (0, errorHandler_1.asyncHa
     // Update roles using new role system
     if (input.roles && input.roles.length > 0) {
         // First, remove all existing roles
-        await db_1.db.delete(userRoles).where((0, drizzle_orm_1.eq)(userRoles.userId, req.params.id));
+        await db_1.db.delete(schema_1.userRoles).where((0, drizzle_orm_1.eq)(schema_1.userRoles.userId, req.params.id));
         // Then assign new roles
         for (const roleName of input.roles) {
             await authService_1.AuthService.assignRole(req.params.id, roleName, req.user.id);
@@ -734,13 +767,15 @@ router.put('/users/:id/roles', auth_1.superAdminOnly, (0, errorHandler_1.asyncHa
         userAgent: req.get('user-agent'),
         metadata: { targetUserId: req.params.id, roles: input.roles },
     });
+    // Fetch full user with roles for the response
+    const userRolesList = await authService_1.AuthService.getUserRoles(updated.id);
+    const roleNames = userRolesList.map(r => r.name);
     res.json({
         success: true,
         data: {
             id: updated.id,
             email: updated.email,
-            role: updated.role,
-            roles: updated.roles,
+            roles: roleNames,
             isGuest: updated.isGuest,
             mustChangePassword: updated.mustChangePassword,
             updatedAt: updated.updatedAt,

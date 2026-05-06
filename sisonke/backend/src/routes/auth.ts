@@ -7,10 +7,24 @@ import { users, roles, userRoles } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { ChangePasswordSchema, LoginSchema, RegisterSchema, GuestSessionSchema } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, normalizeRole } from '../middleware/auth';
 import { AuthService } from '../services/authService';
 
 const router = Router();
+
+// Get currently authenticated user with normalized roles
+router.get('/me', authMiddleware, asyncHandler(async (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      id: req.user!.id,
+      email: req.user!.email,
+      roles: req.user!.roles, // req.user!.roles is already normalized inside authMiddleware!
+      isGuest: req.user!.isGuest,
+      mustChangePassword: req.user!.mustChangePassword,
+    },
+  });
+}));
 
 // Generate JWT token
 const generateToken = (userId: string) => {
@@ -73,7 +87,7 @@ router.post('/register', asyncHandler(async (req, res) => {
       user: {
         id: newUser[0].id,
         email: newUser[0].email,
-        roles: userRoles.map(r => r.name),
+        roles: userRoles.map(r => r.name).map(normalizeRole),
         isGuest: newUser[0].isGuest,
         mustChangePassword: newUser[0].mustChangePassword,
       },
@@ -133,7 +147,7 @@ router.post('/login', asyncHandler(async (req, res) => {
       user: {
         id: user[0].id,
         email: user[0].email,
-        roles: userRoles.map(r => r.name),
+        roles: userRoles.map(r => r.name).map(normalizeRole),
         isGuest: user[0].isGuest,
         mustChangePassword: user[0].mustChangePassword,
       },
@@ -210,7 +224,7 @@ router.post('/guest', asyncHandler(async (req, res) => {
       data: {
         user: {
           id: existingGuest[0].id,
-          roles: userRoles.map(r => r.name),
+          roles: userRoles.map(r => r.name).map(normalizeRole),
           isGuest: existingGuest[0].isGuest,
           mustChangePassword: existingGuest[0].mustChangePassword,
         },
@@ -249,7 +263,7 @@ router.post('/guest', asyncHandler(async (req, res) => {
     data: {
       user: {
         id: newGuest[0].id,
-        roles: userRoles.map(r => r.name),
+        roles: userRoles.map(r => r.name).map(normalizeRole),
         isGuest: newGuest[0].isGuest,
         mustChangePassword: newGuest[0].mustChangePassword,
       },

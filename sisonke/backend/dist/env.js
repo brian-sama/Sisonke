@@ -13,7 +13,14 @@ function validateEnv() {
     }
 }
 function getAllowedOrigins() {
-    const configured = process.env.FRONTEND_URL || 'http://localhost:3000';
-    return configured.split(',').map((origin) => origin.trim()).filter(Boolean);
+    const configured = process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173';
+    const origins = configured.split(',').map((o) => o.trim()).filter(Boolean);
+    // Add production domain
+    if (!origins.includes('https://sisonke.mmpzmne.co.zw')) {
+        origins.push('https://sisonke.mmpzmne.co.zw');
+    }
+    // Always allow any localhost port for easier dev/debug
+    origins.push(/^http:\/\/localhost:\d+$/);
+    return origins;
 }
 //# sourceMappingURL=env.js.map

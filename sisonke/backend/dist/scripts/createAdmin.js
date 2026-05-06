@@ -17,13 +17,18 @@ async function main() {
     if (!email || !password) {
         throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required.');
     }
-    const existing = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, email)).limit(1);
+    const existing = await db_1.db.select({ id: schema_1.users.id }).from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, email)).limit(1);
     if (existing.length > 0) {
-        await db_1.db.update(schema_1.users).set({ isGuest: false, updatedAt: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.users.id, existing[0].id));
+        const passwordHash = await bcryptjs_1.default.hash(password, 12);
+        await db_1.db.update(schema_1.users).set({
+            passwordHash,
+            isGuest: false,
+            updatedAt: new Date()
+        }).where((0, drizzle_orm_1.eq)(schema_1.users.id, existing[0].id));
         // Assign SUPER_ADMIN and ADMIN roles to existing user
         await authService_1.AuthService.assignRole(existing[0].id, 'SUPER_ADMIN');
         await authService_1.AuthService.assignRole(existing[0].id, 'ADMIN');
-        console.log(`Promoted existing user ${email} to super admin.`);
+        console.log(`Promoted existing user ${email} to super admin and updated password.`);
         return;
     }
     const passwordHash = await bcryptjs_1.default.hash(password, 12);

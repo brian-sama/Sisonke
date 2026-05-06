@@ -14,6 +14,19 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const auth_1 = require("../middleware/auth");
 const authService_1 = require("../services/authService");
 const router = (0, express_1.Router)();
+// Get currently authenticated user with normalized roles
+router.get('/me', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    res.json({
+        success: true,
+        data: {
+            id: req.user.id,
+            email: req.user.email,
+            roles: req.user.roles, // req.user!.roles is already normalized inside authMiddleware!
+            isGuest: req.user.isGuest,
+            mustChangePassword: req.user.mustChangePassword,
+        },
+    });
+}));
 // Generate JWT token
 const generateToken = (userId) => {
     if (!process.env.JWT_SECRET) {
@@ -28,7 +41,7 @@ router.post('/register', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const validatedData = types_1.RegisterSchema.parse(req.body);
     // Check if user already exists
     const existingUser = await db_1.db
-        .select()
+        .select({ id: schema_1.users.id })
         .from(schema_1.users)
         .where((0, drizzle_orm_1.eq)(schema_1.users.email, validatedData.email))
         .limit(1);
@@ -49,7 +62,12 @@ router.post('/register', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         passwordHash,
         isGuest: false,
     })
-        .returning();
+        .returning({
+        id: schema_1.users.id,
+        email: schema_1.users.email,
+        isGuest: schema_1.users.isGuest,
+        mustChangePassword: schema_1.users.mustChangePassword,
+    });
     // Assign USER role
     await authService_1.AuthService.assignRole(newUser[0].id, 'USER');
     // Get user roles for response
@@ -61,7 +79,7 @@ router.post('/register', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             user: {
                 id: newUser[0].id,
                 email: newUser[0].email,
-                roles: userRoles.map(r => r.name),
+                roles: userRoles.map(r => r.name).map(auth_1.normalizeRole),
                 isGuest: newUser[0].isGuest,
                 mustChangePassword: newUser[0].mustChangePassword,
             },
@@ -74,7 +92,13 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const validatedData = types_1.LoginSchema.parse(req.body);
     // Find user
     const user = await db_1.db
-        .select()
+        .select({
+        id: schema_1.users.id,
+        email: schema_1.users.email,
+        passwordHash: schema_1.users.passwordHash,
+        isGuest: schema_1.users.isGuest,
+        mustChangePassword: schema_1.users.mustChangePassword,
+    })
         .from(schema_1.users)
         .where((0, drizzle_orm_1.eq)(schema_1.users.email, validatedData.email))
         .limit(1);
@@ -106,7 +130,7 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             user: {
                 id: user[0].id,
                 email: user[0].email,
-                roles: userRoles.map(r => r.name),
+                roles: userRoles.map(r => r.name).map(auth_1.normalizeRole),
                 isGuest: user[0].isGuest,
                 mustChangePassword: user[0].mustChangePassword,
             },
@@ -116,7 +140,15 @@ router.post('/login', (0, errorHandler_1.asyncHandler)(async (req, res) => {
 }));
 router.post('/change-password', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.ChangePasswordSchema.parse(req.body);
-    const [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, req.user.id)).limit(1);
+    const [user] = await db_1.db
+        .select({
+        id: schema_1.users.id,
+        passwordHash: schema_1.users.passwordHash,
+        mustChangePassword: schema_1.users.mustChangePassword,
+    })
+        .from(schema_1.users)
+        .where((0, drizzle_orm_1.eq)(schema_1.users.id, req.user.id))
+        .limit(1);
     if (!user || !user.passwordHash) {
         return res.status(404).json({ success: false, error: 'Account not found.' });
     }
@@ -142,7 +174,11 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const validatedData = types_1.GuestSessionSchema.parse(req.body);
     // Check if guest session already exists
     const existingGuest = await db_1.db
-        .select()
+        .select({
+        id: schema_1.users.id,
+        isGuest: schema_1.users.isGuest,
+        mustChangePassword: schema_1.users.mustChangePassword,
+    })
         .from(schema_1.users)
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.deviceId, validatedData.deviceId), (0, drizzle_orm_1.eq)(schema_1.users.isGuest, true)))
         .limit(1);
@@ -160,7 +196,7 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             data: {
                 user: {
                     id: existingGuest[0].id,
-                    roles: userRoles.map(r => r.name),
+                    roles: userRoles.map(r => r.name).map(auth_1.normalizeRole),
                     isGuest: existingGuest[0].isGuest,
                     mustChangePassword: existingGuest[0].mustChangePassword,
                 },
@@ -175,7 +211,11 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         deviceId: validatedData.deviceId,
         isGuest: true,
     })
-        .returning();
+        .returning({
+        id: schema_1.users.id,
+        isGuest: schema_1.users.isGuest,
+        mustChangePassword: schema_1.users.mustChangePassword,
+    });
     // Assign GUEST role (we'll need to add this to the role system)
     try {
         await authService_1.AuthService.assignRole(newGuest[0].id, 'USER'); // Use USER role for guests for now
@@ -191,7 +231,7 @@ router.post('/guest', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         data: {
             user: {
                 id: newGuest[0].id,
-                roles: userRoles.map(r => r.name),
+                roles: userRoles.map(r => r.name).map(auth_1.normalizeRole),
                 isGuest: newGuest[0].isGuest,
                 mustChangePassword: newGuest[0].mustChangePassword,
             },
@@ -215,7 +255,9 @@ router.post('/refresh', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
     // Get user
     const user = await db_1.db
-        .select()
+        .select({
+        id: schema_1.users.id,
+    })
         .from(schema_1.users)
         .where((0, drizzle_orm_1.eq)(schema_1.users.id, decoded.userId))
         .limit(1);

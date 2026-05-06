@@ -55,7 +55,18 @@ const authMiddleware = async (req, res, next) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         // Get user from database
-        const user = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, decoded.userId)).limit(1);
+        const user = await db_1.db
+            .select({
+            id: schema_1.users.id,
+            email: schema_1.users.email,
+            isGuest: schema_1.users.isGuest,
+            mustChangePassword: schema_1.users.mustChangePassword,
+            deviceId: schema_1.users.deviceId,
+            isSuspended: schema_1.users.isSuspended,
+        })
+            .from(schema_1.users)
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, decoded.userId))
+            .limit(1);
         if (!user.length) {
             return res.status(401).json({ error: 'Invalid token' });
         }
@@ -92,7 +103,18 @@ const optionalAuth = async (req, res, next) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         // Get user from database
-        const user = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, decoded.userId)).limit(1);
+        const user = await db_1.db
+            .select({
+            id: schema_1.users.id,
+            email: schema_1.users.email,
+            isGuest: schema_1.users.isGuest,
+            mustChangePassword: schema_1.users.mustChangePassword,
+            deviceId: schema_1.users.deviceId,
+            isSuspended: schema_1.users.isSuspended,
+        })
+            .from(schema_1.users)
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, decoded.userId))
+            .limit(1);
         if (user.length) {
             if (user[0].isSuspended)
                 return next();
