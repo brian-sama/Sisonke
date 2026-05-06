@@ -98,6 +98,32 @@ const ROLE_PERMISSIONS = {
         canManageSystemSettings: true,
     },
 };
+const normalizeRoleName = (name) => {
+    const normalized = name.trim().toLowerCase().replace(/_/g, '-');
+    switch (normalized) {
+        case 'super-admin':
+            return 'SUPER_ADMIN';
+        case 'system-admin':
+            return 'SYSTEM_ADMIN';
+        case 'admin':
+            return 'ADMIN';
+        case 'counselor':
+        case 'counsellor':
+            return 'COUNSELOR';
+        case 'moderator':
+        case 'community-helper':
+            return 'MODERATOR';
+        case 'content-manager':
+        case 'content-admin':
+        case 'content-helper':
+            return 'CONTENT_ADMIN';
+        case 'user':
+        case 'app-user':
+            return 'USER';
+        default:
+            return name.toUpperCase().replace(/-/g, '_');
+    }
+};
 class AuthService {
     // Get user roles with permissions
     static async getUserRoles(userId) {
@@ -144,7 +170,7 @@ class AuthService {
     // Check if user has any of the specified roles
     static async hasRole(userId, roleNames) {
         const userRoles = await this.getUserRoles(userId);
-        const targetRoles = Array.isArray(roleNames) ? roleNames : [roleNames];
+        const targetRoles = (Array.isArray(roleNames) ? roleNames : [roleNames]).map(r => normalizeRoleName(r));
         return userRoles.some(role => targetRoles.includes(role.name));
     }
     // Check if user can access a specific resource
@@ -231,13 +257,14 @@ class AuthService {
     }
     // Assign role to user
     static async assignRole(userId, roleName, assignedBy) {
+        const dbRoleName = normalizeRoleName(roleName);
         const role = await db_1.db
             .select()
             .from(schema_1.roles)
-            .where((0, drizzle_orm_1.eq)(schema_1.roles.name, roleName))
+            .where((0, drizzle_orm_1.eq)(schema_1.roles.name, dbRoleName))
             .limit(1);
         if (role.length === 0) {
-            throw new Error(`Role ${roleName} not found`);
+            throw new Error(`Role ${roleName} (mapped to ${dbRoleName}) not found`);
         }
         // Check if user already has this role
         const existing = await db_1.db
@@ -246,7 +273,7 @@ class AuthService {
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.userRoles.userId, userId), (0, drizzle_orm_1.eq)(schema_1.userRoles.roleId, role[0].id)))
             .limit(1);
         if (existing.length > 0) {
-            throw new Error(`User already has role ${roleName}`);
+            return null; // Gracefully return if user already has this role
         }
         const [userRole] = await db_1.db
             .insert(schema_1.userRoles)
@@ -260,10 +287,11 @@ class AuthService {
     }
     // Remove role from user
     static async removeRole(userId, roleName) {
+        const dbRoleName = normalizeRoleName(roleName);
         const role = await db_1.db
             .select()
             .from(schema_1.roles)
-            .where((0, drizzle_orm_1.eq)(schema_1.roles.name, roleName))
+            .where((0, drizzle_orm_1.eq)(schema_1.roles.name, dbRoleName))
             .limit(1);
         if (role.length === 0) {
             throw new Error(`Role ${roleName} not found`);

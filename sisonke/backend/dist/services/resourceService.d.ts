@@ -1,8 +1,8 @@
 export declare class ResourceService {
     static getAll(query: any, isAdmin?: boolean): Promise<{
         resources: {
-            description: string;
             id: string;
+            description: string;
             createdAt: Date | null;
             updatedAt: Date | null;
             deletedAt: Date | null;
@@ -25,8 +25,8 @@ export declare class ResourceService {
         hasMore: boolean;
     }>;
     static getById(id: string, isAdmin?: boolean): Promise<{
-        description: string;
         id: string;
+        description: string;
         createdAt: Date | null;
         updatedAt: Date | null;
         deletedAt: Date | null;

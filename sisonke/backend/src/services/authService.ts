@@ -111,6 +111,33 @@ const ROLE_PERMISSIONS: Record<string, Permission> = {
   },
 };
 
+const normalizeRoleName = (name: string): string => {
+  const normalized = name.trim().toLowerCase().replace(/_/g, '-');
+  switch (normalized) {
+    case 'super-admin':
+      return 'SUPER_ADMIN';
+    case 'system-admin':
+      return 'SYSTEM_ADMIN';
+    case 'admin':
+      return 'ADMIN';
+    case 'counselor':
+    case 'counsellor':
+      return 'COUNSELOR';
+    case 'moderator':
+    case 'community-helper':
+      return 'MODERATOR';
+    case 'content-manager':
+    case 'content-admin':
+    case 'content-helper':
+      return 'CONTENT_ADMIN';
+    case 'user':
+    case 'app-user':
+      return 'USER';
+    default:
+      return name.toUpperCase().replace(/-/g, '_');
+  }
+};
+
 export class AuthService {
   // Get user roles with permissions
   static async getUserRoles(userId: string) {
@@ -164,7 +191,7 @@ export class AuthService {
   // Check if user has any of the specified roles
   static async hasRole(userId: string, roleNames: string | string[]): Promise<boolean> {
     const userRoles = await this.getUserRoles(userId);
-    const targetRoles = Array.isArray(roleNames) ? roleNames : [roleNames];
+    const targetRoles = (Array.isArray(roleNames) ? roleNames : [roleNames]).map(r => normalizeRoleName(r));
     return userRoles.some(role => targetRoles.includes(role.name));
   }
 
@@ -274,14 +301,15 @@ export class AuthService {
 
   // Assign role to user
   static async assignRole(userId: string, roleName: string, assignedBy?: string) {
+    const dbRoleName = normalizeRoleName(roleName);
     const role = await db
       .select()
       .from(roles)
-      .where(eq(roles.name, roleName as any))
+      .where(eq(roles.name, dbRoleName as any))
       .limit(1);
 
     if (role.length === 0) {
-      throw new Error(`Role ${roleName} not found`);
+      throw new Error(`Role ${roleName} (mapped to ${dbRoleName}) not found`);
     }
 
     // Check if user already has this role
@@ -297,7 +325,7 @@ export class AuthService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new Error(`User already has role ${roleName}`);
+      return null; // Gracefully return if user already has this role
     }
 
     const [userRole] = await db
@@ -314,10 +342,11 @@ export class AuthService {
 
   // Remove role from user
   static async removeRole(userId: string, roleName: string) {
+    const dbRoleName = normalizeRoleName(roleName);
     const role = await db
       .select()
       .from(roles)
-      .where(eq(roles.name, roleName as any))
+      .where(eq(roles.name, dbRoleName as any))
       .limit(1);
 
     if (role.length === 0) {

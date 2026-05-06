@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SocketService = void 0;
 const socket_io_1 = require("socket.io");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const authService_1 = require("./authService");
 /**
  * SocketService handles real-time bidirectional communication
  * between counselors and users for live support sessions.
@@ -19,13 +20,19 @@ class SocketService {
                 methods: ['GET', 'POST']
             }
         });
-        this.io.use((socket, next) => {
+        this.io.use(async (socket, next) => {
             const token = socket.handshake.auth.token;
             if (!token)
                 return next(new Error('Authentication error'));
             try {
                 const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'dev_secret');
-                socket.data.user = decoded;
+                // Fetch user roles dynamically from DB to support the new multi-role junction table architecture
+                const userRolesList = await authService_1.AuthService.getUserRoles(decoded.userId);
+                const rolesList = userRolesList.map(r => r.name);
+                socket.data.user = {
+                    id: decoded.userId,
+                    roles: rolesList
+                };
                 next();
             }
             catch (err) {
@@ -34,13 +41,15 @@ class SocketService {
         });
         this.io.on('connection', (socket) => {
             const user = socket.data.user;
-            const roles = Array.isArray(user.roles) ? user.roles : [user.role].filter(Boolean);
+            // Convert all roles to lowercase for localized staff room checks to match counselor, admin, super-admin, system-admin
+            const roles = (Array.isArray(user.roles) ? user.roles : [])
+                .map((r) => r.toLowerCase().replace(/_/g, '-'));
             console.log(`User connected: ${user.id} (Roles: ${roles.join(', ')})`);
             // Users join their own private room for notifications
             socket.join(`user:${user.id}`);
             // Staff join shared rooms
-            const isStaff = roles.includes('counselor') || roles.includes('admin') || roles.includes('super-admin');
-            const isAdmin = roles.includes('admin') || roles.includes('super-admin');
+            const isStaff = roles.includes('counselor') || roles.includes('admin') || roles.includes('super-admin') || roles.includes('system-admin');
+            const isAdmin = roles.includes('admin') || roles.includes('super-admin') || roles.includes('system-admin');
             if (isStaff)
                 socket.join('staff');
             if (isAdmin)

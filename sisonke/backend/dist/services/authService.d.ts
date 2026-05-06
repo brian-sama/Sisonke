@@ -13,9 +13,9 @@ export interface Permission {
 }
 export declare class AuthService {
     static getUserRoles(userId: string): Promise<{
-        description: string | null;
         id: string;
         name: "USER" | "COUNSELOR" | "MODERATOR" | "CONTENT_ADMIN" | "ADMIN" | "SYSTEM_ADMIN" | "SUPER_ADMIN";
+        description: string | null;
         permissions: unknown;
         createdAt: Date | null;
         updatedAt: Date | null;
@@ -31,7 +31,7 @@ export declare class AuthService {
         roleId: string;
         assignedBy: string | null;
         assignedAt: Date | null;
-    }>;
+    } | null>;
     static removeRole(userId: string, roleName: string): Promise<import("postgres").RowList<never[]>>;
 }
 //# sourceMappingURL=authService.d.ts.map

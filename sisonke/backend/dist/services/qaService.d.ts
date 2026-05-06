@@ -1,7 +1,7 @@
 export declare class QAService {
     static getQuestions(category?: any, isAdmin?: boolean): Promise<{
-        description: string;
         id: string;
+        description: string;
         createdAt: Date | null;
         updatedAt: Date | null;
         deviceId: string | null;
@@ -29,8 +29,8 @@ export declare class QAService {
             expertRole: string | null;
             answeredAt: Date | null;
         }[];
-        description: string;
         id: string;
+        description: string;
         createdAt: Date | null;
         updatedAt: Date | null;
         deviceId: string | null;
@@ -52,8 +52,8 @@ export declare class QAService {
         category: any;
         deviceId?: string;
     }): Promise<{
-        description: string;
         id: string;
+        description: string;
         createdAt: Date | null;
         updatedAt: Date | null;
         deviceId: string | null;
