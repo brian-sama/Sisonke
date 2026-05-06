@@ -3,10 +3,21 @@ import { ChatOllama } from '@langchain/ollama';
 import { personaPrompts, sisonkeFriendPrompt } from '../prompts/sisonkeFriendPrompt';
 import { SisonkeGraphState } from '../types';
 import { validateModelOutput } from '../validation';
-import { systemFallbacks } from '../data/fallbacks';
 
 const defaultBaseUrl = 'http://127.0.0.1:11434';
 const defaultModel = 'qwen2.5:1.5b';
+
+async function isOllamaReachable(baseUrl: string) {
+  const timeoutMs = Number(process.env.OLLAMA_HEALTH_TIMEOUT_MS || 1500);
+  try {
+    const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/tags`, {
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 function historyText(state: SisonkeGraphState) {
   return (state.history || [])
@@ -22,9 +33,16 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
     return { response: undefined, fallbackReason: 'local_ai_disabled' };
   }
 
+  const baseUrl = process.env.OLLAMA_BASE_URL || defaultBaseUrl;
+  if (!(await isOllamaReachable(baseUrl))) {
+    return {
+      fallbackReason: 'ollama_unreachable',
+    };
+  }
+
   const llm = new ChatOllama({
     model: process.env.OLLAMA_CHAT_MODEL || defaultModel,
-    baseUrl: process.env.OLLAMA_BASE_URL || defaultBaseUrl,
+    baseUrl,
     temperature: 0.35,
     numPredict: 120,
     numCtx: 1400,
@@ -46,12 +64,19 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
   });
 
   try {
-    const result = await llm.invoke([
-      new SystemMessage(prompt),
-      new HumanMessage(state.message),
-    ], {
-      signal: AbortSignal.timeout(Number(process.env.OLLAMA_TIMEOUT_MS || 12000)),
-    });
+    const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 12000);
+    const result = await Promise.race([
+      llm.invoke(
+        [
+          new SystemMessage(prompt),
+          new HumanMessage(state.message),
+        ],
+        { signal: AbortSignal.timeout(timeoutMs) },
+      ),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Ollama request timed out')), timeoutMs),
+      ),
+    ]);
     const validated = validateModelOutput(String(result.content || ''));
     return {
       response: validated.text,
@@ -60,9 +85,7 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
     };
   } catch {
     return {
-      response: systemFallbacks.llm_timeout,
       fallbackReason: 'llm_timeout',
-      aiProvider: 'rules',
     };
   }
 }

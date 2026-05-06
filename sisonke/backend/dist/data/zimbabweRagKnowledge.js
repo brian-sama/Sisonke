@@ -161,7 +161,6 @@ exports.safetyRules = [
             'musombodia',
             'kachasu',
             'friend collapsed',
-            'heart is racing',
             'took too much',
             'ku sticker',
         ],
@@ -169,7 +168,7 @@ exports.safetyRules = [
     {
         route: 'self_harm',
         risk: 'amber',
-        terms: ['hopeless', 'depressed', 'panic', 'can not cope', "can't cope", 'self harm', 'alone', 'empty', 'numb'],
+        terms: ['hopeless', 'depressed', 'panic', 'heart racing', 'heart is racing', 'can not cope', "can't cope", 'self harm', 'alone', 'empty', 'numb'],
     },
 ];
 exports.zimbabweKnowledgeCards = [

@@ -293,18 +293,21 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
 
   // --- 🏺 Gratitude Jar Layout ---
   Widget _buildGratitudeJarLayout() {
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Gratitude Jar'),
       body: Container(
         decoration: const BoxDecoration(gradient: SisonkeColors.forestBreeze),
         child: Column(
           children: [
+            if (!isKeyboardVisible)
+              Expanded(
+                flex: 4,
+                child: _GratitudeJarAnimator(isAnimating: _isAnimating),
+              ),
             Expanded(
-              flex: 4,
-              child: _GratitudeJarAnimator(isAnimating: _isAnimating),
-            ),
-            Expanded(
-              flex: 5,
+              flex: isKeyboardVisible ? 1 : 5,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Container(
@@ -368,18 +371,21 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
 
   // --- 📦 Worry Box Layout ---
   Widget _buildWorryBoxLayout() {
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Worry Box'),
       body: Container(
         decoration: const BoxDecoration(gradient: SisonkeColors.pastelSunset),
         child: Column(
           children: [
+            if (!isKeyboardVisible)
+              Expanded(
+                flex: 4,
+                child: _WorryBoxAnimator(isAnimating: _isAnimating),
+              ),
             Expanded(
-              flex: 4,
-              child: _WorryBoxAnimator(isAnimating: _isAnimating),
-            ),
-            Expanded(
-              flex: 5,
+              flex: isKeyboardVisible ? 1 : 5,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Container(

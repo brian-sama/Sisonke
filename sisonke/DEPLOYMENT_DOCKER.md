@@ -53,6 +53,12 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d --bui
 
 The first run creates the PostgreSQL database volume and runs migrations before the backend starts.
 
+Pull the local AI model once on the VPS:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml exec ollama ollama pull qwen2.5:1.5b
+```
+
 ## 5. Create First Admin
 
 After the stack is running:
@@ -95,6 +101,12 @@ View logs:
 
 ```bash
 docker compose --env-file .env.production -f docker-compose.prod.yml logs -f backend
+```
+
+View AI runtime logs:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml logs -f ollama
 ```
 
 Restart:

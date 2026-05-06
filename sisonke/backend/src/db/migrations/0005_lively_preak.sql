@@ -34,12 +34,12 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-ALTER TYPE "analytics_event" ADD VALUE 'chatbot_session_started';--> statement-breakpoint
-ALTER TYPE "analytics_event" ADD VALUE 'counselor_escalated';--> statement-breakpoint
-ALTER TYPE "analytics_event" ADD VALUE 'community_post_submitted';--> statement-breakpoint
-ALTER TYPE "analytics_event" ADD VALUE 'mood_logged';--> statement-breakpoint
-ALTER TYPE "user_role" ADD VALUE 'counselor';--> statement-breakpoint
-ALTER TYPE "user_role" ADD VALUE 'moderator';--> statement-breakpoint
+ALTER TYPE "analytics_event" ADD VALUE IF NOT EXISTS 'chatbot_session_started';--> statement-breakpoint
+ALTER TYPE "analytics_event" ADD VALUE IF NOT EXISTS 'counselor_escalated';--> statement-breakpoint
+ALTER TYPE "analytics_event" ADD VALUE IF NOT EXISTS 'community_post_submitted';--> statement-breakpoint
+ALTER TYPE "analytics_event" ADD VALUE IF NOT EXISTS 'mood_logged';--> statement-breakpoint
+ALTER TYPE "user_role" ADD VALUE IF NOT EXISTS 'counselor';--> statement-breakpoint
+ALTER TYPE "user_role" ADD VALUE IF NOT EXISTS 'moderator';--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "audit_logs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"actor_id" uuid,
@@ -171,12 +171,12 @@ CREATE TABLE IF NOT EXISTS "user_profiles" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "roles" varchar(40)[] DEFAULT '{guest}';--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "is_suspended" boolean DEFAULT false;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "suspension_reason" text;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "suspended_at" timestamp;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "must_change_password" boolean DEFAULT false;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "deleted_at" timestamp;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "roles" varchar(40)[] DEFAULT '{guest}';--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_suspended" boolean DEFAULT false;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "suspension_reason" text;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "suspended_at" timestamp;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "must_change_password" boolean DEFAULT false;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp;--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION

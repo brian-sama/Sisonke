@@ -40,6 +40,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
       appBar: const SisonkeAppBar(
         title: 'Sisonke Friend',
@@ -50,108 +52,113 @@ class _EFriendScreenState extends State<EFriendScreen> {
         decoration: BoxDecoration(gradient: _ambientBackground),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'How are you arriving today?',
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF2F3433),
-                                ),
+            if (!isKeyboardVisible)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'How are you arriving today?',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF2F3433),
+                                  ),
+                            ),
                           ),
-                        ),
-                        // Soft style selection toggle
-                        SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(
-                              value: 'female',
-                              icon: Icon(Icons.spa_outlined, size: 16),
-                              label: Text(
-                                'Sister',
-                                style: TextStyle(fontSize: 11),
+                          // Soft style selection toggle
+                          SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(
+                                value: 'female',
+                                icon: Icon(Icons.spa_outlined, size: 16),
+                                label: Text(
+                                  'Sister',
+                                  style: TextStyle(fontSize: 11),
+                                ),
                               ),
-                            ),
-                            ButtonSegment(
-                              value: 'male',
-                              icon: Icon(Icons.air_outlined, size: 16),
-                              label: Text(
-                                'Brother',
-                                style: TextStyle(fontSize: 11),
+                              ButtonSegment(
+                                value: 'male',
+                                icon: Icon(Icons.air_outlined, size: 16),
+                                label: Text(
+                                  'Brother',
+                                  style: TextStyle(fontSize: 11),
+                                ),
                               ),
-                            ),
-                          ],
-                          selected: {_persona},
-                          onSelectionChanged: (value) =>
-                              setState(() => _persona = value.first),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          const [
-                            'Sad',
-                            'Anxious',
-                            'Angry',
-                            'Confused',
-                            'Lonely',
-                            'Okay',
-                            'Happy',
-                          ].map((emotion) {
-                            return _EmotionChip(
-                              emotion: emotion,
-                              selected: _emotion == emotion,
-                              onSelected: () => _selectEmotion(emotion),
-                            );
-                          }).toList(),
-                    ),
-                    if (_emotion != null) ...[
+                            ],
+                            selected: {_persona},
+                            onSelectionChanged: (value) =>
+                                setState(() => _persona = value.first),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 12),
-                      _RiskCheckBanner(emotion: _emotion!),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            const [
+                              'Sad',
+                              'Anxious',
+                              'Angry',
+                              'Confused',
+                              'Lonely',
+                              'Okay',
+                              'Happy',
+                            ].map((emotion) {
+                              return _EmotionChip(
+                                emotion: emotion,
+                                selected: _emotion == emotion,
+                                onSelected: () => _selectEmotion(emotion),
+                              );
+                            }).toList(),
+                      ),
+                      if (_emotion != null) ...[
+                        const SizedBox(height: 12),
+                        _RiskCheckBanner(emotion: _emotion!),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
 
             // Render interactive floating companion when chat is quiet
             if (_messages.length <= 1 && !_sending)
               Expanded(
                 child: Center(
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _BreathingCompanion(persona: _persona),
-                        const SizedBox(height: 24),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 40),
-                          child: Text(
-                            '“Type anything below to speak. I am your safe, private space.”',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontStyle: FontStyle.italic,
-                              color: const Color(0xFF2F3433).withOpacity(0.6),
+                        if (!isKeyboardVisible) ...[
+                          _BreathingCompanion(persona: _persona),
+                          const SizedBox(height: 24),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Text(
+                              'â€œType anything below to speak. I am your safe, private space.â€',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: const Color(0xFF2F3433).withOpacity(0.6),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -160,6 +167,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
             else
               Expanded(
                 child: ListView.separated(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   itemCount: _messages.length + (_sending ? 1 : 0),
                   separatorBuilder: (context, index) =>
@@ -174,7 +183,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
               ),
 
             // Ambient Exercises Quick Row
-            if (_messages.length > 1)
+            if (_messages.length > 1 && !isKeyboardVisible)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: Row(
@@ -235,17 +244,21 @@ class _EFriendScreenState extends State<EFriendScreen> {
               ),
 
             // Talk to counselor block
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: SisonkeButton(
-                label: _messages.any((m) => m.risk == 'HIGH')
-                    ? 'I deserve counselor support right now'
-                    : 'Speak to a human counselor',
-                icon: Icons.support_agent_rounded,
-                isFullWidth: true,
-                onPressed: () => context.push('/talk-to-counselor'),
+            if (!isKeyboardVisible)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: SisonkeButton(
+                  label: _messages.any((m) => m.risk == 'HIGH')
+                      ? 'I deserve counselor support right now'
+                      : 'Speak to a human counselor',
+                  icon: Icons.support_agent_rounded,
+                  isFullWidth: true,
+                  onPressed: () => context.push('/talk-to-counselor'),
+                ),
               ),
-            ),
 
             SafeArea(
               top: false,

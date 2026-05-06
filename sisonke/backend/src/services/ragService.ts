@@ -37,11 +37,20 @@ export class RagService {
     const tokens = this.tokenize(query);
     if (tokens.length === 0) return '';
 
-    // Fetch potential candidates from DB
-    const [resRows, cmsRows] = await Promise.all([
+    // Fetch potential DB candidates, but keep the graph useful during local
+    // development when Postgres content has not been migrated or seeded yet.
+    const dbLookup = Promise.all([
       db.select().from(resources).where(and(eq(resources.status, 'published'), isNull(resources.deletedAt))).limit(50),
       db.select().from(cmsContent).where(eq(cmsContent.status, 'published')).limit(50)
     ]);
+    const timeoutMs = Number(process.env.RAG_DB_TIMEOUT_MS || 1500);
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('RAG DB lookup timed out')), timeoutMs),
+    );
+    const [resRows, cmsRows] = await Promise.race([dbLookup, timeout]).catch((error) => {
+      console.warn('RAG DB lookup failed; using bundled approved cards only.', error);
+      return [[], []] as const;
+    });
 
     const candidates: GroundingSource[] = [
       ...allZimbabweRagCards.map(card => ({

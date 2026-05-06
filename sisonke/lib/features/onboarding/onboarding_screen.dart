@@ -92,121 +92,162 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            onPageChanged: (int page) {
-              setState(() {
-                _currentPage = page;
-              });
-            },
-            itemCount: pages.length,
-            itemBuilder: (context, index) {
-              return _buildPage(pages[index]);
-            },
-          ),
-          Positioned(
-            bottom: 48,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    pages.length,
-                    (index) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentPage == index ? 32 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    if (_currentPage > 0)
-                      Flexible(
-                        child: SisonkeButton(
-                          label: 'Back',
-                          buttonType: ButtonType.secondary,
-                          onPressed: () {
-                            _pageController.previousPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          },
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: (int page) {
+                setState(() {
+                  _currentPage = page;
+                });
+              },
+              itemCount: pages.length,
+              itemBuilder: (context, index) {
+                return _buildPage(pages[index]);
+              },
+            ),
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              bottom: isKeyboardVisible ? -120 : 24,
+              left: 24,
+              right: 24,
+              child: IgnorePointer(
+                ignoring: isKeyboardVisible,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 120),
+                  opacity: isKeyboardVisible ? 0 : 1,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          pages.length,
+                          (index) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentPage == index ? 32 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _currentPage == index
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
                       ),
-                    if (_currentPage > 0) const SizedBox(width: 12),
-                    Flexible(
-                      child: SisonkeButton(
-                        label: _currentPage == pages.length - 1
-                            ? (_saving ? 'Saving...' : 'Get Started')
-                            : 'Next',
-                        isLoading: _saving,
-                        onPressed: () {
-                          if (_currentPage == pages.length - 1) {
-                            _finishOnboarding();
-                          } else {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          }
-                        },
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          if (_currentPage > 0) ...[
+                            Expanded(
+                              child: SisonkeButton(
+                                label: 'Back',
+                                buttonType: ButtonType.secondary,
+                                onPressed: () {
+                                  _pageController.previousPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                          Expanded(
+                            child: SisonkeButton(
+                              label: _currentPage == pages.length - 1
+                                  ? (_saving ? 'Saving...' : 'Get Started')
+                                  : 'Next',
+                              isLoading: _saving,
+                              onPressed: () {
+                                if (_currentPage == pages.length - 1) {
+                                  _finishOnboarding();
+                                } else {
+                                  _pageController.nextPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPage(OnboardingPage page) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(page.icon, size: 100, color: Theme.of(context).primaryColor),
-          const SizedBox(height: 32),
-          Text(
-            page.title,
-            style: Theme.of(context).textTheme.headlineSmall,
-            textAlign: TextAlign.center,
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final isKeyboardVisible = keyboardInset > 0;
+    final bottomPadding = isKeyboardVisible ? keyboardInset + 32 : 156.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final contentMinHeight = (constraints.maxHeight - bottomPadding)
+            .clamp(0.0, double.infinity)
+            .toDouble();
+
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            24,
+            isKeyboardVisible ? 16 : 24,
+            24,
+            bottomPadding,
           ),
-          const SizedBox(height: 16),
-          Text(
-            page.description,
-            style: Theme.of(context).textTheme.bodyLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          _buildStepFields(),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: contentMinHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  page.icon,
+                  size: isKeyboardVisible ? 72 : 100,
+                  color: Theme.of(context).primaryColor,
+                ),
+                SizedBox(height: isKeyboardVisible ? 20 : 32),
+                Text(
+                  page.title,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  page.description,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                _buildStepFields(),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
-          const SizedBox(height: 120), // Extra space for the floating buttons
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 

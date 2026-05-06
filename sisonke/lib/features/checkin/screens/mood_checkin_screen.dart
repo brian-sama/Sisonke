@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sisonke/shared/models/mood.dart';
 import 'package:sisonke/features/mood_tracker/providers/mood_provider.dart';
-import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
@@ -47,24 +46,31 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFFD68A7F),
-          content: Text('Please select an organic state representing your mood.'),
+          content: Text(
+            'Please select an organic state representing your mood.',
+          ),
         ),
       );
       return;
     }
 
-    await ref.read(moodEntriesProvider.notifier).addMood(
-      mood: _selectedMood!,
-      energyLevel: _energyLevel.toInt(),
-      note: _noteController.text,
-    );
+    await ref
+        .read(moodEntriesProvider.notifier)
+        .addMood(
+          mood: _selectedMood!,
+          energyLevel: _energyLevel.toInt(),
+          note: _noteController.text,
+        );
 
     if (mounted) {
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFF2E6F60),
-          content: Text('Your organic mood reflection is saved safely inside Sisonke.', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+            'Your organic mood reflection is saved safely inside Sisonke.',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       );
     }
@@ -73,16 +79,13 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SisonkeAppBar(
-        title: 'Daily Reflection',
-      ),
+      appBar: const SisonkeAppBar(title: 'Daily Reflection'),
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 600),
-        decoration: BoxDecoration(
-          gradient: _ambientGradient,
-        ),
+        decoration: BoxDecoration(gradient: _ambientGradient),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -116,12 +119,13 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.0,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.0,
+                          ),
                       itemCount: MoodType.values.length,
                       itemBuilder: (context, index) {
                         final mood = MoodType.values[index];
@@ -145,23 +149,30 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFF2E6F60).withOpacity(0.15),
+                                        color: const Color(
+                                          0xFF2E6F60,
+                                        ).withOpacity(0.15),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
-                                      )
+                                      ),
                                     ]
                                   : null,
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(mood.emoji, style: const TextStyle(fontSize: 34)),
+                                Text(
+                                  mood.emoji,
+                                  style: const TextStyle(fontSize: 34),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   mood.label,
                                   style: TextStyle(
                                     fontSize: 12.5,
-                                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w900
+                                        : FontWeight.w600,
                                     color: const Color(0xFF2F3433),
                                   ),
                                 ),
@@ -197,7 +208,10 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2E6F60).withOpacity(0.12),
                             borderRadius: BorderRadius.circular(12),
@@ -217,7 +231,9 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: const Color(0xFF2E6F60),
-                        inactiveTrackColor: const Color(0xFF2E6F60).withOpacity(0.15),
+                        inactiveTrackColor: const Color(
+                          0xFF2E6F60,
+                        ).withOpacity(0.15),
                         thumbColor: const Color(0xFF2E6F60),
                         overlayColor: const Color(0xFF2E6F60).withOpacity(0.12),
                         valueIndicatorColor: const Color(0xFF2E6F60),
@@ -228,7 +244,8 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                         max: 10,
                         divisions: 9,
                         label: _energyLevel.toInt().toString(),
-                        onChanged: (value) => setState(() => _energyLevel = value),
+                        onChanged: (value) =>
+                            setState(() => _energyLevel = value),
                       ),
                     ),
                   ],
@@ -260,8 +277,11 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
                         fillColor: Colors.white.withOpacity(0.85),
-                        hintText: 'Take your time, write as little or as much as you need...',
-                        hintStyle: TextStyle(color: const Color(0xFF2F3433).withOpacity(0.4)),
+                        hintText:
+                            'Take your time, write as little or as much as you need...',
+                        hintStyle: TextStyle(
+                          color: const Color(0xFF2F3433).withOpacity(0.4),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
                           borderSide: BorderSide.none,

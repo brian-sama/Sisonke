@@ -31,7 +31,8 @@ class _CounselorRequestScreenState extends State<CounselorRequestScreen> {
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Request Counselor'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         children: [
           Text(
             'What kind of support do you need?',
@@ -651,7 +652,8 @@ class _RequestTypeScaffold extends StatelessWidget {
     return Scaffold(
       appBar: SisonkeAppBar(title: title),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         children: [
           _FlowCard(
             child: Column(

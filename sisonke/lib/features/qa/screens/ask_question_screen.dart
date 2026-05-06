@@ -24,7 +24,8 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
   }
 
   Future<void> _submitQuestion() async {
-    if (_titleController.text.trim().isEmpty || _descriptionController.text.trim().isEmpty) {
+    if (_titleController.text.trim().isEmpty ||
+        _descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
@@ -34,11 +35,13 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      await ref.read(submitQuestionProvider.notifier).submitQuestion(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        category: _selectedCategory,
-      );
+      await ref
+          .read(submitQuestionProvider.notifier)
+          .submitQuestion(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            category: _selectedCategory,
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -48,9 +51,9 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {
@@ -67,133 +70,140 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingMedium),
-        child: Column(
+      body: SafeArea(
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.all(AppConstants.spacingMedium),
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ask a Question',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSmall),
-                    Text(
-                      'Your questions are anonymous. We\'ll do our best to provide helpful answers.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingLarge),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ask a Question',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                Text(
+                  'Your questions are anonymous. We\'ll do our best to provide helpful answers.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-                    // Category Selection
-                    Text(
-                      'Category',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                // Category Selection
+                Text(
+                  'Category',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Select a category',
+                  ),
+                  items: AppConstants.questionCategories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(
+                        AppConstants.questionCategoryDisplayNames[category] ??
+                            category,
                       ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSmall),
-                    DropdownButtonFormField<String>(
-                      value: _selectedCategory,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Select a category',
-                      ),
-                      items: AppConstants.questionCategories.map((category) {
-                        return DropdownMenuItem(
-                          value: category,
-                          child: Text(AppConstants.questionCategoryDisplayNames[category] ?? category),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() => _selectedCategory = value!);
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.spacingLarge),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedCategory = value!);
+                  },
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-                    // Title
-                    Text(
-                      'Title',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSmall),
-                    TextField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Brief summary of your question',
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: AppConstants.spacingLarge),
+                // Title
+                Text(
+                  'Title',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Brief summary of your question',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-                    // Description
-                    Text(
-                      'Description',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSmall),
-                    TextField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Provide more details about your question',
-                      ),
-                      maxLines: 6,
-                    ),
-                    const SizedBox(height: AppConstants.spacingLarge),
+                // Description
+                Text(
+                  'Description',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Provide more details about your question',
+                  ),
+                  maxLines: 6,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-                    // Privacy Notice
-                    Container(
-                      padding: const EdgeInsets.all(AppConstants.spacingMedium),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                // Privacy Notice
+                Container(
+                  padding: const EdgeInsets.all(AppConstants.spacingMedium),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusMedium,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.lock,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(width: AppConstants.spacingSmall),
-                              Text(
-                                'Privacy Protected',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          Icon(
+                            Icons.lock,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: AppConstants.spacingSmall),
+                          Text(
+                            'Privacy Protected',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppConstants.spacingSmall),
-                          Text(
-                            'Your question is submitted anonymously. No personal information will be shared.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: AppConstants.spacingSmall),
+                      Text(
+                        'Your question is submitted anonymously. No personal information will be shared.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppConstants.spacingLarge),
+              ],
             ),
-            const SizedBox(height: AppConstants.spacingMedium),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -201,13 +211,16 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingMedium),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.spacingMedium,
+                  ),
                 ),
                 child: _isSubmitting
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Submit Question'),
               ),
             ),
+            const SizedBox(height: AppConstants.spacingMedium),
           ],
         ),
       ),

@@ -10,8 +10,7 @@ class AppConstants {
   }
 
   static String get devApiBaseUrl {
-    // Since the backend is running on the VPS, we point to the production domain
-    return 'https://sisonke.mmpzmne.co.zw/api';
+    return 'http://localhost:3001/api';
   }
 
   static const String tokenKey = 'auth_token';

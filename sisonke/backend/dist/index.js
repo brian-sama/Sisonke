@@ -3,12 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const http_1 = require("http");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-const dotenv_1 = __importDefault(require("dotenv"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const env_1 = require("./env");
 const socketService_1 = require("./services/socketService");
@@ -27,8 +27,6 @@ const chatbot_1 = __importDefault(require("./routes/chatbot"));
 const counselor_1 = __importDefault(require("./routes/counselor"));
 const community_1 = __importDefault(require("./routes/community"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
-// Load environment variables
-dotenv_1.default.config();
 (0, env_1.validateEnv)();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;

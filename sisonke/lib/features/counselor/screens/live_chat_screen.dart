@@ -125,6 +125,8 @@ class _LiveChatScreenState extends ConsumerState<LiveChatScreen> {
                 ? const _EmptyChat()
                 : ListView.builder(
                     controller: _scrollController,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.all(16),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {

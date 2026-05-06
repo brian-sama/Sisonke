@@ -7,6 +7,7 @@ import { ragNode } from './nodes/ragNode';
 import { localModelNode } from './nodes/localModelNode';
 import { geminiFallbackNode } from './nodes/geminiFallbackNode';
 import { counselorEscalationNode } from './nodes/counselorEscalationNode';
+import { ruleFallbackNode } from './nodes/ruleFallbackNode';
 
 const SisonkeState = Annotation.Root({
   userId: Annotation<string | undefined>(),
@@ -52,6 +53,7 @@ export const sisonkeGraph = new StateGraph(SisonkeState)
   .addNode('rag', ragNode)
   .addNode('localModel', localModelNode)
   .addNode('geminiFallback', geminiFallbackNode)
+  .addNode('ruleFallback', ruleFallbackNode)
   .addNode('escalate', counselorEscalationNode)
   .addEdge(START, 'safety')
   .addConditionalEdges('safety', routeAfterSafety, {
@@ -65,7 +67,8 @@ export const sisonkeGraph = new StateGraph(SisonkeState)
   })
   .addEdge('rag', 'localModel')
   .addEdge('localModel', 'geminiFallback')
-  .addEdge('geminiFallback', END)
+  .addEdge('geminiFallback', 'ruleFallback')
+  .addEdge('ruleFallback', END)
   .addEdge('escalate', END)
   .compile();
 

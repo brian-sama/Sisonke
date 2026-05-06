@@ -1,9 +1,9 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { notFound, errorHandler } from './middleware/errorHandler';
 import { getAllowedOrigins, validateEnv } from './env';
 import { SocketService } from './services/socketService';
@@ -24,8 +24,6 @@ import counselorRoutes from './routes/counselor';
 import communityRoutes from './routes/community';
 import notificationRoutes from './routes/notifications';
 
-// Load environment variables
-dotenv.config();
 validateEnv();
 
 const app = express();
