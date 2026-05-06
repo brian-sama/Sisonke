@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sisonke/shared/widgets/sisonke_app_bar.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 
 class SisonkeScaffold extends StatelessWidget {
@@ -6,6 +7,7 @@ class SisonkeScaffold extends StatelessWidget {
   final Widget body;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
+  final String? fallbackBackLocation;
 
   const SisonkeScaffold({
     super.key,
@@ -13,13 +15,18 @@ class SisonkeScaffold extends StatelessWidget {
     required this.body,
     this.actions,
     this.floatingActionButton,
+    this.fallbackBackLocation,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SisonkeColors.cream,
-      appBar: AppBar(title: Text(title), actions: actions),
+      appBar: SisonkeAppBar(
+        title: title,
+        actions: actions,
+        fallbackBackLocation: fallbackBackLocation,
+      ),
       body: body,
       floatingActionButton: floatingActionButton,
     );

@@ -19,7 +19,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
   final _messages = <_ChatMessage>[
     const _ChatMessage(
       fromUser: false,
-      text: 'Take a slow, deep breath. I’m here to listen. Tell me what is on your mind today.',
+      text:
+          'Take a slow, deep breath. I’m here to listen. Tell me what is on your mind today.',
       risk: 'LOW',
     ),
   ];
@@ -40,12 +41,13 @@ class _EFriendScreenState extends State<EFriendScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SisonkeAppBar(title: 'Sisonke Friend'),
+      appBar: const SisonkeAppBar(
+        title: 'Sisonke Friend',
+        fallbackBackLocation: '/home',
+      ),
       body: AnimatedContainer(
         duration: const Duration(seconds: 1),
-        decoration: BoxDecoration(
-          gradient: _ambientBackground,
-        ),
+        decoration: BoxDecoration(gradient: _ambientBackground),
         child: Column(
           children: [
             Padding(
@@ -65,7 +67,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
                         Expanded(
                           child: Text(
                             'How are you arriving today?',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.w900,
                                   color: const Color(0xFF2F3433),
                                 ),
@@ -77,12 +80,18 @@ class _EFriendScreenState extends State<EFriendScreen> {
                             ButtonSegment(
                               value: 'female',
                               icon: Icon(Icons.spa_outlined, size: 16),
-                              label: Text('Sister', style: TextStyle(fontSize: 11)),
+                              label: Text(
+                                'Sister',
+                                style: TextStyle(fontSize: 11),
+                              ),
                             ),
                             ButtonSegment(
                               value: 'male',
                               icon: Icon(Icons.air_outlined, size: 16),
-                              label: Text('Brother', style: TextStyle(fontSize: 11)),
+                              label: Text(
+                                'Brother',
+                                style: TextStyle(fontSize: 11),
+                              ),
                             ),
                           ],
                           selected: {_persona},
@@ -95,21 +104,22 @@ class _EFriendScreenState extends State<EFriendScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: const [
-                        'Sad',
-                        'Anxious',
-                        'Angry',
-                        'Confused',
-                        'Lonely',
-                        'Okay',
-                        'Happy',
-                      ].map((emotion) {
-                        return _EmotionChip(
-                          emotion: emotion,
-                          selected: _emotion == emotion,
-                          onSelected: () => _selectEmotion(emotion),
-                        );
-                      }).toList(),
+                      children:
+                          const [
+                            'Sad',
+                            'Anxious',
+                            'Angry',
+                            'Confused',
+                            'Lonely',
+                            'Okay',
+                            'Happy',
+                          ].map((emotion) {
+                            return _EmotionChip(
+                              emotion: emotion,
+                              selected: _emotion == emotion,
+                              onSelected: () => _selectEmotion(emotion),
+                            );
+                          }).toList(),
                     ),
                     if (_emotion != null) ...[
                       const SizedBox(height: 12),
@@ -119,7 +129,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
                 ),
               ),
             ),
-            
+
             // Render interactive floating companion when chat is quiet
             if (_messages.length <= 1 && !_sending)
               Expanded(
@@ -152,7 +162,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   itemCount: _messages.length + (_sending ? 1 : 0),
-                  separatorBuilder: (context, index) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     if (index == _messages.length) {
                       return const _TypingBubble();
@@ -172,12 +183,25 @@ class _EFriendScreenState extends State<EFriendScreen> {
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           backgroundColor: Colors.white54,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          side: BorderSide(color: Colors.white.withOpacity(0.5)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          side: BorderSide(
+                            color: Colors.white.withOpacity(0.5),
+                          ),
                         ),
                         onPressed: () => context.push('/breathing'),
-                        icon: const Icon(Icons.self_improvement_rounded, color: Color(0xFF2E6F60)),
-                        label: const Text('Breathe', style: TextStyle(color: Color(0xFF2F3433), fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.self_improvement_rounded,
+                          color: Color(0xFF2E6F60),
+                        ),
+                        label: const Text(
+                          'Breathe',
+                          style: TextStyle(
+                            color: Color(0xFF2F3433),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -185,12 +209,25 @@ class _EFriendScreenState extends State<EFriendScreen> {
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           backgroundColor: Colors.white54,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          side: BorderSide(color: Colors.white.withOpacity(0.5)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          side: BorderSide(
+                            color: Colors.white.withOpacity(0.5),
+                          ),
                         ),
                         onPressed: () => context.push('/private-journal'),
-                        icon: const Icon(Icons.edit_note_rounded, color: Color(0xFF7361A9)),
-                        label: const Text('Journal', style: TextStyle(color: Color(0xFF2F3433), fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.edit_note_rounded,
+                          color: Color(0xFF7361A9),
+                        ),
+                        label: const Text(
+                          'Journal',
+                          style: TextStyle(
+                            color: Color(0xFF2F3433),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -224,7 +261,10 @@ class _EFriendScreenState extends State<EFriendScreen> {
                         decoration: InputDecoration(
                           hintText: 'Share your thoughts...',
                           fillColor: Colors.white.withOpacity(0.85),
-                          prefixIcon: const Icon(Icons.favorite_outline_rounded, color: Color(0xFF2E6F60)),
+                          prefixIcon: const Icon(
+                            Icons.favorite_outline_rounded,
+                            color: Color(0xFF2E6F60),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -290,7 +330,10 @@ class _EFriendScreenState extends State<EFriendScreen> {
             backgroundColor: Color(0xFFD68A7F),
             content: Text(
               'I think you deserve some friendly human support right now. Consider chatting with a counselor.',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             duration: Duration(seconds: 6),
           ),
@@ -373,7 +416,11 @@ class _EmotionChip extends StatelessWidget {
       selectedColor: const Color(0xFF2E6F60),
       backgroundColor: Colors.white.withOpacity(0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      avatar: Icon(_iconFor(emotion), size: 18, color: selected ? Colors.white : companionColor),
+      avatar: Icon(
+        _iconFor(emotion),
+        size: 18,
+        color: selected ? Colors.white : companionColor,
+      ),
       onSelected: (_) => onSelected(),
     );
   }
@@ -435,7 +482,9 @@ class _RiskCheckBanner extends StatelessWidget {
             : const Color(0xFFE7FAFA).withOpacity(0.9),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: highAttention ? const Color(0xFFFFCCD2) : const Color(0xFFCBEFF0),
+          color: highAttention
+              ? const Color(0xFFFFCCD2)
+              : const Color(0xFFCBEFF0),
         ),
       ),
       child: Row(
@@ -444,7 +493,9 @@ class _RiskCheckBanner extends StatelessWidget {
             highAttention
                 ? Icons.health_and_safety_rounded
                 : Icons.check_circle_rounded,
-            color: highAttention ? const Color(0xFFD68A7F) : const Color(0xFF2E6F60),
+            color: highAttention
+                ? const Color(0xFFD68A7F)
+                : const Color(0xFF2E6F60),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -455,7 +506,9 @@ class _RiskCheckBanner extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12.5,
-                color: highAttention ? const Color(0xFF8C4C42) : const Color(0xFF1B4F43),
+                color: highAttention
+                    ? const Color(0xFF8C4C42)
+                    : const Color(0xFF1B4F43),
               ),
             ),
           ),
@@ -484,7 +537,6 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isUser = message.fromUser;
 
     return Align(
@@ -507,7 +559,7 @@ class _ChatBubble extends StatelessWidget {
               color: Colors.black.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 3),
-            )
+            ),
           ],
           border: message.risk == 'HIGH'
               ? Border.all(color: Colors.redAccent, width: 2)
@@ -524,9 +576,7 @@ class _ChatBubble extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: isUser
-                    ? Colors.white
-                    : const Color(0xFF2F3433),
+                color: isUser ? Colors.white : const Color(0xFF2F3433),
               ),
             ),
             if (message.risk != 'LOW' && message.risk != 'CHECKING') ...[
@@ -648,10 +698,7 @@ class _BreathingCompanionState extends State<_BreathingCompanion>
                       ],
                     ),
                     child: const Center(
-                      child: Text(
-                        '🌱',
-                        style: TextStyle(fontSize: 24),
-                      ),
+                      child: Text('🌱', style: TextStyle(fontSize: 24)),
                     ),
                   ),
                 ],
@@ -735,7 +782,9 @@ class _TypingBubbleState extends State<_TypingBubble>
                   height: size,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF2E6F60).withOpacity(0.3 + (value * 0.7)),
+                    color: const Color(
+                      0xFF2E6F60,
+                    ).withOpacity(0.3 + (value * 0.7)),
                   ),
                 );
               }),

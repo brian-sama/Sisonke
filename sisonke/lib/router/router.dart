@@ -17,6 +17,7 @@ import 'package:sisonke/features/emergency/screens/breathing_exercise_screen.dar
 import 'package:sisonke/features/checkin/screens/check_in_screen.dart';
 import 'package:sisonke/features/checkin/screens/mood_tracker_screen.dart';
 import 'package:sisonke/features/checkin/screens/journal_screen.dart';
+import 'package:sisonke/features/checkin/screens/journal_entry_screen.dart';
 import 'package:sisonke/features/checkin/screens/sobriety_tracker_screen.dart';
 import 'package:sisonke/features/support/screens/support_directory_screen.dart';
 import 'package:sisonke/features/support/screens/bookmarks_screen.dart';
@@ -247,6 +248,11 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/private-journal',
       builder: (context, state) => const JournalScreen(),
+    ),
+    GoRoute(
+      path: '/journal-entry',
+      builder: (context, state) =>
+          JournalEntryScreen(mode: state.uri.queryParameters['mode']),
     ),
     GoRoute(
       path: '/talk-to-counselor',

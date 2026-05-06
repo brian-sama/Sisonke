@@ -15,20 +15,26 @@ class HomeScreen extends ConsumerWidget {
     const teal = Color(0xFF00A6A6);
     const lemon = Color(0xFFFFC857);
     const violet = Color(0xFF7B61FF);
+    final topActionColor = colorScheme.primaryContainer.withValues(alpha: 0.5);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: SisonkeAppBar(
         title: 'Sisonke',
         showBackButton: false,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: colorScheme.onSurface,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: IconButton.filledTonal(
+            child: IconButton(
               icon: const Icon(Icons.notifications_none_rounded),
+              color: colorScheme.primary,
               tooltip: 'Notifications',
+              style: IconButton.styleFrom(
+                backgroundColor: topActionColor,
+                fixedSize: const Size(40, 40),
+              ),
               onPressed: () => context.push('/notifications'),
             ),
           ),
@@ -38,9 +44,7 @@ class HomeScreen extends ConsumerWidget {
               tooltip: 'Profile menu',
               icon: CircleAvatar(
                 radius: 18,
-                backgroundColor: colorScheme.primaryContainer.withValues(
-                  alpha: 0.5,
-                ),
+                backgroundColor: topActionColor,
                 child: Icon(Icons.person_rounded, color: colorScheme.primary),
               ),
               onSelected: (value) => context.push(value),
@@ -72,74 +76,9 @@ class HomeScreen extends ConsumerWidget {
                 lemon: lemon,
                 violet: violet,
               ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00A6A6), Color(0xFF7B61FF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: violet.withValues(alpha: 0.22),
-                      blurRadius: 24,
-                      offset: const Offset(0, 14),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Text(
-                        'You are not alone',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Your private support space',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 27,
-                        height: 1.04,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Check in, breathe, ask, or build a plan at your own pace.',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.88),
-                        fontSize: 14,
-                        height: 1.35,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
               Text(
-                'Track - Reflect - Guide - Support',
+                'Start here',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
@@ -155,41 +94,41 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   _QuickActionCard(
                     icon: Icons.smart_toy_rounded,
-                    label: 'Sisonke Friend',
-                    caption: 'Emotion triage',
+                    label: 'Friend',
+                    caption: 'Talk it through',
                     accentColor: violet,
                     backgroundColor: const Color(0xFFF0EDFF),
                     onTap: () => context.go('/e-friend'),
                   ),
                   _QuickActionCard(
                     icon: Icons.favorite_rounded,
-                    label: 'Mood Diary',
-                    caption: 'Track and reflect',
+                    label: 'Check-In',
+                    caption: 'Mood + journal',
                     accentColor: coral,
                     backgroundColor: const Color(0xFFFFEEF0),
                     onTap: () => context.go('/check-in'),
                   ),
                   _QuickActionCard(
                     icon: Icons.groups_rounded,
-                    label: 'Safe Space',
-                    caption: 'Bamboo Forest',
+                    label: 'Community',
+                    caption: 'Safe Space',
                     accentColor: teal,
                     backgroundColor: const Color(0xFFE7FAFA),
                     onTap: () => context.go('/community'),
                   ),
                   _QuickActionCard(
                     icon: Icons.support_agent_rounded,
-                    label: 'Talk to Someone',
-                    caption: 'Tracked case',
+                    label: 'Support',
+                    caption: 'Counselor help',
                     accentColor: const Color(0xFFE7A500),
                     backgroundColor: const Color(0xFFFFF6D8),
-                    onTap: () => context.push('/talk-to-counselor'),
+                    onTap: () => context.go('/support'),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
               Text(
-                'Mind workouts',
+                'Quick tools',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
@@ -209,79 +148,20 @@ class HomeScreen extends ConsumerWidget {
                     'Gratitude Jar',
                     'Add one good thing',
                     const Color(0xFFFFF6D8),
-                    () => context.push('/private-journal'),
-                  ),
-                  _WellnessLoopItem(
-                    Icons.emoji_events_rounded,
-                    'Treasure Box',
-                    'Save a win',
-                    const Color(0xFFF0EDFF),
-                    () => context.push('/private-journal'),
+                    () => context.push('/journal-entry?mode=gratitude'),
                   ),
                   _WellnessLoopItem(
                     Icons.flag_rounded,
-                    'Goal Tracker',
-                    'Small next step',
+                    'Safety plan',
+                    'Plan ahead',
                     const Color(0xFFFFEEF0),
-                    () => context.go('/check-in'),
+                    () => context.push('/safety-plan'),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Main sections',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _SectionList(
-                sections: [
-                  _SectionItem(Icons.home_rounded, 'Home', '/home'),
-                  _SectionItem(
-                    Icons.mood_rounded,
-                    'Mood Tracker',
-                    '/mood-tracker',
-                  ),
-                  _SectionItem(
-                    Icons.edit_note_rounded,
-                    'Private Journal',
-                    '/private-journal',
-                  ),
-                  _SectionItem(
-                    Icons.smart_toy_rounded,
-                    'Talk to Sisonke Friend',
-                    '/e-friend',
-                  ),
-                  _SectionItem(
-                    Icons.support_agent_rounded,
-                    'Talk to Someone',
-                    '/talk-to-counselor',
-                  ),
-                  _SectionItem(
-                    Icons.groups_rounded,
-                    'Community Feed',
-                    '/community',
-                  ),
-                  _SectionItem(
-                    Icons.menu_book_rounded,
-                    'Learn & Grow',
-                    '/resources',
-                  ),
-                  _SectionItem(Icons.forum_rounded, 'Anonymous Q&A', '/qa'),
-                  _SectionItem(
-                    Icons.shield_rounded,
-                    'Emergency Toolkit',
-                    '/emergency',
-                  ),
-                  _SectionItem(
-                    Icons.admin_panel_settings_rounded,
-                    'Profile & Safety Settings',
-                    '/profile-safety',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
+              _MoreSupportCard(teal: teal, coral: coral, violet: violet),
+              const SizedBox(height: 18),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -299,41 +179,6 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               _FeaturedResourceFromApi(accentColor: lemon),
-              const SizedBox(height: 18),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEEF0),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.lock_rounded, color: coral),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Private by design. Use Quick Exit any time you need privacy.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          height: 1.25,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -343,14 +188,6 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-class _SectionItem {
-  final IconData icon;
-  final String label;
-  final String route;
-
-  const _SectionItem(this.icon, this.label, this.route);
 }
 
 class _LivingDashboard extends StatelessWidget {
@@ -412,45 +249,34 @@ class _LivingDashboard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Your day brightens as you track, reflect, and choose support.',
+            'One calm place for check-ins, support, and private tools.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.72),
               height: 1.35,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: [
-              _GardenTile(
-                color: coral,
-                icon: Icons.mood_rounded,
-                label: 'Mood',
-                value: 'Log today',
-              ),
-              const SizedBox(width: 10),
-              _GardenTile(
-                color: teal,
-                icon: Icons.waves_rounded,
-                label: 'Pond',
-                value: 'Breathe',
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _GardenTile(
+              _StatusPill(
                 color: lemon,
                 icon: Icons.inbox_rounded,
-                label: 'Jar',
                 value: '1 gratitude',
+                onTap: () => context.push('/journal-entry?mode=gratitude'),
               ),
               const SizedBox(width: 10),
-              _GardenTile(
+              _StatusPill(
+                color: coral,
+                icon: Icons.mood_rounded,
+                value: 'Mood open',
+                onTap: () => context.go('/check-in/mood'),
+              ),
+              const SizedBox(width: 10),
+              _StatusPill(
                 color: violet,
                 icon: Icons.support_agent_rounded,
-                label: 'Support',
-                value: 'Ready',
+                value: 'Support ready',
+                onTap: () => context.go('/support'),
               ),
             ],
           ),
@@ -460,48 +286,50 @@ class _LivingDashboard extends StatelessWidget {
   }
 }
 
-class _GardenTile extends StatelessWidget {
+class _StatusPill extends StatelessWidget {
   final Color color;
   final IconData icon;
-  final String label;
   final String value;
+  final VoidCallback onTap;
 
-  const _GardenTile({
+  const _StatusPill({
     required this.color,
     required this.icon,
-    required this.label,
     required this.value,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        height: 82,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.13),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color),
-            const Spacer(),
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+      child: Material(
+        color: color.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                Icon(icon, color: color, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              value,
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.65),
-                fontSize: 12,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -582,10 +410,16 @@ class _WellnessLoopRow extends StatelessWidget {
   }
 }
 
-class _SectionList extends StatelessWidget {
-  final List<_SectionItem> sections;
+class _MoreSupportCard extends StatelessWidget {
+  final Color teal;
+  final Color coral;
+  final Color violet;
 
-  const _SectionList({required this.sections});
+  const _MoreSupportCard({
+    required this.teal,
+    required this.coral,
+    required this.violet,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -599,16 +433,68 @@ class _SectionList extends StatelessWidget {
           color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
-      child: Column(
-        children: sections.map((section) {
-          return ListTile(
-            leading: Icon(section.icon),
-            title: Text(section.label),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.push(section.route),
-          );
-        }).toList(),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        leading: Icon(Icons.more_horiz_rounded, color: teal),
+        title: const Text(
+          'More options',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        subtitle: const Text('Learn, Q&A, bookmarks, safety settings'),
+        children: [
+          _CompactNavTile(
+            icon: Icons.menu_book_rounded,
+            color: teal,
+            label: 'Learn & Grow',
+            route: '/resources',
+          ),
+          _CompactNavTile(
+            icon: Icons.forum_rounded,
+            color: violet,
+            label: 'Anonymous Q&A',
+            route: '/qa',
+          ),
+          _CompactNavTile(
+            icon: Icons.bookmark_rounded,
+            color: coral,
+            label: 'Bookmarks',
+            route: '/bookmarks',
+          ),
+          _CompactNavTile(
+            icon: Icons.admin_panel_settings_rounded,
+            color: colorScheme.primary,
+            label: 'Profile & Safety',
+            route: '/profile-safety',
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _CompactNavTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String route;
+
+  const _CompactNavTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.route,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      leading: Icon(icon, color: color),
+      title: Text(label),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: () => context.push(route),
     );
   }
 }
@@ -739,13 +625,9 @@ class _FeaturedResourceCard extends StatelessWidget {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.bookmark_border_rounded),
-                    tooltip: 'Save',
+                    tooltip: 'Open bookmarks',
                     color: colorScheme.onSurface,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Saved to bookmarks')),
-                      );
-                    },
+                    onPressed: () => context.push('/bookmarks'),
                   ),
                 ],
               ),

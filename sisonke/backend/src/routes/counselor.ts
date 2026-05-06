@@ -7,12 +7,35 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { CounselorRequestSchema } from '../types';
 import { SocketService } from '../services/socketService';
 import { AuthService } from '../services/authService';
+import {
+  deterministicRiskReview,
+  generateCounselorDraftReply,
+  generateCounselorSummary,
+} from '../ai/counselorCopilot';
 
 const router = Router();
 
 const isAssignedCounselor = async (caseId: string, userId: string) => {
   const [item] = await db.select().from(counselorCases).where(eq(counselorCases.id, caseId)).limit(1);
   return item && item.counselorId === userId ? item : null;
+};
+
+const canUseCounselorAi = async (caseId: string, user: NonNullable<Express.Request['user']>) => {
+  const [item] = await db.select().from(counselorCases).where(eq(counselorCases.id, caseId)).limit(1);
+  if (!item) return null;
+  if (item.counselorId === user.id) return item;
+  if (hasAnyRole(user, ['admin', 'system-admin', 'super-admin'])) return item;
+  return null;
+};
+
+const loadCaseMessages = async (caseId: string) => {
+  const rows = await db
+    .select()
+    .from(counselingMessages)
+    .where(eq(counselingMessages.caseId, caseId))
+    .orderBy(desc(counselingMessages.createdAt))
+    .limit(20);
+  return rows.reverse();
 };
 
 router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
@@ -233,6 +256,96 @@ router.post('/cases/:id/messages', asyncHandler(async (req, res) => {
   }
 
   res.status(201).json({ success: true, data: message });
+}));
+
+router.get('/cases/:id/ai-summary', asyncHandler(async (req, res) => {
+  const caseRow = await canUseCounselorAi(req.params.id, req.user!);
+  if (!caseRow) {
+    return res.status(403).json({ success: false, error: 'Counselor case access required.' });
+  }
+
+  const messages = await loadCaseMessages(req.params.id);
+  const summary = await generateCounselorSummary({
+    issueCategory: caseRow.issueCategory,
+    riskLevel: caseRow.riskLevel,
+    status: caseRow.status,
+    summary: caseRow.summary,
+    messages: messages.map((message) => ({
+      senderRole: message.senderRole,
+      content: message.content,
+      createdAt: message.createdAt,
+    })),
+  });
+
+  await db.insert(auditLogs).values({
+    actorId: req.user!.id,
+    action: 'counselor_ai_summary_generated',
+    entityType: 'counselor_case',
+    entityId: caseRow.id,
+    metadata: { riskLevel: caseRow.riskLevel },
+  });
+
+  res.json({ success: true, data: { summary, draftOnly: true } });
+}));
+
+router.post('/cases/:id/ai-draft-reply', asyncHandler(async (req, res) => {
+  const caseRow = await canUseCounselorAi(req.params.id, req.user!);
+  if (!caseRow) {
+    return res.status(403).json({ success: false, error: 'Counselor case access required.' });
+  }
+
+  const messages = await loadCaseMessages(req.params.id);
+  const draft = await generateCounselorDraftReply({
+    issueCategory: caseRow.issueCategory,
+    riskLevel: caseRow.riskLevel,
+    status: caseRow.status,
+    summary: caseRow.summary,
+    messages: messages.map((message) => ({
+      senderRole: message.senderRole,
+      content: message.content,
+      createdAt: message.createdAt,
+    })),
+  });
+
+  await db.insert(auditLogs).values({
+    actorId: req.user!.id,
+    action: 'counselor_ai_draft_generated',
+    entityType: 'counselor_case',
+    entityId: caseRow.id,
+    metadata: { riskLevel: caseRow.riskLevel, draftOnly: true },
+  });
+
+  res.json({ success: true, data: { draft, draftOnly: true } });
+}));
+
+router.post('/cases/:id/ai-risk-review', asyncHandler(async (req, res) => {
+  const caseRow = await canUseCounselorAi(req.params.id, req.user!);
+  if (!caseRow) {
+    return res.status(403).json({ success: false, error: 'Counselor case access required.' });
+  }
+
+  const messages = await loadCaseMessages(req.params.id);
+  const review = deterministicRiskReview({
+    issueCategory: caseRow.issueCategory,
+    riskLevel: caseRow.riskLevel,
+    status: caseRow.status,
+    summary: caseRow.summary,
+    messages: messages.map((message) => ({
+      senderRole: message.senderRole,
+      content: message.content,
+      createdAt: message.createdAt,
+    })),
+  });
+
+  await db.insert(auditLogs).values({
+    actorId: req.user!.id,
+    action: 'counselor_ai_risk_review_generated',
+    entityType: 'counselor_case',
+    entityId: caseRow.id,
+    metadata: review,
+  });
+
+  res.json({ success: true, data: review });
 }));
 
 router.post('/cases/:id/callback', asyncHandler(async (req, res) => {

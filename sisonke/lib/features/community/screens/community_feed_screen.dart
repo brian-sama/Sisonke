@@ -1,7 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 
 class CommunityFeedScreen extends StatefulWidget {
   const CommunityFeedScreen({super.key});
@@ -19,7 +19,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   String? _notice;
   List<Map<String, dynamic>> _posts = const [];
 
-  // Local state to manage reaction counters and selection anonymously
   final Map<String, Map<String, int>> _reactionCounts = {};
   final Map<String, Map<String, bool>> _reactionSelected = {};
 
@@ -29,18 +28,33 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     _loadPosts();
   }
 
+  @override
+  void dispose() {
+    _post.dispose();
+    super.dispose();
+  }
+
   void _toggleReaction(String postId, String reactionKey) {
     setState(() {
-      _reactionCounts.putIfAbsent(postId, () => {'helped': 2, 'relate': 4, 'support': 3});
-      _reactionSelected.putIfAbsent(postId, () => {'helped': false, 'relate': false, 'support': false});
+      _reactionCounts.putIfAbsent(
+        postId,
+        () => {'helped': 2, 'relate': 4, 'support': 3},
+      );
+      _reactionSelected.putIfAbsent(
+        postId,
+        () => {'helped': false, 'relate': false, 'support': false},
+      );
 
-      final currentlySelected = _reactionSelected[postId]![reactionKey] ?? false;
+      final currentlySelected =
+          _reactionSelected[postId]![reactionKey] ?? false;
       _reactionSelected[postId]![reactionKey] = !currentlySelected;
 
       if (currentlySelected) {
-        _reactionCounts[postId]![reactionKey] = (_reactionCounts[postId]![reactionKey] ?? 1) - 1;
+        _reactionCounts[postId]![reactionKey] =
+            (_reactionCounts[postId]![reactionKey] ?? 1) - 1;
       } else {
-        _reactionCounts[postId]![reactionKey] = (_reactionCounts[postId]![reactionKey] ?? 0) + 1;
+        _reactionCounts[postId]![reactionKey] =
+            (_reactionCounts[postId]![reactionKey] ?? 0) + 1;
       }
     });
   }
@@ -48,280 +62,248 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   @override
   Widget build(BuildContext context) {
     const groups = ['13-15', '16-17', '18-24', '25+'];
+
     return Scaffold(
-      appBar: const SisonkeAppBar(title: 'Bamboo Forest'),
-      body: Stack(
+      backgroundColor: SisonkeColors.cream,
+      appBar: const SisonkeAppBar(
+        title: 'Community',
+        fallbackBackLocation: '/home',
+      ),
+      body: ListView(
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 40),
         children: [
-          // 1. Deep indigo night sky background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)], // Slate-900 to Indigo-950
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+          const _CommunityHeader(),
+          const SizedBox(height: 12),
+          const _InfoPanel(
+            icon: Icons.verified_user_rounded,
+            title: 'Anonymous and moderated',
+            body:
+                'Age-group rooms, reviewed posts, report-first safety controls, and no direct messages.',
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Choose an age group',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: SisonkeColors.charcoal,
             ),
           ),
-          
-          // 2. Animated floating campfire embers overlay
-          const Positioned.fill(
-            child: _CampfireEmberStack(),
-          ),
-
-          // 3. Main scrollable community feed content
-          ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: [
-              const _ForestHeader(),
-              const SizedBox(height: 16),
-              const InfoPanel(
-                icon: Icons.verified_user_rounded,
-                title: 'Anonymous safe space',
-                body: 'Posts use age-group rooms, moderator approval, no direct messages, and report-first safety controls.',
-              ),
-              const SizedBox(height: 20),
-              
-              // Age group selector header
-              Text(
-                'Select your age-group room:',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: groups.map((group) {
-                  final isSelected = _ageGroup == group;
-                  return ChoiceChip(
-                    label: Text(
-                      group,
-                      style: TextStyle(
-                        color: isSelected ? const Color(0xFF0F172A) : Colors.white,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: const Color(0xFFFFC857), // Golden warmth
-                    backgroundColor: Colors.white.withOpacity(0.08),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    onSelected: (_) {
-                      setState(() => _ageGroup = group);
-                      _loadPosts();
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-
-              // Whisper submission container
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: groups.map((group) {
+              final isSelected = _ageGroup == group;
+              return ChoiceChip(
+                label: Text(group),
+                selected: isSelected,
+                selectedColor: SisonkeColors.lemon,
+                backgroundColor: Colors.white,
+                checkmarkColor: SisonkeColors.forest,
+                labelStyle: TextStyle(
+                  color: SisonkeColors.charcoal,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
+                    color: isSelected
+                        ? SisonkeColors.forest.withValues(alpha: 0.36)
+                        : SisonkeColors.sage,
+                  ),
+                ),
+                onSelected: (_) {
+                  setState(() => _ageGroup = group);
+                  _loadPosts();
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          _PostComposer(
+            controller: _post,
+            submitting: _submitting,
+            onSubmit: _submitPost,
+          ),
+          if (_notice != null) ...[
+            const SizedBox(height: 10),
+            _NoticePanel(message: _notice!),
+          ],
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Text(
+                'Approved posts',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: SisonkeColors.charcoal,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$_ageGroup room',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: SisonkeColors.forest,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (_loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(28),
+                child: CircularProgressIndicator(color: SisonkeColors.forest),
+              ),
+            )
+          else if (_posts.isEmpty)
+            const _InfoPanel(
+              icon: Icons.forum_outlined,
+              title: 'Nothing posted yet',
+              body:
+                  'Approved posts for this age group will appear here after moderation.',
+            )
+          else
+            ..._posts.map(_buildPostCard),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostCard(Map<String, dynamic> post) {
+    final postId = post['id'] ?? post['content'].toString().hashCode.toString();
+
+    _reactionCounts.putIfAbsent(
+      postId,
+      () => {'helped': 2, 'relate': 4, 'support': 3},
+    );
+    _reactionSelected.putIfAbsent(
+      postId,
+      () => {'helped': false, 'relate': false, 'support': false},
+    );
+
+    final selectedMap = _reactionSelected[postId]!;
+    final countsMap = _reactionCounts[postId]!;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: SisonkeColors.sage.withValues(alpha: 0.9)),
+        boxShadow: [
+          BoxShadow(
+            color: SisonkeColors.forest.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.person_outline_rounded,
+                size: 17,
+                color: SisonkeColors.forest,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Anonymous member',
+                  style: TextStyle(
+                    color: SisonkeColors.charcoal.withValues(alpha: 0.65),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: SisonkeColors.mint,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  '${post['ageGroup'] ?? post['age_group'] ?? _ageGroup}',
+                  style: const TextStyle(
+                    color: SisonkeColors.forest,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${post['content']}',
+            style: const TextStyle(
+              color: SisonkeColors.charcoal,
+              fontSize: 15,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0xFFE4E8DF)),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    TextField(
-                      controller: _post,
-                      minLines: 3,
-                      maxLines: 5,
-                      style: const TextStyle(color: Colors.white, fontSize: 14.5),
-                      decoration: InputDecoration(
-                        fillColor: Colors.white.withOpacity(0.04),
-                        labelText: 'Whisper to the forest',
-                        labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                        hintText: 'Share an anonymous thought or feeling...',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                        helperText: 'Anonymous. Reviewed before it appears to others.',
-                        helperStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                    _ReactionButton(
+                      icon: Icons.spa_outlined,
+                      label: 'Helped',
+                      count: countsMap['helped'] ?? 0,
+                      isSelected: selectedMap['helped'] ?? false,
+                      selectedColor: SisonkeColors.forest,
+                      onTap: () => _toggleReaction(postId, 'helped'),
                     ),
-                    const SizedBox(height: 12),
-                    SisonkeButton(
-                      onPressed: () => _submitPost(),
-                      isEnabled: !_submitting,
-                      label: _submitting ? 'Sending Whisper...' : 'Submit anonymous post',
-                      icon: Icons.send_rounded,
-                      isFullWidth: true,
+                    _ReactionButton(
+                      icon: Icons.handshake_outlined,
+                      label: 'Relate',
+                      count: countsMap['relate'] ?? 0,
+                      isSelected: selectedMap['relate'] ?? false,
+                      selectedColor: const Color(0xFF7361A9),
+                      onTap: () => _toggleReaction(postId, 'relate'),
+                    ),
+                    _ReactionButton(
+                      icon: Icons.favorite_border_rounded,
+                      label: 'Support',
+                      count: countsMap['support'] ?? 0,
+                      isSelected: selectedMap['support'] ?? false,
+                      selectedColor: const Color(0xFFD15F5F),
+                      onTap: () => _toggleReaction(postId, 'support'),
                     ),
                   ],
                 ),
               ),
-              if (_notice != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E6F60).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF2E6F60).withOpacity(0.4)),
-                  ),
-                  child: Text(
-                    _notice!,
-                    style: const TextStyle(color: Color(0xFF9BE7C4), fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 28),
-
-              Text(
-                'Approved whispers',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-              ),
-              const SizedBox(height: 10),
-
-              if (_loading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(color: Color(0xFFFFC857)),
-                  ),
-                )
-              else if (_posts.isEmpty)
-                const InfoPanel(
-                  icon: Icons.hourglass_empty_rounded,
-                  title: 'Silence in the forest',
-                  body: 'Approved posts for this room will appear here near the campfire once moderated.',
-                )
-              else
-                ..._posts.map((post) {
-                  final postId = post['id'] ?? post['content'].toString().hashCode.toString();
-                  
-                  _reactionCounts.putIfAbsent(postId, () => {'helped': 2, 'relate': 4, 'support': 3});
-                  _reactionSelected.putIfAbsent(postId, () => {'helped': false, 'relate': false, 'support': false});
-
-                  final selectedMap = _reactionSelected[postId]!;
-                  final countsMap = _reactionCounts[postId]!;
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.eco_outlined, size: 16, color: Color(0xFF9BE7C4)),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Anonymous Traveler',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${post['ageGroup'] ?? post['age_group'] ?? _ageGroup} Room',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '${post['content']}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              height: 1.45,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Divider(color: Colors.white12, height: 1),
-                          const SizedBox(height: 12),
-                          
-                          // Custom anonymous reaction rows
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    _ReactionButton(
-                                      emoji: '🌱',
-                                      label: 'This helped',
-                                      count: countsMap['helped'] ?? 0,
-                                      isSelected: selectedMap['helped'] ?? false,
-                                      selectedColor: const Color(0xFF2E6F60),
-                                      onTap: () => _toggleReaction(postId, 'helped'),
-                                    ),
-                                    _ReactionButton(
-                                      emoji: '🤝',
-                                      label: 'I relate',
-                                      count: countsMap['relate'] ?? 0,
-                                      isSelected: selectedMap['relate'] ?? false,
-                                      selectedColor: const Color(0xFF7361A9),
-                                      onTap: () => _toggleReaction(postId, 'relate'),
-                                    ),
-                                    _ReactionButton(
-                                      emoji: '🕊️',
-                                      label: 'Support',
-                                      count: countsMap['support'] ?? 0,
-                                      isSelected: selectedMap['support'] ?? false,
-                                      selectedColor: const Color(0xFFD68A7F),
-                                      onTap: () => _toggleReaction(postId, 'support'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.flag_outlined, size: 20),
-                                color: const Color(0xFFFFC857).withOpacity(0.7),
-                                tooltip: 'Report Post',
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      backgroundColor: Color(0xFFD68A7F),
-                                      content: Text('Report submitted safely. Moderators will review this post.'),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
+              IconButton(
+                icon: const Icon(Icons.flag_outlined, size: 20),
+                color: SisonkeColors.charcoal.withValues(alpha: 0.6),
+                tooltip: 'Report post',
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Report submitted safely. Moderators will review this post.',
                       ),
                     ),
                   );
-                }).toList(),
-              const SizedBox(height: 48),
+                },
+              ),
             ],
           ),
         ],
@@ -343,7 +325,8 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       setState(() {
         _posts = const [];
         _loading = false;
-        _notice = 'Could not sync the forest. Check that the backend is active.';
+        _notice =
+            'Could not sync community posts. Check that the backend is active.';
       });
     }
   }
@@ -365,58 +348,67 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       setState(() {
         _post.clear();
         _submitting = false;
-        _notice = '${response['message'] ?? 'Whisper sent safely. Under mod review.'}';
+        _notice =
+            '${response['message'] ?? 'Post sent safely. It will appear after moderation.'}';
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _notice = 'Sync failure. Let’s try sending your whisper again shortly.';
+        _notice = 'Could not send your post yet. Please try again shortly.';
       });
     }
   }
 }
 
-class _ForestHeader extends StatelessWidget {
-  const _ForestHeader();
+class _CommunityHeader extends StatelessWidget {
+  const _CommunityHeader();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: SisonkeColors.mint,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: SisonkeColors.sage),
       ),
       child: Row(
         children: [
           Container(
-            width: 54,
-            height: 54,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFC857).withOpacity(0.12),
-              borderRadius: BorderRadius.circular(18),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.fireplace_rounded, color: Color(0xFFFFC857), size: 30),
+            child: const Icon(
+              Icons.groups_2_rounded,
+              color: SisonkeColors.forest,
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Bamboo Forest',
+                  'Community Space',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: SisonkeColors.charcoal,
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Sit around our digital campfire. Share whispers anonymously with others in your age group.',
-                  style: TextStyle(color: Color(0xFFB7C4D8), height: 1.35, fontSize: 13),
+                  'Share anonymously with people in your age group after moderator review.',
+                  style: TextStyle(
+                    color: SisonkeColors.charcoal,
+                    height: 1.35,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -427,13 +419,81 @@ class _ForestHeader extends StatelessWidget {
   }
 }
 
-class InfoPanel extends StatelessWidget {
+class _PostComposer extends StatelessWidget {
+  final TextEditingController controller;
+  final bool submitting;
+  final VoidCallback onSubmit;
+
+  const _PostComposer({
+    required this.controller,
+    required this.submitting,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: SisonkeColors.sage.withValues(alpha: 0.9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: controller,
+            minLines: 3,
+            maxLines: 5,
+            style: const TextStyle(
+              color: SisonkeColors.charcoal,
+              fontSize: 14.5,
+            ),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: SisonkeColors.cream,
+              labelText: 'Write an anonymous post',
+              hintText: 'Share a thought, feeling, or encouragement...',
+              helperText: 'Reviewed before it appears to others.',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: SisonkeColors.sage),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: SisonkeColors.sage),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: SisonkeColors.forest,
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SisonkeButton(
+            onPressed: onSubmit,
+            isEnabled: !submitting,
+            label: submitting ? 'Sending...' : 'Submit anonymous post',
+            icon: Icons.send_rounded,
+            isFullWidth: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoPanel extends StatelessWidget {
   final IconData icon;
   final String title;
   final String body;
 
-  const InfoPanel({
-    super.key,
+  const _InfoPanel({
     required this.icon,
     required this.title,
     required this.body,
@@ -441,42 +501,83 @@ class InfoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white.withOpacity(0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, size: 28, color: const Color(0xFF9BE7C4)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(body, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12.5, height: 1.3)),
-                ],
-              ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SisonkeColors.sage.withValues(alpha: 0.9)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: SisonkeColors.sage.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            child: Icon(icon, size: 22, color: SisonkeColors.forest),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: SisonkeColors.charcoal,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: TextStyle(
+                    color: SisonkeColors.charcoal.withValues(alpha: 0.72),
+                    fontSize: 12.5,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoticePanel extends StatelessWidget {
+  final String message;
+
+  const _NoticePanel({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: SisonkeColors.lemon.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7D17F)),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: SisonkeColors.charcoal,
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
         ),
       ),
     );
   }
 }
 
-// Stateful interactive, brand-matched anonymous reaction button
 class _ReactionButton extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String label;
   final int count;
   final bool isSelected;
@@ -484,7 +585,7 @@ class _ReactionButton extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ReactionButton({
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.count,
     required this.isSelected,
@@ -496,40 +597,50 @@ class _ReactionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? selectedColor.withOpacity(0.24) 
-              : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected
+              ? selectedColor.withValues(alpha: 0.12)
+              : SisonkeColors.cream,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? selectedColor : Colors.white.withOpacity(0.1),
-            width: 1.5,
+            color: isSelected ? selectedColor : SisonkeColors.sage,
+            width: 1.2,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 6),
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected
+                  ? selectedColor
+                  : SisonkeColors.charcoal.withValues(alpha: 0.62),
+            ),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white60,
+                color: isSelected
+                    ? selectedColor
+                    : SisonkeColors.charcoal.withValues(alpha: 0.72),
                 fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               '$count',
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white60,
+                color: isSelected
+                    ? selectedColor
+                    : SisonkeColors.charcoal.withValues(alpha: 0.62),
                 fontSize: 11,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ],
@@ -537,116 +648,4 @@ class _ReactionButton extends StatelessWidget {
       ),
     );
   }
-}
-
-// Campfire Embers slow floating particle physics stack
-class _CampfireEmberStack extends StatefulWidget {
-  const _CampfireEmberStack();
-
-  @override
-  State<_CampfireEmberStack> createState() => _CampfireEmberStackState();
-}
-
-class _CampfireEmberStackState extends State<_CampfireEmberStack>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  final List<_EmberParticle> _particles = [];
-  final _random = math.Random();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
-
-    // Spawn 15 slow orange fire ember particles
-    for (int i = 0; i < 15; i++) {
-      _particles.add(_EmberParticle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: 2.0 + _random.nextDouble() * 3.5,
-        speed: 0.0015 + _random.nextDouble() * 0.002,
-        swaySpeed: 1.0 + _random.nextDouble() * 2.0,
-        swayWidth: 0.015 + _random.nextDouble() * 0.02,
-      ));
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        for (final p in _particles) {
-          p.y -= p.speed; // ascend
-          if (p.y < -0.1) {
-            p.y = 1.1; // reset bottom loop
-            p.x = _random.nextDouble();
-          }
-        }
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final h = constraints.maxHeight;
-            if (w == 0 || h == 0) return const SizedBox.shrink();
-
-            return Stack(
-              children: _particles.map((p) {
-                final sway = math.sin(_controller.value * math.pi * 2 * p.swaySpeed) * p.swayWidth;
-                final dx = ((p.x + sway) % 1.0) * w;
-                final dy = p.y * h;
-
-                return Positioned(
-                  left: dx,
-                  top: dy,
-                  child: Container(
-                    width: p.size,
-                    height: p.size,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFF07167).withOpacity(0.6), // Fire warm red
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFFC857).withOpacity(0.55), // warm golden ember halo
-                          blurRadius: p.size * 1.5,
-                          spreadRadius: p.size * 0.5,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _EmberParticle {
-  double x;
-  double y;
-  final double size;
-  final double speed;
-  final double swaySpeed;
-  final double swayWidth;
-
-  _EmberParticle({
-    required this.x,
-    required this.y,
-    required this.size,
-    required this.speed,
-    required this.swaySpeed,
-    required this.swayWidth,
-  });
 }

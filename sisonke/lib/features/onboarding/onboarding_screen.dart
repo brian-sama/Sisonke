@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/exceptions/api_exception.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
@@ -314,35 +316,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           {
             'id': 'female', // Soft & Understanding
             'name': 'Soft & Understanding',
-            'quote': '“I’m here with you. We can take this one step at a time.”',
+            'quote':
+                '“I’m here with you. We can take this one step at a time.”',
             'icon': Icons.spa_rounded,
             'color': const Color(0xFFEBCBD0), // blush
           },
           {
             'id': 'female_calm', // Calm & Encouraging
             'name': 'Calm & Encouraging',
-            'quote': '“You are doing better than you think. Let’s find your balance.”',
+            'quote':
+                '“You are doing better than you think. Let’s find your balance.”',
             'icon': Icons.wb_sunny_rounded,
             'color': const Color(0xFFCFE6D2), // sage
           },
           {
             'id': 'male', // Gentle Listener
             'name': 'Gentle Listener',
-            'quote': '“Your thoughts are safe here. I am listening whenever you are ready.”',
+            'quote':
+                '“Your thoughts are safe here. I am listening whenever you are ready.”',
             'icon': Icons.hearing_rounded,
             'color': const Color(0xFFD8EEF8), // sky
           },
           {
             'id': 'female_motivating', // Motivating Friend
             'name': 'Motivating Friend',
-            'quote': '“I believe in you! Let’s take on small, joyful steps together today.”',
+            'quote':
+                '“I believe in you! Let’s take on small, joyful steps together today.”',
             'icon': Icons.bolt_rounded,
             'color': const Color(0xFFF7E8B5), // lemon
           },
           {
             'id': 'male_quiet', // Quiet & Comforting
             'name': 'Quiet & Comforting',
-            'quote': '“No pressure to speak. Let’s just sit in quiet reflection together.”',
+            'quote':
+                '“No pressure to speak. Let’s just sit in quiet reflection together.”',
             'icon': Icons.nightlight_round,
             'color': const Color(0xFFE4DDF6), // lavender
           },
@@ -375,10 +382,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: (style['color'] as Color).withValues(alpha: 0.4),
+                              color: (style['color'] as Color).withValues(
+                                alpha: 0.4,
+                              ),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
-                            )
+                            ),
                           ]
                         : null,
                   ),
@@ -415,7 +424,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
-                                color: const Color(0xFF2F3433).withValues(alpha: 0.85),
+                                color: const Color(
+                                  0xFF2F3433,
+                                ).withValues(alpha: 0.85),
                               ),
                             ),
                           ],
@@ -478,16 +489,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         biometricEnabled: _biometricEnabled,
         consentAccepted: _consentAccepted,
       );
-      if (mounted) context.go('/home');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_completed', true);
+      await prefs.setBool(AppConstants.pinEnabledKey, _pinEnabled);
+      await prefs.setBool(
+        AppConstants.biometricEnabledKey,
+        _pinEnabled && _biometricEnabled,
+      );
+      if (mounted) context.go(_pinEnabled ? '/app-lock' : '/home');
     } catch (e) {
       debugPrint('Onboarding error: $e');
       if (!mounted) return;
-      String errorMsg = 'Could not save your profile. Check that the backend is running.';
+      String errorMsg =
+          'Could not save your profile. Check that the backend is running.';
       if (e is ApiException) {
         errorMsg = e.message;
       } else if (e is DioException) {
         if (e.response?.data is Map && e.response?.data['error'] != null) {
-          errorMsg = e.response?.data['error']?.toString() ?? 'Could not save profile';
+          errorMsg =
+              e.response?.data['error']?.toString() ?? 'Could not save profile';
         } else if (e.message != null) {
           errorMsg = e.message!;
         }

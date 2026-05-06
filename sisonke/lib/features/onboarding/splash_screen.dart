@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/services/api_service.dart';
+import 'package:sisonke/core/services/security_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,15 +25,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     final apiService = ApiService();
-    final hasCompletedOnboarding = prefs.getBool('onboarding_completed') ?? false;
+    final securityService = SecurityService();
+    final hasCompletedOnboarding =
+        prefs.getBool('onboarding_completed') ?? false;
     final isAuthenticated = await apiService.isAuthenticated;
+    final pinEnabled = prefs.getBool(AppConstants.pinEnabledKey) ?? false;
+    final hasPin = await securityService.hasPIN();
 
     if (!mounted) return;
 
-    if (isAuthenticated) {
+    if ((isAuthenticated || hasCompletedOnboarding) && pinEnabled) {
+      context.go('/app-lock');
+    } else if (isAuthenticated) {
       context.go('/home');
     } else if (!hasCompletedOnboarding) {
       context.go('/onboarding');
+    } else if (hasPin) {
+      context.go('/app-lock');
     } else {
       context.go('/auth');
     }
@@ -59,10 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Sisonke',
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
+            Text('Sisonke', style: Theme.of(context).textTheme.headlineLarge),
             const SizedBox(height: 8),
             Text(
               'Your Wellness Journey',
@@ -80,4 +87,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

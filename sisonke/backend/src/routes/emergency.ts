@@ -4,7 +4,7 @@ import { emergencyContacts } from '../db/schema';
 import { and, eq } from 'drizzle-orm';
 import { optionalAuth, authMiddleware, adminOnly } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
-import { zimbabweEmergencyContacts } from '../data/zimbabweRagKnowledge';
+import { directoryForAudience, publicEmergencyContacts } from '../data/supportDirectory';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.get('/contacts', asyncHandler(async (req, res) => {
     .where(and(eq(emergencyContacts.isActive, true), eq(emergencyContacts.status, 'published')))
     .orderBy(emergencyContacts.category, emergencyContacts.name);
 
-  const seededContacts = zimbabweEmergencyContacts.map((contact) => ({
+  const seededContacts = publicEmergencyContacts().map((contact) => ({
     id: contact.id,
     name: contact.name,
     phone_number: contact.phoneNumber,
@@ -72,7 +72,7 @@ router.get('/contacts/:category', asyncHandler(async (req, res) => {
     .where(and(eq(emergencyContacts.category, category), eq(emergencyContacts.isActive, true)))
     .orderBy(emergencyContacts.name);
 
-  const seededContacts = zimbabweEmergencyContacts
+  const seededContacts = publicEmergencyContacts()
     .filter((contact) => contact.category === category)
     .map((contact) => ({
       ...contact,
@@ -92,6 +92,30 @@ router.get('/contacts/:category', asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: contacts,
+  });
+}));
+
+// Get the richer referral directory. Public users only see verified/public entries;
+// counselors and admins can request the counselor view with review-only entries.
+router.get('/directory', optionalAuth, asyncHandler(async (req, res) => {
+  const requestedAudience = String(req.query.audience || 'users');
+  const roles = (req.user?.roles || []).map((role) => role.toLowerCase().replace(/_/g, '-'));
+  const canViewCounselorDirectory = roles.some((role) =>
+    ['counselor', 'admin', 'system-admin', 'super-admin'].includes(role),
+  );
+  const audience = requestedAudience === 'counselors' && canViewCounselorDirectory
+    ? 'counselors'
+    : 'users';
+  const entries = directoryForAudience(audience);
+
+  res.json({
+    success: true,
+    data: {
+      audience,
+      entries,
+      total: entries.length,
+      last_updated: new Date().toISOString(),
+    },
   });
 }));
 

@@ -82,6 +82,8 @@ const emptyChart = (days: number) => Array.from({ length: days }).map((_, i) => 
   urgent: 0,
 }));
 
+const LIVE_POLL_MS = 2000;
+
 // --- API Service ---
 const apiFetch = async (endpoint: string, options: any = {}) => {
   const token = localStorage.getItem('auth_token');
@@ -693,12 +695,26 @@ const CounselorCases = () => {
     const [cases, setCases] = useState<any[]>([]);
     const [activeChat, setActiveChat] = useState<any>(null);
     const [counselors, setCounselors] = useState<any[]>([]);
+    const [syncError, setSyncError] = useState('');
     const loadCases = () => apiFetch('/api/admin/counselor-cases').then(data => setCases(Array.isArray(data) ? data : []));
     
     const isAdmin = hasAny(user, ['admin', 'super-admin', 'system-admin']);
 
     useEffect(() => {
-      loadCases();
+      let mounted = true;
+      const refresh = () => loadCases()
+        .then(() => {
+          if (mounted) setSyncError('');
+        })
+        .catch((error) => {
+          if (mounted) setSyncError(error.message || 'Could not refresh support requests.');
+        });
+
+      refresh();
+      const interval = window.setInterval(() => {
+        if (document.visibilityState === 'visible') refresh();
+      }, LIVE_POLL_MS);
+
       if (isAdmin) {
         apiFetch('/api/admin/users')
           .then(data => {
@@ -712,6 +728,11 @@ const CounselorCases = () => {
           })
           .catch(() => {});
       }
+
+      return () => {
+        mounted = false;
+        window.clearInterval(interval);
+      };
     }, [user, isAdmin]);
 
     const isAssignedToMe = (c: any) => c.counselorId === (user as any)?.id;
@@ -721,11 +742,19 @@ const CounselorCases = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
            <h3 className="text-3xl font-display font-black text-zinc-900">Open support requests</h3>
            <div className="flex gap-3">
+               <div className="px-5 py-2 bg-emerald-50 text-emerald-700 rounded-2xl text-sm font-bold flex items-center gap-2">
+                <Activity size={18} /> Live every 2s
+              </div>
                <div className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-sm font-bold flex items-center gap-2">
                 <Activity size={18} /> {cases.length} open
               </div>
            </div>
         </div>
+        {syncError && (
+          <div className="p-4 bg-rose-50 text-rose-700 rounded-2xl font-bold">
+            {syncError}
+          </div>
+        )}
         
         <div className="grid gap-6">
           {cases.map(c => (
@@ -878,11 +907,29 @@ const CounselorCases = () => {
 const CommunityPosts = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [message, setMessage] = useState('');
+  const [syncError, setSyncError] = useState('');
 
   const loadPosts = () => apiFetch('/api/admin/community-posts').then(data => setPosts(Array.isArray(data) ? data : []));
 
   useEffect(() => {
-    loadPosts();
+    let mounted = true;
+    const refresh = () => loadPosts()
+      .then(() => {
+        if (mounted) setSyncError('');
+      })
+      .catch((error) => {
+        if (mounted) setSyncError(error.message || 'Could not refresh community posts.');
+      });
+
+    refresh();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh();
+    }, LIVE_POLL_MS);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   const reviewPost = async (id: string, status: 'approved' | 'removed') => {
@@ -905,11 +952,12 @@ const CommunityPosts = () => {
           <p className="text-zinc-500 font-medium">Review posts before they appear to young people.</p>
         </div>
         <div className="px-5 py-3 bg-indigo-50 text-indigo-700 rounded-2xl font-black">
-          {pending.length} waiting
+          {pending.length} waiting · live every 2s
         </div>
       </div>
 
       {message && <div className="p-4 bg-emerald-50 text-emerald-700 rounded-2xl font-bold">{message}</div>}
+      {syncError && <div className="p-4 bg-rose-50 text-rose-700 rounded-2xl font-bold">{syncError}</div>}
 
       <div className="grid gap-5">
         {posts.length === 0 && (

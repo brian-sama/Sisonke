@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/services/local_database_service.dart';
 import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/router/router.dart';
@@ -13,6 +14,7 @@ import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/core/services/bootstrap_content_service.dart';
 import 'package:sisonke/core/services/public_content_sync_service.dart';
 import 'package:sisonke/core/services/push_notification_service.dart';
+import 'package:sisonke/core/services/widget_service.dart';
 import 'package:sisonke/l10n/app_localizations.dart';
 
 void main() async {
@@ -24,6 +26,7 @@ void main() async {
     },
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
+      await WidgetService.setup();
 
       final sharedPreferences = await SharedPreferences.getInstance();
       final bootstrapContentService = BootstrapContentService(
@@ -70,8 +73,45 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final AppLifecycleListener _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    _listener = AppLifecycleListener(
+      onHide: () {
+        _flushNavigationStack();
+      },
+      onPause: () {
+        _flushNavigationStack();
+      },
+    );
+  }
+
+  Future<void> _flushNavigationStack() async {
+    // Security Feature: Instant quick-exit when backgrounded or dropped
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pinEnabled = prefs.getBool(AppConstants.pinEnabledKey) ?? false;
+      router.go(pinEnabled ? '/app-lock' : '/home');
+    } catch (e) {
+      debugPrint('Lifecycle flush failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _listener.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

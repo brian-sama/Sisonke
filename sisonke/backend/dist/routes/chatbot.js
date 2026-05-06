@@ -7,11 +7,9 @@ const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
 const types_1 = require("../types");
 const riskService_1 = require("../services/riskService");
-const ollamaService_1 = require("../services/ollamaService");
-const geminiService_1 = require("../services/geminiService");
-const ragService_1 = require("../services/ragService");
 const socketService_1 = require("../services/socketService");
 const express_1 = require("express");
+const graph_1 = require("../ai/graph");
 const router = (0, express_1.Router)();
 router.use(auth_1.optionalAuth);
 router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
@@ -49,36 +47,31 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         content: input.message,
         riskLevel,
     });
-    const approvedContext = await ragService_1.RagService.getGroundingContext(input.message);
     const fallbackReply = (0, riskService_1.safeBotReply)(input.message, riskLevel, input.persona);
-    const localReply = await (0, ollamaService_1.generateLocalChatReply)({
+    const graphResult = await (0, graph_1.invokeSisonkeGraph)({
+        userId: req.user?.id,
+        deviceId: input.deviceId,
+        sessionId: session.id,
         message: input.message,
-        history: formattedHistory,
         persona: input.persona,
         riskLevel,
-        approvedContext,
-    });
-    const geminiReply = await (0, geminiService_1.generateGeminiFallback)({
-        message: input.message,
+        turnsElapsed: history.length,
         history: formattedHistory,
-        persona: input.persona,
-        riskLevel,
-        approvedContext,
-        localReply,
     });
+    const finalRiskLevel = graphResult.riskLevel || riskLevel;
     const reply = {
         ...fallbackReply,
-        text: geminiReply || localReply || fallbackReply.text,
+        text: graphResult.response || fallbackReply.text,
     };
     let caseId;
-    if (riskLevel === 'high') {
+    if (finalRiskLevel === 'high') {
         const [createdCase] = await db_1.db.insert(schema_1.counselorCases).values({
             userId: req.user?.id,
             issueCategory: 'High-risk chatbot escalation',
             status: 'escalated',
             riskLevel: 'high',
             source: 'chatbot',
-            summary: input.message.slice(0, 2000),
+            summary: (graphResult.handoffSummary || input.message).slice(0, 2000),
             updatedAt: new Date(),
         }).returning();
         caseId = createdCase.id;
@@ -86,19 +79,35 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             .update(schema_1.chatbotSessions)
             .set({ escalatedCaseId: caseId, updatedAt: new Date() })
             .where((0, drizzle_orm_1.eq)(schema_1.chatbotSessions.id, session.id));
-        await db_1.db.insert(schema_1.analyticsEvents).values({ event: 'counselor_escalated', category: 'chatbot', metadata: { riskLevel } });
+        await db_1.db.insert(schema_1.analyticsEvents).values({
+            event: 'counselor_escalated',
+            category: 'chatbot',
+            metadata: {
+                riskLevel: finalRiskLevel,
+                conversationState: graphResult.conversationState,
+                emotion: graphResult.detectedPrimaryEmotion,
+            },
+        });
         socketService_1.SocketService.broadcastDashboardUpdate({ type: 'counselor_case', action: 'escalated' });
     }
     await db_1.db.insert(schema_1.chatbotMessages).values({
         sessionId: session.id,
         sender: 'bot',
         content: reply.text,
-        riskLevel,
+        riskLevel: finalRiskLevel,
     });
     await db_1.db.insert(schema_1.analyticsEvents).values({
         event: 'chatbot_session_started',
-        category: riskLevel,
-        metadata: { persona: input.persona },
+        category: finalRiskLevel,
+        metadata: {
+            persona: input.persona,
+            conversationState: graphResult.conversationState,
+            emotion: graphResult.detectedPrimaryEmotion,
+            intent: graphResult.detectedIntent,
+            localExpressions: graphResult.matchedLocalExpressions?.map((item) => item.phrase) || [],
+            aiProvider: graphResult.aiProvider || 'rules',
+            fallbackReason: graphResult.fallbackReason,
+        },
     });
     socketService_1.SocketService.broadcastDashboardUpdate({ type: 'chatbot_session', action: 'created' });
     res.json({
@@ -106,11 +115,19 @@ router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         data: {
             sessionId: session.id,
             reply: reply.text,
-            riskLevel,
-            escalationRequired: riskLevel === 'high',
+            riskLevel: finalRiskLevel,
+            conversationState: graphResult.conversationState || (finalRiskLevel === 'high' ? 'ESCALATE' : 'EXPLORE'),
+            primaryEmotion: graphResult.detectedPrimaryEmotion || 'unclear',
+            intent: graphResult.detectedIntent || 'sharing_feelings',
+            intervention: graphResult.interventionId ? {
+                id: graphResult.interventionId,
+                text: graphResult.interventionText,
+            } : null,
+            escalationRequired: finalRiskLevel === 'high',
             counselorCaseId: caseId,
-            grounded: approvedContext.length > 0,
-            aiProvider: riskLevel === 'high' ? 'none' : geminiReply ? 'gemini' : localReply ? 'ollama' : 'rules',
+            grounded: Boolean(graphResult.approvedContext),
+            aiProvider: finalRiskLevel === 'high' ? 'rules' : graphResult.aiProvider || 'rules',
+            safetySource: graphResult.safetySource || 'rules',
         },
     });
 }));

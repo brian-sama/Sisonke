@@ -16,7 +16,10 @@ class SupportDirectoryScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: const SisonkeAppBar(title: 'Support'),
+      appBar: const SisonkeAppBar(
+        title: 'Support',
+        fallbackBackLocation: '/home',
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
         children: [

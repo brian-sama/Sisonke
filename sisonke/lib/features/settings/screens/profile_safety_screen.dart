@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/core/services/security_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
@@ -36,7 +38,12 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           if (_loading)
-            const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else ...[
             _SettingsTile(
               icon: Icons.pin_rounded,
@@ -52,7 +59,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   ? 'Use device biometrics where available'
                   : 'Not available on this device or platform',
               value: _biometricEnabled,
-              onChanged: _biometricAvailable ? (value) => setState(() => _biometricEnabled = value) : null,
+              onChanged: _biometricAvailable
+                  ? (value) => setState(() => _biometricEnabled = value)
+                  : null,
             ),
             Card(
               child: ListTile(
@@ -64,7 +73,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                   max: 30,
                   divisions: 29,
                   label: '$_autoLockMinutes min',
-                  onChanged: (value) => setState(() => _autoLockMinutes = value.round()),
+                  onChanged: (value) =>
+                      setState(() => _autoLockMinutes = value.round()),
                 ),
                 trailing: Text('$_autoLockMinutes min'),
               ),
@@ -80,7 +90,9 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               child: ListTile(
                 leading: Icon(Icons.enhanced_encryption_rounded),
                 title: Text('Encrypted storage'),
-                subtitle: Text('Private data stays encrypted locally and is prepared for encrypted backend storage'),
+                subtitle: Text(
+                  'Private data stays encrypted locally and is prepared for encrypted backend storage',
+                ),
                 trailing: Icon(Icons.lock_rounded),
               ),
             ),
@@ -88,7 +100,11 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
             FilledButton.icon(
               onPressed: _saving ? null : _save,
               icon: _saving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.save_rounded),
               label: const Text('Save safety settings'),
             ),
@@ -106,14 +122,29 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     try {
       final biometricAvailable = await _securityService.isBiometricAvailable();
       final profile = await _api.getProfile();
+      final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
       setState(() {
         _biometricAvailable = biometricAvailable;
-        _pinEnabled = profile?['pinEnabled'] as bool? ?? profile?['pin_enabled'] as bool? ?? true;
-        _biometricEnabled = biometricAvailable &&
-            (profile?['biometricEnabled'] as bool? ?? profile?['biometric_enabled'] as bool? ?? false);
-        _hideJournalPreview = profile?['hideJournalPreview'] as bool? ?? profile?['hide_journal_preview'] as bool? ?? true;
-        _autoLockMinutes = profile?['autoLockMinutes'] as int? ?? profile?['auto_lock_minutes'] as int? ?? 5;
+        _pinEnabled =
+            profile?['pinEnabled'] as bool? ??
+            profile?['pin_enabled'] as bool? ??
+            prefs.getBool(AppConstants.pinEnabledKey) ??
+            true;
+        _biometricEnabled =
+            biometricAvailable &&
+            (profile?['biometricEnabled'] as bool? ??
+                profile?['biometric_enabled'] as bool? ??
+                prefs.getBool(AppConstants.biometricEnabledKey) ??
+                false);
+        _hideJournalPreview =
+            profile?['hideJournalPreview'] as bool? ??
+            profile?['hide_journal_preview'] as bool? ??
+            true;
+        _autoLockMinutes =
+            profile?['autoLockMinutes'] as int? ??
+            profile?['auto_lock_minutes'] as int? ??
+            5;
         _loading = false;
       });
     } catch (_) {
@@ -139,6 +170,15 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         autoLockMinutes: _autoLockMinutes,
         hideJournalPreview: _hideJournalPreview,
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.pinEnabledKey, _pinEnabled);
+      await prefs.setBool(
+        AppConstants.biometricEnabledKey,
+        _pinEnabled && _biometricEnabled,
+      );
+      if (!_pinEnabled) {
+        await _securityService.clearPIN();
+      }
       if (!mounted) return;
       setState(() {
         _saving = false;
@@ -148,7 +188,8 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _notice = 'Could not save. Complete onboarding first or check the backend.';
+        _notice =
+            'Could not save. Complete onboarding first or check the backend.';
       });
     }
   }

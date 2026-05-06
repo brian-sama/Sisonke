@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sisonke/core/services/widget_service.dart';
 import 'package:sisonke/features/journal/providers/journal_provider.dart';
-import 'package:sisonke/core/constants/app_constants.dart';
+import 'package:sisonke/features/mood_tracker/providers/mood_provider.dart';
+import 'package:sisonke/shared/models/mood.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
@@ -45,7 +47,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFFD68A7F),
-          content: Text('Your heart is full of thoughts. Write something to save.'),
+          content: Text(
+            'Your heart is full of thoughts. Write something to save.',
+          ),
         ),
       );
       return;
@@ -56,17 +60,22 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       setState(() => _isAnimating = true);
       await Future.delayed(const Duration(milliseconds: 1500));
       if (!mounted) return;
-      
+
       // Prompt with the comforting "let it go" question
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           backgroundColor: SisonkeColors.cream,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           title: const Text(
             'Letting go...',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2F3433)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2F3433),
+            ),
           ),
           content: const Text(
             'Your worry has been folded and securely locked inside the Worry Box. Would you like to let this go for tonight?',
@@ -81,12 +90,17 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
               child: const Text('Keep in journal'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2E6F60)),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2E6F60),
+              ),
               onPressed: () async {
                 Navigator.pop(context); // Close dialog
                 await _persistEntry(letGo: true);
               },
-              child: const Text('Yes, let it go', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Yes, let it go',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -101,12 +115,39 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     }
   }
 
-  Future<void> _persistEntry({bool letGo = false, bool isGratitude = false}) async {
-    await ref.read(journalEntriesProvider.notifier).addEntry(
-      title: _titleController.text.trim(),
-      content: _contentController.text.trim(),
-      isLocked: _isLocked,
-    );
+  Future<void> _persistEntry({
+    bool letGo = false,
+    bool isGratitude = false,
+  }) async {
+    final modeTag = widget.mode ?? 'free';
+    await ref
+        .read(journalEntriesProvider.notifier)
+        .addEntry(
+          title: _titleController.text.trim(),
+          content: _contentController.text.trim(),
+          isLocked: _isLocked,
+          tags: [modeTag],
+        );
+
+    // Sync to native home widgets
+    try {
+      final journals = ref.read(journalEntriesProvider);
+      final gratitudeCount = journals
+          .where((j) => j.tags.contains('gratitude'))
+          .length;
+
+      final moods = ref.read(moodEntriesProvider);
+      final latestMood = moods.isNotEmpty ? moods.first.mood : MoodType.okay;
+
+      await WidgetService.syncSnapshot(
+        WidgetService.snapshotForMood(
+          mood: latestMood,
+          gratitudeStars: gratitudeCount,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to sync widget after journal entry: $e');
+    }
 
     if (mounted) {
       context.pop();
@@ -114,9 +155,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         SnackBar(
           backgroundColor: const Color(0xFF2E6F60),
           content: Text(
-            letGo 
-                ? 'Worry released. Take a slow, comforting breath tonight.' 
-                : (isGratitude ? 'Your memory has been added to the Gratitude Jar!' : 'Journal entry saved!'),
+            letGo
+                ? 'Worry released. Take a slow, comforting breath tonight.'
+                : (isGratitude
+                      ? 'Your memory has been added to the Gratitude Jar!'
+                      : 'Journal entry saved!'),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -150,11 +193,16 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: TextField(
                   controller: _titleController,
@@ -165,7 +213,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2F3433)),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2F3433),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -173,9 +225,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: TextField(
                     controller: _contentController,
@@ -187,25 +241,37 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                       contentPadding: EdgeInsets.zero,
                     ),
                     maxLines: null,
-                    style: const TextStyle(fontSize: 15, color: Color(0xFF2F3433)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF2F3433),
+                    ),
                     keyboardType: TextInputType.multiline,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _isLocked,
                   title: const Text(
                     'Lock with Sisonke PIN?',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2F3433)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2F3433),
+                    ),
                   ),
                   onChanged: (value) => setState(() => _isLocked = value),
                 ),
@@ -244,9 +310,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -266,8 +334,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                           maxLines: null,
                           enabled: !_isAnimating,
                           decoration: InputDecoration(
-                            hintText: 'A warm conversation, sunlight on your desk, or a small victory...',
-                            fillColor: Colors.white.withOpacity(0.6),
+                            hintText:
+                                'A warm conversation, sunlight on your desk, or a small victory...',
+                            fillColor: Colors.white.withValues(alpha: 0.6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -280,7 +349,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                       SisonkeButton(
                         onPressed: _saveEntry,
                         isEnabled: !_isAnimating,
-                        label: _isAnimating ? 'Adding Memory...' : 'Drop Memory into Jar',
+                        label: _isAnimating
+                            ? 'Adding Memory...'
+                            : 'Drop Memory into Jar',
                         icon: Icons.favorite_rounded,
                         isFullWidth: true,
                       ),
@@ -314,9 +385,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -334,7 +407,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                         'You can fold them up and drop them away for the night.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: const Color(0xFF2F3433).withOpacity(0.55),
+                          color: const Color(
+                            0xFF2F3433,
+                          ).withValues(alpha: 0.55),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -347,8 +422,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                             maxLines: null,
                             enabled: !_isAnimating,
                             decoration: InputDecoration(
-                              hintText: 'What is weighing on your chest right now?',
-                              fillColor: Colors.white.withOpacity(0.6),
+                              hintText:
+                                  'What is weighing on your chest right now?',
+                              fillColor: Colors.white.withValues(alpha: 0.6),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide: BorderSide.none,
@@ -362,7 +438,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                       SisonkeButton(
                         onPressed: _saveEntry,
                         isEnabled: !_isAnimating,
-                        label: _isAnimating ? 'Folding Letter...' : 'Release and Let Go',
+                        label: _isAnimating
+                            ? 'Folding Letter...'
+                            : 'Release and Let Go',
                         icon: Icons.delete_outline_rounded,
                         isFullWidth: true,
                       ),
@@ -408,8 +486,8 @@ class _GratitudeJarAnimatorState extends State<_GratitudeJarAnimator>
   }
 
   @override
-  void didUpdateWidget(covariant _GratitudeJarAnimator) {
-    super.didUpdateWidget(_GratitudeJarAnimator);
+  void didUpdateWidget(covariant _GratitudeJarAnimator oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (widget.isAnimating) {
       _starController.forward(from: 0.0);
     }
@@ -442,14 +520,17 @@ class _GratitudeJarAnimatorState extends State<_GratitudeJarAnimator>
               width: 140,
               height: 180,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.24),
+                color: Colors.white.withValues(alpha: 0.24),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                   bottomLeft: Radius.circular(45),
                   bottomRight: Radius.circular(45),
                 ),
-                border: Border.all(color: Colors.white.withOpacity(0.6), width: 3),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  width: 3,
+                ),
               ),
               child: Stack(
                 children: [
@@ -501,12 +582,7 @@ class _GratitudeJarAnimatorState extends State<_GratitudeJarAnimator>
                     Icons.star_rounded,
                     color: Color(0xFFF7E8B5),
                     size: 28,
-                    shadows: [
-                      Shadow(
-                        color: Colors.white,
-                        blurRadius: 12,
-                      )
-                    ],
+                    shadows: [Shadow(color: Colors.white, blurRadius: 12)],
                   ),
                 ),
               ),
@@ -540,8 +616,8 @@ class _WorryBoxAnimatorState extends State<_WorryBoxAnimator>
   }
 
   @override
-  void didUpdateWidget(covariant _WorryBoxAnimator) {
-    super.didUpdateWidget(_WorryBoxAnimator);
+  void didUpdateWidget(covariant _WorryBoxAnimator oldWidget) {
+    super.didUpdateWidget(oldWidget);
     if (widget.isAnimating) {
       _foldController.forward(from: 0.0);
     }
@@ -580,10 +656,10 @@ class _WorryBoxAnimatorState extends State<_WorryBoxAnimator>
                 border: Border.all(color: Colors.white, width: 3.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
-                  )
+                  ),
                 ],
               ),
               child: Center(
@@ -613,18 +689,21 @@ class _WorryBoxAnimatorState extends State<_WorryBoxAnimator>
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFD68A7F), width: 1.5),
+                          border: Border.all(
+                            color: const Color(0xFFD68A7F),
+                            width: 1.5,
+                          ),
                           boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 8,
-                            )
+                            BoxShadow(color: Colors.black12, blurRadius: 8),
                           ],
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            Icon(Icons.mail_outline_rounded, color: Color(0xFFD68A7F)),
+                            Icon(
+                              Icons.mail_outline_rounded,
+                              color: Color(0xFFD68A7F),
+                            ),
                           ],
                         ),
                       ),

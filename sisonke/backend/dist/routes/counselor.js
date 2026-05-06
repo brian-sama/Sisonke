@@ -9,10 +9,30 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const types_1 = require("../types");
 const socketService_1 = require("../services/socketService");
 const authService_1 = require("../services/authService");
+const counselorCopilot_1 = require("../ai/counselorCopilot");
 const router = (0, express_1.Router)();
 const isAssignedCounselor = async (caseId, userId) => {
     const [item] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, caseId)).limit(1);
     return item && item.counselorId === userId ? item : null;
+};
+const canUseCounselorAi = async (caseId, user) => {
+    const [item] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, caseId)).limit(1);
+    if (!item)
+        return null;
+    if (item.counselorId === user.id)
+        return item;
+    if ((0, auth_1.hasAnyRole)(user, ['admin', 'system-admin', 'super-admin']))
+        return item;
+    return null;
+};
+const loadCaseMessages = async (caseId) => {
+    const rows = await db_1.db
+        .select()
+        .from(schema_1.counselingMessages)
+        .where((0, drizzle_orm_1.eq)(schema_1.counselingMessages.caseId, caseId))
+        .orderBy((0, drizzle_orm_1.desc)(schema_1.counselingMessages.createdAt))
+        .limit(20);
+    return rows.reverse();
 };
 router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.CounselorRequestSchema.parse(req.body);
@@ -206,6 +226,84 @@ router.post('/cases/:id/messages', (0, errorHandler_1.asyncHandler)(async (req, 
         socketService_1.SocketService.emitCaseEvent(req.params.id, messageCase.userId, 'voice_note:uploaded', { caseId: req.params.id, message });
     }
     res.status(201).json({ success: true, data: message });
+}));
+router.get('/cases/:id/ai-summary', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const caseRow = await canUseCounselorAi(req.params.id, req.user);
+    if (!caseRow) {
+        return res.status(403).json({ success: false, error: 'Counselor case access required.' });
+    }
+    const messages = await loadCaseMessages(req.params.id);
+    const summary = await (0, counselorCopilot_1.generateCounselorSummary)({
+        issueCategory: caseRow.issueCategory,
+        riskLevel: caseRow.riskLevel,
+        status: caseRow.status,
+        summary: caseRow.summary,
+        messages: messages.map((message) => ({
+            senderRole: message.senderRole,
+            content: message.content,
+            createdAt: message.createdAt,
+        })),
+    });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: 'counselor_ai_summary_generated',
+        entityType: 'counselor_case',
+        entityId: caseRow.id,
+        metadata: { riskLevel: caseRow.riskLevel },
+    });
+    res.json({ success: true, data: { summary, draftOnly: true } });
+}));
+router.post('/cases/:id/ai-draft-reply', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const caseRow = await canUseCounselorAi(req.params.id, req.user);
+    if (!caseRow) {
+        return res.status(403).json({ success: false, error: 'Counselor case access required.' });
+    }
+    const messages = await loadCaseMessages(req.params.id);
+    const draft = await (0, counselorCopilot_1.generateCounselorDraftReply)({
+        issueCategory: caseRow.issueCategory,
+        riskLevel: caseRow.riskLevel,
+        status: caseRow.status,
+        summary: caseRow.summary,
+        messages: messages.map((message) => ({
+            senderRole: message.senderRole,
+            content: message.content,
+            createdAt: message.createdAt,
+        })),
+    });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: 'counselor_ai_draft_generated',
+        entityType: 'counselor_case',
+        entityId: caseRow.id,
+        metadata: { riskLevel: caseRow.riskLevel, draftOnly: true },
+    });
+    res.json({ success: true, data: { draft, draftOnly: true } });
+}));
+router.post('/cases/:id/ai-risk-review', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const caseRow = await canUseCounselorAi(req.params.id, req.user);
+    if (!caseRow) {
+        return res.status(403).json({ success: false, error: 'Counselor case access required.' });
+    }
+    const messages = await loadCaseMessages(req.params.id);
+    const review = (0, counselorCopilot_1.deterministicRiskReview)({
+        issueCategory: caseRow.issueCategory,
+        riskLevel: caseRow.riskLevel,
+        status: caseRow.status,
+        summary: caseRow.summary,
+        messages: messages.map((message) => ({
+            senderRole: message.senderRole,
+            content: message.content,
+            createdAt: message.createdAt,
+        })),
+    });
+    await db_1.db.insert(schema_1.auditLogs).values({
+        actorId: req.user.id,
+        action: 'counselor_ai_risk_review_generated',
+        entityType: 'counselor_case',
+        entityId: caseRow.id,
+        metadata: review,
+    });
+    res.json({ success: true, data: review });
 }));
 router.post('/cases/:id/callback', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const callbackPhone = String(req.body.callbackPhone || '').trim();

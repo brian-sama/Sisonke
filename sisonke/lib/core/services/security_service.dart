@@ -11,7 +11,8 @@ class SecurityService {
     if (!_supportsBiometricsOnCurrentPlatform) return false;
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+      final bool canAuthenticate =
+          canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
       return canAuthenticate;
     } catch (_) {
       return false;
@@ -37,6 +38,10 @@ class SecurityService {
     await _storage.write(key: _pinKey, value: pin);
   }
 
+  Future<void> clearPIN() async {
+    await _storage.delete(key: _pinKey);
+  }
+
   Future<bool> verifyPIN(String pin) async {
     final storedPin = await _storage.read(key: _pinKey);
     return storedPin == pin;
@@ -58,7 +63,10 @@ class SecurityService {
   bool get _supportsBiometricsOnCurrentPlatform {
     if (kIsWeb) return false;
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.macOS || TargetPlatform.windows => true,
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
       TargetPlatform.linux || TargetPlatform.fuchsia => false,
     };
   }

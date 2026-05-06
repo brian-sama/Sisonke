@@ -10,6 +10,7 @@ class CheckInScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SisonkeScaffold(
       title: 'Check-In',
+      fallbackBackLocation: '/home',
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
         children: [

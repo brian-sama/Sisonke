@@ -6,7 +6,7 @@ const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
-const zimbabweRagKnowledge_1 = require("../data/zimbabweRagKnowledge");
+const supportDirectory_1 = require("../data/supportDirectory");
 const router = (0, express_1.Router)();
 // Get all emergency contacts
 router.get('/contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
@@ -15,7 +15,7 @@ router.get('/contacts', (0, errorHandler_1.asyncHandler)(async (req, res) => {
         .from(schema_1.emergencyContacts)
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.emergencyContacts.isActive, true), (0, drizzle_orm_1.eq)(schema_1.emergencyContacts.status, 'published')))
         .orderBy(schema_1.emergencyContacts.category, schema_1.emergencyContacts.name);
-    const seededContacts = zimbabweRagKnowledge_1.zimbabweEmergencyContacts.map((contact) => ({
+    const seededContacts = (0, supportDirectory_1.publicEmergencyContacts)().map((contact) => ({
         id: contact.id,
         name: contact.name,
         phone_number: contact.phoneNumber,
@@ -65,7 +65,7 @@ router.get('/contacts/:category', (0, errorHandler_1.asyncHandler)(async (req, r
         .from(schema_1.emergencyContacts)
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.emergencyContacts.category, category), (0, drizzle_orm_1.eq)(schema_1.emergencyContacts.isActive, true)))
         .orderBy(schema_1.emergencyContacts.name);
-    const seededContacts = zimbabweRagKnowledge_1.zimbabweEmergencyContacts
+    const seededContacts = (0, supportDirectory_1.publicEmergencyContacts)()
         .filter((contact) => contact.category === category)
         .map((contact) => ({
         ...contact,
@@ -83,6 +83,26 @@ router.get('/contacts/:category', (0, errorHandler_1.asyncHandler)(async (req, r
     res.json({
         success: true,
         data: contacts,
+    });
+}));
+// Get the richer referral directory. Public users only see verified/public entries;
+// counselors and admins can request the counselor view with review-only entries.
+router.get('/directory', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const requestedAudience = String(req.query.audience || 'users');
+    const roles = (req.user?.roles || []).map((role) => role.toLowerCase().replace(/_/g, '-'));
+    const canViewCounselorDirectory = roles.some((role) => ['counselor', 'admin', 'system-admin', 'super-admin'].includes(role));
+    const audience = requestedAudience === 'counselors' && canViewCounselorDirectory
+        ? 'counselors'
+        : 'users';
+    const entries = (0, supportDirectory_1.directoryForAudience)(audience);
+    res.json({
+        success: true,
+        data: {
+            audience,
+            entries,
+            total: entries.length,
+            last_updated: new Date().toISOString(),
+        },
     });
 }));
 // Add new emergency contact (admin only)

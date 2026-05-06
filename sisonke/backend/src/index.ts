@@ -35,9 +35,24 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // Rate limiting
+const highFrequencyReadPaths = new Set([
+  '/api/admin/community-posts',
+  '/api/admin/counselor-cases',
+  '/api/admin/counselor-operations',
+]);
+
+const highFrequencyReadPrefixes = [
+  '/api/counselor/my-cases',
+  '/api/counselor/cases',
+];
+
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
+  skip: (req) =>
+    req.method === 'GET' &&
+    (highFrequencyReadPaths.has(req.path) ||
+      highFrequencyReadPrefixes.some((prefix) => req.path.startsWith(prefix))),
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.',

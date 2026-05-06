@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sisonke/core/services/api_service.dart';
@@ -186,6 +188,22 @@ class _CounselorRequestStatusScreenState
   late Future<Map<String, dynamic>> _future = _api.getCounselorCase(
     widget.caseId,
   );
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (!mounted) return;
+      setState(() => _future = _api.getCounselorCase(widget.caseId));
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +235,9 @@ class _CounselorRequestStatusScreenState
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE4DDF6).withOpacity(0.8), // lavender glow
+                    color: const Color(
+                      0xFFE4DDF6,
+                    ).withValues(alpha: 0.8), // lavender glow
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(color: const Color(0xFFC7BCE6)),
                   ),
@@ -226,18 +246,29 @@ class _CounselorRequestStatusScreenState
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.self_improvement_rounded, color: Color(0xFF7361A9)),
+                          Icon(
+                            Icons.self_improvement_rounded,
+                            color: Color(0xFF7361A9),
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'While you wait...',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2F3433)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color(0xFF2F3433),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'A counselor will be with you shortly. In the meantime, try a gentle, calming grounding exercise to steady your breath and body.',
-                        style: TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF2F3433)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: Color(0xFF2F3433),
+                        ),
                       ),
                       const SizedBox(height: 14),
                       Row(
@@ -247,23 +278,42 @@ class _CounselorRequestStatusScreenState
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF7361A9),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
                               ),
                               onPressed: () => context.push('/grounding'),
                               icon: const Icon(Icons.spa_outlined, size: 16),
-                              label: const Text('Grounding', style: TextStyle(fontWeight: FontWeight.bold)),
+                              label: const Text(
+                                'Grounding',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                side: const BorderSide(color: Color(0xFF7361A9)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                side: const BorderSide(
+                                  color: Color(0xFF7361A9),
+                                ),
                               ),
                               onPressed: () => context.push('/breathing'),
-                              icon: const Icon(Icons.air_rounded, size: 16, color: Color(0xFF7361A9)),
-                              label: const Text('Breathe', style: TextStyle(color: Color(0xFF7361A9), fontWeight: FontWeight.bold)),
+                              icon: const Icon(
+                                Icons.air_rounded,
+                                size: 16,
+                                color: Color(0xFF7361A9),
+                              ),
+                              label: const Text(
+                                'Breathe',
+                                style: TextStyle(
+                                  color: Color(0xFF7361A9),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ],
