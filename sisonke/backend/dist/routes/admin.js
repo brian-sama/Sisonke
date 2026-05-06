@@ -688,13 +688,17 @@ router.put('/users/:id', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)
     if (req.params.id === req.user.id && input.roles && !input.roles.some((role) => ['super-admin', 'system-admin'].includes(role))) {
         return res.status(400).json({ success: false, error: 'You cannot remove your own top-level access.' });
     }
-    const roleUpdate = input.roles ? {
-        role: primaryRoleFor(input.roles),
-        roles: input.roles,
-        isGuest: input.roles.includes('guest') && input.roles.length === 1,
-    } : {};
+    // Update roles using new role system if provided
+    if (input.roles && input.roles.length > 0) {
+        // First, remove all existing roles
+        await db_1.db.delete(schema_1.userRoles).where((0, drizzle_orm_1.eq)(schema_1.userRoles.userId, req.params.id));
+        // Then assign new roles
+        for (const roleName of input.roles) {
+            await authService_1.AuthService.assignRole(req.params.id, roleName, req.user.id);
+        }
+    }
     const [updated] = await db_1.db.update(schema_1.users).set({
-        ...roleUpdate,
+        isGuest: input.roles ? (input.roles.includes('guest') && input.roles.length === 1) : undefined,
         email: input.email ? input.email.trim().toLowerCase() : undefined,
         isSuspended: input.isSuspended,
         suspensionReason: input.isSuspended ? input.suspensionReason || 'Paused by an admin' : input.isSuspended === false ? null : undefined,
@@ -712,11 +716,15 @@ router.put('/users/:id', auth_1.superAdminOnly, (0, errorHandler_1.asyncHandler)
         userAgent: req.get('user-agent'),
         metadata: { targetUserId: req.params.id },
     });
+    // Fetch full user with roles for the response
+    const userRolesList = await authService_1.AuthService.getUserRoles(updated.id);
+    const roleNames = userRolesList.map(r => r.name);
     res.json({
         success: true,
         data: {
             id: updated.id,
             email: updated.email,
+            roles: roleNames,
             isGuest: updated.isGuest,
             isSuspended: updated.isSuspended,
             suspensionReason: updated.suspensionReason,

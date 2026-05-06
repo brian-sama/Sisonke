@@ -133,31 +133,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     if (_currentPage > 0)
-                      SisonkeButton(
-                        label: 'Back',
-                        buttonType: ButtonType.secondary,
+                      Flexible(
+                        child: SisonkeButton(
+                          label: 'Back',
+                          buttonType: ButtonType.secondary,
+                          onPressed: () {
+                            _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                        ),
+                      ),
+                    if (_currentPage > 0) const SizedBox(width: 12),
+                    Flexible(
+                      child: SisonkeButton(
+                        label: _currentPage == pages.length - 1
+                            ? (_saving ? 'Saving...' : 'Get Started')
+                            : 'Next',
+                        isLoading: _saving,
                         onPressed: () {
-                          _pageController.previousPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
+                          if (_currentPage == pages.length - 1) {
+                            _finishOnboarding();
+                          } else {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
                         },
                       ),
-                    SisonkeButton(
-                      label: _currentPage == pages.length - 1
-                          ? (_saving ? 'Saving...' : 'Get Started')
-                          : 'Next',
-                      isLoading: _saving,
-                      onPressed: () {
-                        if (_currentPage == pages.length - 1) {
-                          _finishOnboarding();
-                        } else {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
                     ),
                   ],
                 ),

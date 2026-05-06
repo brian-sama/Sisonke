@@ -1000,37 +1000,41 @@ const People = () => {
     if (!form.email.trim()) return setMessage('Please enter an email address.');
     if (!form.id && !form.password) return setMessage('Please enter a starting password.');
 
-    if (form.id) {
-      await apiFetch(`/api/admin/users/${form.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          email: form.email,
-          roles: form.roles,
-          mustChangePassword: form.mustChangePassword,
-          isSuspended: form.isSuspended,
-        }),
-      });
-      if (form.password) {
-        await apiFetch(`/api/admin/users/${form.id}/password`, {
+    try {
+      if (form.id) {
+        await apiFetch(`/api/admin/users/${form.id}`, {
           method: 'PUT',
-          body: JSON.stringify({ password: form.password, mustChangePassword: form.mustChangePassword }),
+          body: JSON.stringify({
+            email: form.email,
+            roles: form.roles,
+            mustChangePassword: form.mustChangePassword,
+            isSuspended: form.isSuspended,
+          }),
         });
+        if (form.password) {
+          await apiFetch(`/api/admin/users/${form.id}/password`, {
+            method: 'PUT',
+            body: JSON.stringify({ password: form.password, mustChangePassword: form.mustChangePassword }),
+          });
+        }
+        setMessage('Person updated.');
+      } else {
+        await apiFetch('/api/admin/users', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+            roles: form.roles,
+            mustChangePassword: form.mustChangePassword,
+          }),
+        });
+        setMessage('Person added.');
       }
-      setMessage('Person updated.');
-    } else {
-      await apiFetch('/api/admin/users', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          roles: form.roles,
-          mustChangePassword: form.mustChangePassword,
-        }),
-      });
-      setMessage('Person added.');
+      setForm(blankForm);
+      await loadPeople();
+    } catch (err: any) {
+      setMessage(err?.message || 'Failed to save person.');
     }
-    setForm(blankForm);
-    await loadPeople();
   };
 
   return (
