@@ -962,7 +962,7 @@ const roleOptions = [
 ];
 
 const People = () => {
-  const blankForm = { id: '', email: '', password: '', roles: ['user'], mustChangePassword: true, isSuspended: false };
+  const blankForm = { id: '', email: '', name: '', avatarUrl: '', password: '', roles: ['user'], mustChangePassword: true, isSuspended: false };
   const [people, setPeople] = useState<any[]>([]);
   const [form, setForm] = useState<any>(blankForm);
   const [message, setMessage] = useState('');
@@ -986,6 +986,8 @@ const People = () => {
     setForm({
       id: person.id,
       email: person.email || '',
+      name: person.name || '',
+      avatarUrl: person.avatarUrl || '',
       password: '',
       roles: person.roles?.length ? person.roles : [person.role || 'user'],
       mustChangePassword: Boolean(person.mustChangePassword),
@@ -1006,6 +1008,8 @@ const People = () => {
           method: 'PUT',
           body: JSON.stringify({
             email: form.email,
+            name: form.name || null,
+            avatarUrl: form.avatarUrl || null,
             roles: form.roles,
             mustChangePassword: form.mustChangePassword,
             isSuspended: form.isSuspended,
@@ -1024,6 +1028,8 @@ const People = () => {
           body: JSON.stringify({
             email: form.email,
             password: form.password,
+            name: form.name || undefined,
+            avatarUrl: form.avatarUrl || undefined,
             roles: form.roles,
             mustChangePassword: form.mustChangePassword,
           }),
@@ -1051,6 +1057,14 @@ const People = () => {
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500">Email</label>
               <input className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} type="email" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500">Full Name</label>
+              <input className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Brian Magagula" type="text" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500">Profile Picture URL</label>
+              <input className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-100" value={form.avatarUrl} onChange={e => setForm({ ...form, avatarUrl: e.target.value })} placeholder="e.g. https://domain.com/pic.jpg" type="url" />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500">{form.id ? 'New password, if changing it' : 'Starting password'}</label>
@@ -1099,8 +1113,29 @@ const People = () => {
               {people.map(person => (
                 <tr key={person.id} className="hover:bg-indigo-50/30">
                   <td className="px-6 py-5">
-                    <div className="font-bold text-zinc-900">{person.email || 'Guest user'}</div>
-                    <div className="text-xs text-zinc-400">{person.isSuspended ? 'Paused' : 'On'}</div>
+                    <div className="flex items-center gap-3">
+                      {person.avatarUrl ? (
+                        <img src={person.avatarUrl} alt={person.name || person.email} className="w-10 h-10 rounded-full object-cover shrink-0 border border-zinc-100" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                          {(person.name || person.email || '?').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-bold text-zinc-900 flex items-center gap-2">
+                          {person.name && <span>{person.name}</span>}
+                          {person.name && <span className="text-zinc-400 font-normal text-xs">({person.email})</span>}
+                          {!person.name && <span>{person.email || 'Guest user'}</span>}
+                        </div>
+                        <div className="text-xs text-zinc-400 font-medium">
+                          {person.isSuspended ? (
+                            <span className="text-rose-500 font-bold">Paused</span>
+                          ) : (
+                            <span className="text-emerald-600 font-bold">Active</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex flex-wrap gap-2">

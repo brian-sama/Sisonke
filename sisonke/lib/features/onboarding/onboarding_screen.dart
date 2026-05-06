@@ -66,10 +66,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.check_circle_outline_rounded,
     ),
     OnboardingPage(
-      title: 'Choose E-Friend',
+      title: "Choose your Companion's Style",
       description:
-          'Pick a male or female persona. Serious risk still goes to a counselor.',
-      icon: Icons.smart_toy_outlined,
+          "Select an emotionally safe digital companion archetype that fits your state today.",
+      icon: Icons.favorite_outline_rounded,
     ),
   ];
 
@@ -310,21 +310,129 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ],
         );
       case 5:
-        return SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(
-              value: 'female',
-              icon: Icon(Icons.face_3_rounded),
-              label: Text('Female'),
-            ),
-            ButtonSegment(
-              value: 'male',
-              icon: Icon(Icons.face_rounded),
-              label: Text('Male'),
-            ),
-          ],
-          selected: {_persona},
-          onSelectionChanged: (value) => setState(() => _persona = value.first),
+        final styles = [
+          {
+            'id': 'female', // Soft & Understanding
+            'name': 'Soft & Understanding',
+            'quote': '“I’m here with you. We can take this one step at a time.”',
+            'icon': Icons.spa_rounded,
+            'color': const Color(0xFFEBCBD0), // blush
+          },
+          {
+            'id': 'female_calm', // Calm & Encouraging
+            'name': 'Calm & Encouraging',
+            'quote': '“You are doing better than you think. Let’s find your balance.”',
+            'icon': Icons.wb_sunny_rounded,
+            'color': const Color(0xFFCFE6D2), // sage
+          },
+          {
+            'id': 'male', // Gentle Listener
+            'name': 'Gentle Listener',
+            'quote': '“Your thoughts are safe here. I am listening whenever you are ready.”',
+            'icon': Icons.hearing_rounded,
+            'color': const Color(0xFFD8EEF8), // sky
+          },
+          {
+            'id': 'female_motivating', // Motivating Friend
+            'name': 'Motivating Friend',
+            'quote': '“I believe in you! Let’s take on small, joyful steps together today.”',
+            'icon': Icons.bolt_rounded,
+            'color': const Color(0xFFF7E8B5), // lemon
+          },
+          {
+            'id': 'male_quiet', // Quiet & Comforting
+            'name': 'Quiet & Comforting',
+            'quote': '“No pressure to speak. Let’s just sit in quiet reflection together.”',
+            'icon': Icons.nightlight_round,
+            'color': const Color(0xFFE4DDF6), // lavender
+          },
+        ];
+
+        return Column(
+          children: styles.map((style) {
+            final isSelected = _persona == style['id'];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _persona = style['id'] as String;
+                  });
+                },
+                borderRadius: BorderRadius.circular(24),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: style['color'] as Color,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF2E6F60) // AppTheme.primary
+                          : Colors.transparent,
+                      width: 2.5,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: (style['color'] as Color).withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          color: Colors.white24,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          style['icon'] as IconData,
+                          size: 28,
+                          color: const Color(0xFF2F3433), // charcoal
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              style['name'] as String,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2F3433),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              style['quote'] as String,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                                color: const Color(0xFF2F3433).withValues(alpha: 0.85),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF2E6F60),
+                          size: 28,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         );
       default:
         return const SizedBox.shrink();
@@ -358,12 +466,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _error = null;
     });
     try {
+      final dbPersona = _persona.startsWith('female') ? 'female' : 'male';
       await _api.saveOnboardingProfile(
         nickname: nickname,
         age: age,
         gender: _gender,
         location: _location.text.trim(),
-        chatbotPersona: _persona,
+        chatbotPersona: dbPersona,
         screeningAnswers: _screeningAnswers,
         pinEnabled: _pinEnabled,
         biometricEnabled: _biometricEnabled,
@@ -378,7 +487,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         errorMsg = e.message;
       } else if (e is DioException) {
         if (e.response?.data is Map && e.response?.data['error'] != null) {
-          errorMsg = e.response?.data['error'].toString();
+          errorMsg = e.response?.data['error']?.toString() ?? 'Could not save profile';
         } else if (e.message != null) {
           errorMsg = e.message!;
         }

@@ -83,6 +83,8 @@ exports.users = (0, pg_core_1.pgTable)('users', {
     counselorStatus: (0, pg_core_1.varchar)('counselor_status', { length: 40 }).default('offline'),
     counselorSpecializations: (0, pg_core_1.varchar)('counselor_specializations', { length: 80 }).array().default([]),
     isOnCall: (0, pg_core_1.boolean)('is_on_call').default(false),
+    name: (0, pg_core_1.varchar)('name', { length: 120 }),
+    avatarUrl: (0, pg_core_1.varchar)('avatar_url', { length: 500 }),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at'),
     deletedAt: (0, pg_core_1.timestamp)('deleted_at'),

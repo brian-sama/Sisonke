@@ -79,9 +79,9 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
       ]
     },
     {
-      label: 'Clinical',
+      label: 'Care Portal',
       items: [
-        { name: 'Counselor Cases', path: '/cases', icon: UserCheck },
+        { name: 'People Needing Support', path: '/cases', icon: UserCheck },
       ]
     },
     {
@@ -231,12 +231,12 @@ const Dashboard = () => {
   );
 
   const cards = [
-    { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { title: 'Guest Sessions', value: stats.guestSessions, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: 'Chatbot Sessions', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'High-Risk Alerts', value: stats.highRiskEscalations, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { title: 'Cases Pending', value: stats.counselorCasesWaiting, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { title: 'Posts to Moderate', value: stats.communityPostsPending, icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
+    { title: 'People Registered', value: stats.totalUsers, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { title: 'Guest Conversations', value: stats.guestSessions, icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'E-Friend Conversations', value: stats.chatbotSessions, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'People Needing Urgent Care', value: stats.highRiskEscalations, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { title: 'People Needing Support', value: stats.counselorCasesWaiting, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { title: 'Whispers to Moderate', value: stats.communityPostsPending, icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];
 
   return (
@@ -739,10 +739,10 @@ const CounselorCases = () => {
     return (
       <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-           <h3 className="text-3xl font-display font-black text-zinc-900">Active Support Queue</h3>
+           <h3 className="text-3xl font-display font-black text-zinc-900">Care & Connection Hub</h3>
            <div className="flex gap-3">
               <div className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-sm font-bold flex items-center gap-2">
-                <Activity size={18} /> 4 Active Counselors
+                <Activity size={18} /> 4 Active Supporters
               </div>
            </div>
         </div>
@@ -763,12 +763,12 @@ const CounselorCases = () => {
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-400 underline decoration-zinc-200 underline-offset-4">CASE LOG #{c.id}</span>
+                      <span className="text-[10px] font-black text-zinc-400 underline decoration-zinc-200 underline-offset-4">SUPPORT LINK #{c.id}</span>
                       <span className={cn(
                         "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest",
                         c.riskLevel === 'high' ? "bg-rose-100 text-rose-700" : "bg-zinc-100 text-zinc-500"
                       )}>
-                        {c.riskLevel} threat level
+                        {c.riskLevel} care priority
                       </span>
                     </div>
                     <h4 className="text-2xl font-display font-black text-zinc-900 line-clamp-1">{c.summary}</h4>

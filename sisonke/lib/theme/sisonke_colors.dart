@@ -11,4 +11,31 @@ class SisonkeColors {
   static const forest = Color(0xFF315F46);
   static const clay = Color(0xFFE8B9A2);
   static const lavender = Color(0xFFE4DDF6);
+
+  static const Gradient pastelSunset = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      blush,
+      lavender,
+    ],
+  );
+
+  static const Gradient morningMist = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      sky,
+      mint,
+    ],
+  );
+
+  static const Gradient forestBreeze = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      sage,
+      cream,
+    ],
+  );
 }

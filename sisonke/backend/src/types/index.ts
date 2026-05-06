@@ -37,6 +37,8 @@ export const AdminRoleSchema = z.preprocess(
 export const CreateAdminUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  name: z.string().max(120).optional(),
+  avatarUrl: z.string().max(500).optional(),
   roles: z.array(AdminRoleSchema).min(1).default(['user']),
   isGuest: z.boolean().default(false),
   mustChangePassword: z.boolean().default(false),
@@ -48,6 +50,8 @@ export const UpdateUserRolesSchema = z.object({
 
 export const UpdateAdminUserSchema = z.object({
   email: z.string().email().optional(),
+  name: z.string().max(120).optional().nullable(),
+  avatarUrl: z.string().max(500).optional().nullable(),
   roles: z.array(AdminRoleSchema).min(1).optional(),
   isSuspended: z.boolean().optional(),
   suspensionReason: z.string().optional(),

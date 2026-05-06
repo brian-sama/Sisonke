@@ -85,6 +85,8 @@ export const users = pgTable('users', {
   counselorStatus: varchar('counselor_status', { length: 40 }).default('offline'),
   counselorSpecializations: varchar('counselor_specializations', { length: 80 }).array().default([]),
   isOnCall: boolean('is_on_call').default(false),
+  name: varchar('name', { length: 120 }),
+  avatarUrl: varchar('avatar_url', { length: 500 }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at'),
   deletedAt: timestamp('deleted_at'),

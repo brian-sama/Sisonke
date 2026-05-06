@@ -30,6 +30,8 @@ export declare const AdminRoleSchema: z.ZodEffects<z.ZodEnum<["guest", "user", "
 export declare const CreateAdminUserSchema: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodString;
+    name: z.ZodOptional<z.ZodString>;
+    avatarUrl: z.ZodOptional<z.ZodString>;
     roles: z.ZodDefault<z.ZodArray<z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "user" | "super-admin" | "system-admin" | "admin" | "counselor" | "moderator" | "content-manager" | "content-admin" | "guest" | "safety-reviewer" | "analyst", unknown>, "many">>;
     isGuest: z.ZodDefault<z.ZodBoolean>;
     mustChangePassword: z.ZodDefault<z.ZodBoolean>;
@@ -39,12 +41,16 @@ export declare const CreateAdminUserSchema: z.ZodObject<{
     isGuest: boolean;
     mustChangePassword: boolean;
     password: string;
+    name?: string | undefined;
+    avatarUrl?: string | undefined;
 }, {
     email: string;
     password: string;
     roles?: unknown[] | undefined;
+    name?: string | undefined;
     isGuest?: boolean | undefined;
     mustChangePassword?: boolean | undefined;
+    avatarUrl?: string | undefined;
 }>;
 export declare const UpdateUserRolesSchema: z.ZodObject<{
     roles: z.ZodArray<z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "user" | "super-admin" | "system-admin" | "admin" | "counselor" | "moderator" | "content-manager" | "content-admin" | "guest" | "safety-reviewer" | "analyst", unknown>, "many">;
@@ -55,22 +61,28 @@ export declare const UpdateUserRolesSchema: z.ZodObject<{
 }>;
 export declare const UpdateAdminUserSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
+    name: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    avatarUrl: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     roles: z.ZodOptional<z.ZodArray<z.ZodEffects<z.ZodEnum<["guest", "user", "counselor", "moderator", "content-admin", "admin", "super-admin", "system-admin", "content-manager", "safety-reviewer", "analyst"]>, "user" | "super-admin" | "system-admin" | "admin" | "counselor" | "moderator" | "content-manager" | "content-admin" | "guest" | "safety-reviewer" | "analyst", unknown>, "many">>;
     isSuspended: z.ZodOptional<z.ZodBoolean>;
     suspensionReason: z.ZodOptional<z.ZodString>;
     mustChangePassword: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     roles?: ("user" | "super-admin" | "system-admin" | "admin" | "counselor" | "moderator" | "content-manager" | "content-admin" | "guest" | "safety-reviewer" | "analyst")[] | undefined;
+    name?: string | null | undefined;
     email?: string | undefined;
     isSuspended?: boolean | undefined;
     suspensionReason?: string | undefined;
     mustChangePassword?: boolean | undefined;
+    avatarUrl?: string | null | undefined;
 }, {
     roles?: unknown[] | undefined;
+    name?: string | null | undefined;
     email?: string | undefined;
     isSuspended?: boolean | undefined;
     suspensionReason?: string | undefined;
     mustChangePassword?: boolean | undefined;
+    avatarUrl?: string | null | undefined;
 }>;
 export declare const AdminSetPasswordSchema: z.ZodObject<{
     password: z.ZodString;

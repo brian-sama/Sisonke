@@ -49,12 +49,12 @@ class MoodEntry {
 }
 
 enum MoodType {
-  great('Great', '😄'),
-  okay('Okay', '🙂'),
-  low('Low', '😔'),
-  anxious('Anxious', '😰'),
-  angry('Angry', '😠'),
-  overwhelmed('Overwhelmed', '😵');
+  great('Sunlight', '🌻'),
+  okay('Gentle Breeze', '🍃'),
+  low('Cool Rain', '🌧️'),
+  anxious('Storm Cloud', '⛈️'),
+  angry('Wild Fire', '🔥'),
+  overwhelmed('Heavy Fog', '🌫️');
 
   final String label;
   final String emoji;

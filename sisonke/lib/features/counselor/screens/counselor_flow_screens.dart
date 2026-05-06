@@ -212,6 +212,66 @@ class _CounselorRequestStatusScreenState
             padding: const EdgeInsets.all(16),
             children: [
               _StatusTimeline(status: status),
+              if (status == 'requested') ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE4DDF6).withOpacity(0.8), // lavender glow
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: const Color(0xFFC7BCE6)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.self_improvement_rounded, color: Color(0xFF7361A9)),
+                          SizedBox(width: 8),
+                          Text(
+                            'While you wait...',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2F3433)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'A counselor will be with you shortly. In the meantime, try a gentle, calming grounding exercise to steady your breath and body.',
+                        style: TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF2F3433)),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF7361A9),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                              onPressed: () => context.push('/grounding'),
+                              icon: const Icon(Icons.spa_outlined, size: 16),
+                              label: const Text('Grounding', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                side: const BorderSide(color: Color(0xFF7361A9)),
+                              ),
+                              onPressed: () => context.push('/breathing'),
+                              icon: const Icon(Icons.air_rounded, size: 16, color: Color(0xFF7361A9)),
+                              label: const Text('Breathe', style: TextStyle(color: Color(0xFF7361A9), fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               _FlowCard(
                 child: Column(

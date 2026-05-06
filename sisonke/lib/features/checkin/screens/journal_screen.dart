@@ -73,37 +73,37 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
                       title: 'Write Freely',
                       icon: Icons.border_color_rounded,
                       color: SisonkeColors.sky,
-                      onTap: () => _openEntry(context),
+                      onTap: () => _openEntry(context, mode: 'free'),
                     ),
                     _JournalModeCard(
                       title: 'Gratitude',
                       icon: Icons.favorite_rounded,
                       color: SisonkeColors.blush,
-                      onTap: () => _openEntry(context),
+                      onTap: () => _openEntry(context, mode: 'gratitude'),
                     ),
                     _JournalModeCard(
                       title: 'Worry Dump',
                       icon: Icons.inbox_rounded,
                       color: SisonkeColors.mint,
-                      onTap: () => _openEntry(context),
+                      onTap: () => _openEntry(context, mode: 'worry'),
                     ),
                     _JournalModeCard(
                       title: 'Reflect',
                       icon: Icons.lightbulb_rounded,
                       color: SisonkeColors.lavender,
-                      onTap: () => _openEntry(context),
+                      onTap: () => _openEntry(context, mode: 'reflect'),
                     ),
                     _JournalModeCard(
                       title: 'Voice Journal',
                       icon: Icons.mic_rounded,
                       color: SisonkeColors.clay,
-                      onTap: () => _openEntry(context),
+                      onTap: () => _openEntry(context, mode: 'voice'),
                     ),
                     _JournalModeCard(
                       title: 'Treasure Box',
                       icon: Icons.emoji_events_rounded,
                       color: SisonkeColors.sage,
-                      onTap: () => _openEntry(context),
+                      onTap: () => _openEntry(context, mode: 'treasure'),
                     ),
                   ],
                 ),
@@ -197,10 +197,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
     );
   }
 
-  void _openEntry(BuildContext context) {
+  void _openEntry(BuildContext context, {String? mode}) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const JournalEntryScreen()),
+      MaterialPageRoute(builder: (context) => JournalEntryScreen(mode: mode)),
     );
   }
 }

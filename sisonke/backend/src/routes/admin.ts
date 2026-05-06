@@ -705,6 +705,8 @@ router.get('/users', adminOnly, asyncHandler(async (_req, res) => {
     .select({
       id: users.id,
       email: users.email,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
       isGuest: users.isGuest,
       isSuspended: users.isSuspended,
       suspensionReason: users.suspensionReason,
@@ -721,6 +723,8 @@ router.get('/users', adminOnly, asyncHandler(async (_req, res) => {
       return {
         id: user.id,
         email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
         roles: roleNames,
         isGuest: user.isGuest,
         isSuspended: user.isSuspended,
@@ -758,6 +762,8 @@ router.post('/users', superAdminOnly, asyncHandler(async (req, res) => {
   const [created] = await db.insert(users).values({
     email,
     passwordHash,
+    name: input.name,
+    avatarUrl: input.avatarUrl,
     isGuest: input.isGuest,
     mustChangePassword: input.mustChangePassword,
     updatedAt: new Date(),
@@ -783,6 +789,8 @@ router.post('/users', superAdminOnly, asyncHandler(async (req, res) => {
     data: {
       id: created.id,
       email: created.email,
+      name: created.name,
+      avatarUrl: created.avatarUrl,
       roles: input.roles,
       isGuest: created.isGuest,
       mustChangePassword: created.mustChangePassword,
@@ -812,6 +820,8 @@ router.put('/users/:id', superAdminOnly, asyncHandler(async (req, res) => {
   const [updated] = await db.update(users).set({
     isGuest: input.roles ? (input.roles.includes('guest') && input.roles.length === 1) : undefined,
     email: input.email ? input.email.trim().toLowerCase() : undefined,
+    name: input.name !== undefined ? input.name : undefined,
+    avatarUrl: input.avatarUrl !== undefined ? input.avatarUrl : undefined,
     isSuspended: input.isSuspended,
     suspensionReason: input.isSuspended ? input.suspensionReason || 'Paused by an admin' : input.isSuspended === false ? null : undefined,
     suspendedAt: input.isSuspended === true ? new Date() : input.isSuspended === false ? null : undefined,
@@ -840,6 +850,8 @@ router.put('/users/:id', superAdminOnly, asyncHandler(async (req, res) => {
     data: {
       id: updated.id,
       email: updated.email,
+      name: updated.name,
+      avatarUrl: updated.avatarUrl,
       roles: roleNames,
       isGuest: updated.isGuest,
       isSuspended: updated.isSuspended,

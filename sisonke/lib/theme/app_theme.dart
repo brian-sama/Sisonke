@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 
 class AppTheme {
-  static const Color primary = Color(0xFF168AAD);
-  static const Color secondary = Color(0xFF7B61FF);
-  static const Color tertiary = Color(0xFFFF5A8A);
+  static const Color primary = Color(0xFF2E6F60); // Soft comforting sage-teal
+  static const Color secondary = Color(0xFF7361A9); // Soft muted lavender
+  static const Color tertiary = Color(0xFFD68A7F); // Warm soft terracotta-clay
   static const Color calmSurface = SisonkeColors.cream;
   static const Color ink = SisonkeColors.charcoal;
   static const Color darkSurface = Color(0xFF10131C);
@@ -83,15 +83,16 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: Color(0xFFD8D3EA)),
+        borderRadius: BorderRadius.circular(24),
+        borderSide: const BorderSide(color: Color(0xFFF1EEFA)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
         borderSide: const BorderSide(color: primary, width: 2),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
     ),
   );
 
@@ -166,15 +167,16 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color(0xFF1D2130),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: Color(0xFF353A4F)),
+        borderRadius: BorderRadius.circular(24),
+        borderSide: const BorderSide(color: Color(0xFF25293A)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
         borderSide: const BorderSide(color: Color(0xFF6DD5F2), width: 2),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
     ),
   );
 }

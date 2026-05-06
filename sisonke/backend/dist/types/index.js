@@ -31,6 +31,8 @@ exports.AdminRoleSchema = zod_1.z.preprocess((value) => typeof value === 'string
 exports.CreateAdminUserSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(1),
+    name: zod_1.z.string().max(120).optional(),
+    avatarUrl: zod_1.z.string().max(500).optional(),
     roles: zod_1.z.array(exports.AdminRoleSchema).min(1).default(['user']),
     isGuest: zod_1.z.boolean().default(false),
     mustChangePassword: zod_1.z.boolean().default(false),
@@ -40,6 +42,8 @@ exports.UpdateUserRolesSchema = zod_1.z.object({
 });
 exports.UpdateAdminUserSchema = zod_1.z.object({
     email: zod_1.z.string().email().optional(),
+    name: zod_1.z.string().max(120).optional().nullable(),
+    avatarUrl: zod_1.z.string().max(500).optional().nullable(),
     roles: zod_1.z.array(exports.AdminRoleSchema).min(1).optional(),
     isSuspended: zod_1.z.boolean().optional(),
     suspensionReason: zod_1.z.string().optional(),
