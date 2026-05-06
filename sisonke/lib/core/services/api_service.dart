@@ -205,7 +205,7 @@ class ApiService {
 
     var deviceId = await _secureStorage.read(key: AppConstants.deviceIdKey);
     if (deviceId == null || deviceId.length < 10) {
-      final suffix = Random.secure().nextInt(1 << 32).toRadixString(16);
+      final suffix = Random.secure().nextInt(0x7FFFFFFF).toRadixString(16);
       deviceId = 'device-${DateTime.now().millisecondsSinceEpoch}-$suffix';
       await _secureStorage.write(
         key: AppConstants.deviceIdKey,
