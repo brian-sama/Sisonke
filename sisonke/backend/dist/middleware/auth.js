@@ -10,10 +10,11 @@ const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const authService_1 = require("../services/authService");
 const normalizeRole = (role) => {
-    return String(role || '')
+    const norm = String(role || '')
         .trim()
         .toLowerCase()
         .replace(/_/g, '-');
+    return norm === 'counsellor' ? 'counselor' : norm;
 };
 exports.normalizeRole = normalizeRole;
 exports.DASHBOARD_ROLES = [
@@ -23,6 +24,10 @@ exports.DASHBOARD_ROLES = [
     'counselor',
     'moderator',
     'content-admin',
+    'content-manager',
+    'safety-reviewer',
+    'analyst',
+    'user',
 ];
 exports.SYSTEM_ADMIN_ROLES = ['admin', 'system-admin', 'super-admin'];
 const hasRole = (user, role) => {

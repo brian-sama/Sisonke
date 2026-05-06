@@ -125,7 +125,19 @@ const useAuth = () => {
     if (!response.ok) throw new Error(data.error || 'Login failed');
     
     // Check for staff permissions
-    const staffRoles = ['admin', 'super-admin', 'system-admin', 'counselor', 'moderator', 'content-manager', 'safety-reviewer'];
+    const staffRoles = [
+      'admin', 
+      'super-admin', 
+      'system-admin', 
+      'counselor', 
+      'counsellor', 
+      'moderator', 
+      'content-manager', 
+      'content-admin', 
+      'safety-reviewer', 
+      'analyst',
+      'user'
+    ];
     const roles = data.data.user.roles || [];
     const isStaff = roles.some((r: string) => staffRoles.includes(r));
     
@@ -168,10 +180,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Reports', path: '/analytics', icon: PieChart, roles: ['admin', 'super-admin', 'system-admin', 'analyst'] },
-    { name: 'Support', path: '/cases', icon: MessageSquare },
-    { name: 'Resources', path: '/resources', icon: BookOpen },
-    { name: 'Questions', path: '/faq', icon: Globe },
-    { name: 'Community', path: '/moderation', icon: Users },
+    { name: 'Support', path: '/cases', icon: MessageSquare, roles: ['admin', 'super-admin', 'system-admin', 'counselor', 'counsellor'] },
+    { name: 'Resources', path: '/resources', icon: BookOpen, roles: ['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin'] },
+    { name: 'Questions', path: '/faq', icon: Globe, roles: ['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin', 'counselor', 'counsellor'] },
+    { name: 'Community', path: '/moderation', icon: Users, roles: ['admin', 'super-admin', 'system-admin', 'moderator'] },
     { name: 'Safety', path: '/safety', icon: ShieldAlert, roles: ['admin', 'super-admin', 'system-admin', 'safety-reviewer'] },
     { name: 'People', path: '/users', icon: Users, roles: ['admin', 'super-admin', 'system-admin'] },
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
@@ -680,11 +692,27 @@ const CounselorCases = () => {
     const { user } = useAuth();
     const [cases, setCases] = useState<any[]>([]);
     const [activeChat, setActiveChat] = useState<any>(null);
+    const [counselors, setCounselors] = useState<any[]>([]);
     const loadCases = () => apiFetch('/api/admin/counselor-cases').then(data => setCases(Array.isArray(data) ? data : []));
     
+    const isAdmin = hasAny(user, ['admin', 'super-admin', 'system-admin']);
+
     useEffect(() => {
       loadCases();
-    }, []);
+      if (isAdmin) {
+        apiFetch('/api/admin/users')
+          .then(data => {
+            if (Array.isArray(data)) {
+              const filtered = data.filter((u: any) => {
+                const rNames = (u.roles || []).map((r: string) => r.toLowerCase().replace(/_/g, '-'));
+                return rNames.some((role: string) => ['counselor', 'counsellor', 'admin', 'super-admin', 'system-admin'].includes(role));
+              });
+              setCounselors(filtered);
+            }
+          })
+          .catch(() => {});
+      }
+    }, [user, isAdmin]);
 
     const isAssignedToMe = (c: any) => c.counselorId === (user as any)?.id;
 
@@ -728,6 +756,11 @@ const CounselorCases = () => {
                       )}>
                         {c.riskLevel} level
                       </span>
+                      {c.counselorId && (
+                        <span className="px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase tracking-widest">
+                          Assigned to: {counselors.find(cn => cn.id === c.counselorId)?.email || `ID: ${c.counselorId.substring(0,8)}`}
+                        </span>
+                      )}
                     </div>
                     <h4 className="text-2xl font-display font-black text-zinc-900 line-clamp-1">{c.summary || c.issueCategory}</h4>
                     <div className="flex items-center gap-4 text-xs font-semibold text-zinc-400">
@@ -750,6 +783,26 @@ const CounselorCases = () => {
                      >
                        <MessageSquare size={18} strokeWidth={3} /> Live Chat
                      </button>
+                   )}
+                   {isAdmin && (
+                     <select
+                       value={c.counselorId || ''}
+                       onChange={async (event) => {
+                         await apiFetch(`/api/admin/counselor-cases/${c.id}/assign`, {
+                           method: 'POST',
+                           body: JSON.stringify({ counselorId: event.target.value }),
+                         });
+                         await loadCases();
+                       }}
+                       className="px-6 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-100 outline-none"
+                     >
+                       <option value="">-- Assign Counselor --</option>
+                       {counselors.map((cn) => (
+                         <option key={cn.id} value={cn.id}>
+                           {cn.email}
+                         </option>
+                       ))}
+                     </select>
                    )}
                    <select
                      value={c.status}
@@ -1412,6 +1465,20 @@ const AdminLayout = ({ children, title, logout, user }: any) => {
   );
 };
 
+// --- Frontend Router Role Guard ---
+
+const ProtectedRoute = ({ children, roles, title, user, logout }: any) => {
+  const hasAccess = !roles || hasAny(user, roles);
+  if (!hasAccess) {
+    return <Navigate to="/" replace />;
+  }
+  return (
+    <AdminLayout title={title} user={user} logout={logout}>
+      {children}
+    </AdminLayout>
+  );
+};
+
 // --- App Root ---
 
 export default function App() {
@@ -1428,16 +1495,16 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<AdminLayout title="Home" user={user} logout={logout}><Home /></AdminLayout>} />
-        <Route path="/emergency" element={<AdminLayout title="Help Contacts" user={user} logout={logout}><EmergencyContacts /></AdminLayout>} />
-        <Route path="/resources" element={<AdminLayout title="Resources" user={user} logout={logout}><ResourcesCMS /></AdminLayout>} />
-        <Route path="/faq" element={<AdminLayout title="Questions" user={user} logout={logout}><FAQBank /></AdminLayout>} />
-        <Route path="/safety" element={<AdminLayout title="Safety Rules" user={user} logout={logout}><SafetyRules /></AdminLayout>} />
-        <Route path="/cases" element={<AdminLayout title="Support Requests" user={user} logout={logout}><CounselorCases /></AdminLayout>} />
-        <Route path="/users" element={<AdminLayout title="People" user={user} logout={logout}><People /></AdminLayout>} />
-        <Route path="/moderation" element={<AdminLayout title="Community Posts" user={user} logout={logout}><CommunityPosts /></AdminLayout>} />
-        <Route path="/analytics" element={<AdminLayout title="Reports" user={user} logout={logout}><Reports /></AdminLayout>} />
-        <Route path="/settings" element={<AdminLayout title="Settings" user={user} logout={logout}><Settings /></AdminLayout>} />
+        <Route path="/" element={<ProtectedRoute title="Home" user={user} logout={logout}><Home /></ProtectedRoute>} />
+        <Route path="/emergency" element={<ProtectedRoute title="Help Contacts" roles={['admin', 'super-admin', 'system-admin']} user={user} logout={logout}><EmergencyContacts /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute title="Resources" roles={['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']} user={user} logout={logout}><ResourcesCMS /></ProtectedRoute>} />
+        <Route path="/faq" element={<ProtectedRoute title="Questions" roles={['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin', 'counselor', 'counsellor']} user={user} logout={logout}><FAQBank /></ProtectedRoute>} />
+        <Route path="/safety" element={<ProtectedRoute title="Safety Rules" roles={['admin', 'super-admin', 'system-admin', 'safety-reviewer']} user={user} logout={logout}><SafetyRules /></ProtectedRoute>} />
+        <Route path="/cases" element={<ProtectedRoute title="Support Requests" roles={['admin', 'super-admin', 'system-admin', 'counselor', 'counsellor']} user={user} logout={logout}><CounselorCases /></ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute title="People" roles={['admin', 'super-admin', 'system-admin']} user={user} logout={logout}><People /></ProtectedRoute>} />
+        <Route path="/moderation" element={<ProtectedRoute title="Community Posts" roles={['admin', 'super-admin', 'system-admin', 'moderator']} user={user} logout={logout}><CommunityPosts /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute title="Reports" roles={['admin', 'super-admin', 'system-admin', 'analyst']} user={user} logout={logout}><Reports /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute title="Settings" user={user} logout={logout}><Settings /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

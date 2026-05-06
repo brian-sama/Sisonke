@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+import 'package:sisonke/core/exceptions/api_exception.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
@@ -363,12 +365,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         consentAccepted: _consentAccepted,
       );
       if (mounted) context.go('/home');
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Onboarding error: $e');
       if (!mounted) return;
+      String errorMsg = 'Could not save your profile. Check that the backend is running.';
+      if (e is ApiException) {
+        errorMsg = e.message;
+      } else if (e is DioException) {
+        if (e.response?.data is Map && e.response?.data['error'] != null) {
+          errorMsg = e.response?.data['error'].toString();
+        } else if (e.message != null) {
+          errorMsg = e.message!;
+        }
+      }
       setState(() {
         _saving = false;
-        _error =
-            'Could not save your profile. Check that the backend is running.';
+        _error = errorMsg;
       });
     }
   }

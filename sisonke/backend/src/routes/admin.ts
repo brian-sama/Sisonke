@@ -51,6 +51,15 @@ const hasAny = (user: any, roles: string[]) => {
   return roles.some((role) => current.includes(role));
 };
 
+const requireRoles = (roles: string[]) => {
+  return (req: any, res: any, next: any) => {
+    if (!hasAny(req.user, roles)) {
+      return res.status(403).json({ success: false, error: 'Insufficient permissions' });
+    }
+    next();
+  };
+};
+
 const canSeePrivateCase = (user: any, item: any) => {
   return hasAny(user, ['counselor']) && item.counselorId === user.id;
 };
@@ -77,7 +86,7 @@ router.get('/me', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { user: req.user } });
 }));
 
-router.get('/analytics/health', dashboardAccess, asyncHandler(async (_req, res) => {
+router.get('/analytics/health', requireRoles(['admin', 'super-admin', 'system-admin', 'analyst']), asyncHandler(async (_req, res) => {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -140,7 +149,7 @@ router.get('/overview', dashboardAccess, asyncHandler(async (req, res) => {
   });
 }));
 
-router.get('/community-posts', dashboardAccess, asyncHandler(async (_req, res) => {
+router.get('/community-posts', requireRoles(['admin', 'super-admin', 'system-admin', 'moderator']), asyncHandler(async (_req, res) => {
   const rows = await db
     .select()
     .from(communityPosts)
@@ -149,7 +158,7 @@ router.get('/community-posts', dashboardAccess, asyncHandler(async (_req, res) =
   res.json({ success: true, data: rows });
 }));
 
-router.post('/community-posts/:id/moderate', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/community-posts/:id/moderate', requireRoles(['admin', 'super-admin', 'system-admin', 'moderator']), asyncHandler(async (req, res) => {
   const status = String(req.body.status || '');
   if (!['approved', 'removed'].includes(status)) {
     return res.status(400).json({ success: false, error: 'Status must be approved or removed.' });
@@ -169,7 +178,7 @@ router.post('/community-posts/:id/moderate', dashboardAccess, asyncHandler(async
   res.json({ success: true, data: updated });
 }));
 
-router.get('/reports', dashboardAccess, asyncHandler(async (_req, res) => {
+router.get('/reports', requireRoles(['admin', 'super-admin', 'system-admin', 'moderator', 'analyst']), asyncHandler(async (_req, res) => {
   const rows = await db
     .select()
     .from(reports)
@@ -178,7 +187,7 @@ router.get('/reports', dashboardAccess, asyncHandler(async (_req, res) => {
   res.json({ success: true, data: rows });
 }));
 
-router.post('/reports/:id/status', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/reports/:id/status', requireRoles(['admin', 'super-admin', 'system-admin', 'moderator']), asyncHandler(async (req, res) => {
   const status = String(req.body.status || '');
   if (!['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
     return res.status(400).json({ success: false, error: 'Invalid report status' });
@@ -206,7 +215,7 @@ router.get('/resources', dashboardAccess, asyncHandler(async (_req, res) => {
   res.json({ success: true, data: rows });
 }));
 
-router.post('/resources', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/resources', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const input = CreateResourceSchema.parse(req.body);
   const isPublished = input.status === 'published';
   const [created] = await db.insert(resources).values({
@@ -220,7 +229,7 @@ router.post('/resources', dashboardAccess, asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: created });
 }));
 
-router.put('/resources/:id', dashboardAccess, asyncHandler(async (req, res) => {
+router.put('/resources/:id', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const input = UpdateResourceSchema.parse(req.body);
   const isPublishing = input.status === 'published';
   const [updated] = await db
@@ -240,7 +249,7 @@ router.put('/resources/:id', dashboardAccess, asyncHandler(async (req, res) => {
   res.json({ success: true, data: updated });
 }));
 
-router.post('/resources/:id/publish', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/resources/:id/publish', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const [updated] = await db
     .update(resources)
     .set({ status: 'published', isPublished: true, publishedAt: new Date(), updatedAt: new Date() })
@@ -253,7 +262,7 @@ router.post('/resources/:id/publish', dashboardAccess, asyncHandler(async (req, 
   res.json({ success: true, data: updated });
 }));
 
-router.post('/resources/:id/archive', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/resources/:id/archive', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const [updated] = await db
     .update(resources)
     .set({ status: 'archived', isPublished: false, deletedAt: new Date(), updatedAt: new Date() })
@@ -276,7 +285,7 @@ router.get('/emergency-contacts', dashboardAccess, asyncHandler(async (_req, res
   res.json({ success: true, data: rows });
 }));
 
-router.post('/emergency-contacts', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/emergency-contacts', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const input = CreateEmergencyContactSchema.parse(req.body);
   const isPublished = input.status === 'published';
   const [created] = await db.insert(emergencyContacts).values({
@@ -289,7 +298,7 @@ router.post('/emergency-contacts', dashboardAccess, asyncHandler(async (req, res
   res.status(201).json({ success: true, data: created });
 }));
 
-router.put('/emergency-contacts/:id', dashboardAccess, asyncHandler(async (req, res) => {
+router.put('/emergency-contacts/:id', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const input = UpdateEmergencyContactSchema.parse(req.body);
   const [updated] = await db
     .update(emergencyContacts)
@@ -307,7 +316,7 @@ router.put('/emergency-contacts/:id', dashboardAccess, asyncHandler(async (req, 
   res.json({ success: true, data: updated });
 }));
 
-router.get('/analytics', dashboardAccess, asyncHandler(async (req, res) => {
+router.get('/analytics', requireRoles(['admin', 'super-admin', 'system-admin', 'analyst']), asyncHandler(async (req, res) => {
   const days = Number(req.query.days || 30);
   const since = new Date(Date.now() - Math.max(1, Math.min(days, 365)) * 24 * 60 * 60 * 1000);
   const [rows, profiles, moodRows, chatRows, cases] = await Promise.all([
@@ -667,7 +676,7 @@ router.post('/safety-rules/test', dashboardAccess, asyncHandler(async (req, res)
   });
 }));
 
-router.post('/cms-content', dashboardAccess, asyncHandler(async (req, res) => {
+router.post('/cms-content', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const input = CmsContentSchema.parse(req.body);
   const [created] = await db.insert(cmsContent).values({
     ...input,
@@ -679,7 +688,7 @@ router.post('/cms-content', dashboardAccess, asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: created });
 }));
 
-router.put('/cms-content/:id', dashboardAccess, asyncHandler(async (req, res) => {
+router.put('/cms-content/:id', requireRoles(['admin', 'super-admin', 'system-admin', 'content-manager', 'content-admin']), asyncHandler(async (req, res) => {
   const input = CmsContentSchema.partial().parse(req.body);
   const [updated] = await db.update(cmsContent).set({
     ...input,

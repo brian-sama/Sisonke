@@ -17,10 +17,11 @@ export interface AuthRequest extends Request {
 }
 
 export const normalizeRole = (role: string | null | undefined) => {
-  return String(role || '')
+  const norm = String(role || '')
     .trim()
     .toLowerCase()
     .replace(/_/g, '-');
+  return norm === 'counsellor' ? 'counselor' : norm;
 };
 
 export const DASHBOARD_ROLES = [
@@ -30,6 +31,10 @@ export const DASHBOARD_ROLES = [
   'counselor',
   'moderator',
   'content-admin',
+  'content-manager',
+  'safety-reviewer',
+  'analyst',
+  'user',
 ];
 
 export const SYSTEM_ADMIN_ROLES = ['admin', 'system-admin', 'super-admin'];
