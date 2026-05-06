@@ -57,6 +57,7 @@ lib/app/core/constants/config.dart
 # Database and sensitive files
 setup_neon.sql
 *.sql
+!**/migrations/**/*.sql
 .secrets/
 
 # Isar (local database) generated files
