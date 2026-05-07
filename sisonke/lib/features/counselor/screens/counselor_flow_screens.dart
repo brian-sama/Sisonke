@@ -601,7 +601,9 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
               ],
               IconButton.filled(
                 iconSize: 48,
-                backgroundColor: _recording ? const Color(0xFFE63946) : const Color(0xFF2E6F60),
+                style: IconButton.styleFrom(
+                  backgroundColor: _recording ? const Color(0xFFE63946) : const Color(0xFF2E6F60),
+                ),
                 onPressed: () {
                   if (_recording) {
                     _stopRecording();

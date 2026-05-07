@@ -174,7 +174,7 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? color : Colors.black80,
+                                color: isSelected ? color : Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 4),

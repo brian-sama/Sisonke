@@ -97,7 +97,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                      color: isSelected ? const Color(0xFF2E6F60) : Colors.black80,
+                                      color: isSelected ? const Color(0xFF2E6F60) : Colors.black87,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
