@@ -55,21 +55,21 @@ class SupportDirectoryScreen extends ConsumerWidget {
                 title: 'Leave message',
                 subtitle: 'Counselor replies later',
                 color: const Color(0xFFFFF6D8),
-                onTap: () => context.push('/counselor-request'),
+                onTap: () => context.push('/counselor-request?method=leave_message'),
               ),
               _SupportAction(
                 icon: Icons.mic_rounded,
                 title: 'Send voice note',
-                subtitle: 'Create case first',
+                subtitle: 'Voice recording',
                 color: const Color(0xFFF0EDFF),
-                onTap: () => context.push('/counselor-request'),
+                onTap: () => context.push('/counselor-request?method=voice_note'),
               ),
               _SupportAction(
                 icon: Icons.call_rounded,
                 title: 'Request callback',
                 subtitle: 'Safe number needed',
                 color: const Color(0xFFFFEEF0),
-                onTap: () => context.push('/counselor-request'),
+                onTap: () => context.push('/counselor-request?method=callback'),
               ),
             ],
           ),
@@ -279,15 +279,29 @@ class _ContactGroup extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             for (final contact in contacts)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(contact.name),
-                subtitle: Text(contact.description),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text(contact.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(contact.phoneNumber),
                 trailing: IconButton(
                   icon: const Icon(Icons.call_rounded, color: Colors.green),
                   tooltip: 'Call',
                   onPressed: () => _makePhoneCall(contact.phoneNumber),
                 ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        contact.description,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),

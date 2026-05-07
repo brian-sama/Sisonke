@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
 import '../exceptions/api_exception.dart';
 
@@ -527,16 +529,37 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> getProfile() async {
-    await ensureGuestSession();
     try {
+      await ensureGuestSession();
       final response = await _dio.get('/profiles/me');
       if (response.data['success']) {
         final data = response.data['data'];
         return data == null ? null : Map<String, dynamic>.from(data as Map);
       }
       throw ApiException(response.data['error'] ?? 'Profile load failed');
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+    } catch (e) {
+      // Offline fallback: load the locally saved profile from SharedPreferences
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final nickname = prefs.getString('user_nickname');
+        if (nickname != null) {
+          final screeningStr = prefs.getString('user_screening') ?? '{}';
+          return {
+            'nickname': nickname,
+            'age': prefs.getInt('user_age') ?? 18,
+            'gender': prefs.getString('user_gender') ?? 'Prefer not to say',
+            'location': prefs.getString('user_location') ?? '',
+            'chatbotPersona': prefs.getString('user_persona') ?? 'female',
+            'pinEnabled': prefs.getBool(AppConstants.pinEnabledKey) ?? false,
+            'biometricEnabled': prefs.getBool(AppConstants.biometricEnabledKey) ?? false,
+            'screeningAnswers': jsonDecode(screeningStr),
+          };
+        }
+      } catch (err) {
+        debugPrint('Local profile load failed: $err');
+      }
+      // If no local fallback available, return null
+      return null;
     }
   }
 
@@ -747,6 +770,30 @@ class ApiService {
       );
     } on DioException {
       // Push token sync should never block app startup or support flows.
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getNotifications() async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.get('/notifications');
+      if (response.data['success']) {
+        return (response.data['data'] as List<dynamic>)
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
+      }
+      throw ApiException(response.data['error'] ?? 'Notifications load failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    await ensureGuestSession();
+    try {
+      await _dio.post('/notifications/$notificationId/read');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 

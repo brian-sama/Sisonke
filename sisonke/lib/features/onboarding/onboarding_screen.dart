@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/exceptions/api_exception.dart';
 import 'package:sisonke/core/services/api_service.dart';
+import 'package:sisonke/core/services/security_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _nickname = TextEditingController();
   final _age = TextEditingController(text: '18');
   final _location = TextEditingController();
+  final _pinController = TextEditingController();
   var _gender = 'Prefer not to say';
   var _persona = 'female';
   var _pinEnabled = true;
@@ -87,6 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _nickname.dispose();
     _age.dispose();
     _location.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
@@ -170,6 +174,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 if (_currentPage == pages.length - 1) {
                                   _finishOnboarding();
                                 } else {
+                                  if (_currentPage == 3 && _pinEnabled && _pinController.text.length != 4) {
+                                    setState(() {
+                                      _error = 'Please enter a valid 4-digit security PIN.';
+                                    });
+                                    return;
+                                  }
+                                  setState(() {
+                                    _error = null;
+                                  });
                                   _pageController.nextPage(
                                     duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
@@ -310,6 +323,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onChanged: (value) => setState(() => _pinEnabled = value),
               title: const Text('Enable PIN lock'),
             ),
+            if (_pinEnabled) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _pinController,
+                obscureText: true,
+                maxLength: 4,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Choose a 4-Digit Security PIN',
+                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  counterText: '',
+                ),
+                style: const TextStyle(letterSpacing: 8, fontSize: 18, fontWeight: FontWeight.bold),
+                onChanged: (val) {
+                  if (val.length == 4) {
+                    setState(() {
+                      _error = null;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Make sure it is memorable. This is required to open your app lock.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+              ),
+            ],
             SwitchListTile(
               value: _biometricEnabled,
               onChanged: (value) => setState(() => _biometricEnabled = value),
@@ -519,17 +561,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
     try {
       final dbPersona = _persona.startsWith('female') ? 'female' : 'male';
-      await _api.saveOnboardingProfile(
-        nickname: nickname,
-        age: age,
-        gender: _gender,
-        location: _location.text.trim(),
-        chatbotPersona: dbPersona,
-        screeningAnswers: _screeningAnswers,
-        pinEnabled: _pinEnabled,
-        biometricEnabled: _biometricEnabled,
-        consentAccepted: _consentAccepted,
-      );
+      
+      // Try saving to backend, but handle network/loopback failures gracefully
+      try {
+        await _api.saveOnboardingProfile(
+          nickname: nickname,
+          age: age,
+          gender: _gender,
+          location: _location.text.trim(),
+          chatbotPersona: dbPersona,
+          screeningAnswers: _screeningAnswers,
+          pinEnabled: _pinEnabled,
+          biometricEnabled: _biometricEnabled,
+          consentAccepted: _consentAccepted,
+        );
+      } catch (e) {
+        debugPrint('Onboarding backend sync failed: $e. Saving locally instead.');
+      }
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('onboarding_completed', true);
       await prefs.setBool(AppConstants.pinEnabledKey, _pinEnabled);
@@ -537,25 +586,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         AppConstants.biometricEnabledKey,
         _pinEnabled && _biometricEnabled,
       );
+
+      // Save local backup copies of profile parameters so Sisonke is fully offline-capable
+      await prefs.setString('user_nickname', nickname);
+      await prefs.setInt('user_age', age);
+      await prefs.setString('user_gender', _gender);
+      await prefs.setString('user_location', _location.text.trim());
+      await prefs.setString('user_persona', dbPersona);
+      await prefs.setString('user_screening', jsonEncode(_screeningAnswers));
+
+      // Set the PIN using SecurityService
+      if (_pinEnabled && _pinController.text.length == 4) {
+        final securityService = SecurityService();
+        await securityService.setPIN(_pinController.text);
+      }
+
       if (mounted) context.go(_pinEnabled ? '/app-lock' : '/home');
     } catch (e) {
-      debugPrint('Onboarding error: $e');
+      debugPrint('Critical onboarding error: $e');
       if (!mounted) return;
-      String errorMsg =
-          'Could not save your profile. Check that the backend is running.';
-      if (e is ApiException) {
-        errorMsg = e.message;
-      } else if (e is DioException) {
-        if (e.response?.data is Map && e.response?.data['error'] != null) {
-          errorMsg =
-              e.response?.data['error']?.toString() ?? 'Could not save profile';
-        } else if (e.message != null) {
-          errorMsg = e.message!;
-        }
-      }
       setState(() {
         _saving = false;
-        _error = errorMsg;
+        _error = 'An unexpected error occurred: $e';
       });
     }
   }

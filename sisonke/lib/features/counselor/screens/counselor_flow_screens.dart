@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +7,9 @@ import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
 class CounselorRequestScreen extends StatefulWidget {
-  const CounselorRequestScreen({super.key});
+  final String? initialMethod;
+
+  const CounselorRequestScreen({super.key, this.initialMethod});
 
   @override
   State<CounselorRequestScreen> createState() => _CounselorRequestScreenState();
@@ -17,8 +20,14 @@ class _CounselorRequestScreenState extends State<CounselorRequestScreen> {
   final _summary = TextEditingController();
   var _category = 'Feeling overwhelmed';
   var _riskLevel = 'medium';
-  var _contactMethod = 'live_chat';
+  late String _contactMethod;
   var _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _contactMethod = widget.initialMethod ?? 'live_chat';
+  }
 
   @override
   void dispose() {
@@ -84,42 +93,48 @@ class _CounselorRequestScreenState extends State<CounselorRequestScreen> {
                   onSelectionChanged: (value) =>
                       setState(() => _riskLevel = value.first),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _contactMethod,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.contact_support_rounded),
-                    labelText: 'Preferred contact method',
+                if (widget.initialMethod == null) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _contactMethod,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.contact_support_rounded),
+                      labelText: 'Preferred contact method',
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'live_chat',
+                        child: Text('Live chat'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'leave_message',
+                        child: Text('Leave message'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'voice_note',
+                        child: Text('Voice note'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'callback',
+                        child: Text('Callback request'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _contactMethod = value ?? _contactMethod),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'live_chat',
-                      child: Text('Live chat'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'leave_message',
-                      child: Text('Leave message'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'voice_note',
-                      child: Text('Voice note'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'callback',
-                      child: Text('Callback request'),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => _contactMethod = value ?? _contactMethod),
-                ),
+                ],
                 const SizedBox(height: 12),
                 TextField(
                   controller: _summary,
                   minLines: 4,
                   maxLines: 6,
-                  decoration: const InputDecoration(
-                    labelText: 'What should the counselor know?',
-                    prefixIcon: Icon(Icons.notes_rounded),
+                  decoration: InputDecoration(
+                    labelText: _contactMethod == 'voice_note'
+                        ? 'Optional: What is this voice note about?'
+                        : _contactMethod == 'callback'
+                            ? 'Optional: What should we call you about?'
+                            : 'What should the counselor know?',
+                    prefixIcon: const Icon(Icons.notes_rounded),
                   ),
                 ),
               ],
@@ -135,7 +150,13 @@ class _CounselorRequestScreenState extends State<CounselorRequestScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.support_agent_rounded),
-            label: const Text('Create tracked case'),
+            label: Text(
+              _contactMethod == 'voice_note'
+                  ? 'Continue to record voice note'
+                  : _contactMethod == 'callback'
+                      ? 'Continue to number input'
+                      : 'Create tracked case',
+            ),
           ),
           const SizedBox(height: 12),
           const _FlowHint(
@@ -159,14 +180,14 @@ class _CounselorRequestScreenState extends State<CounselorRequestScreen> {
       final caseId = response['case']?['id'];
       if (!mounted || caseId == null) return;
       if (_contactMethod == 'callback') {
-        context.go('/callback-request/$caseId');
+        context.pushReplacement('/callback-request/$caseId');
         return;
       }
       if (_contactMethod == 'voice_note') {
-        context.go('/voice-note-request/$caseId');
+        context.pushReplacement('/voice-note-request/$caseId');
         return;
       }
-      context.go('/counselor-request-status/$caseId');
+      context.pushReplacement('/counselor-request-status/$caseId');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -462,7 +483,7 @@ class _CallbackRequestScreenState extends State<CallbackRequestScreen> {
         );
       }
       if (!mounted) return;
-      context.go('/counselor-request-status/${widget.caseId}');
+      context.pushReplacement('/counselor-request-status/${widget.caseId}');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -485,9 +506,56 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
   var _recording = false;
   var _loading = false;
 
+  Timer? _timer;
+  int _recordDuration = 0;
+  final List<double> _waveform = [];
+  final _random = math.Random();
+  Timer? _waveformTimer;
+
+  void _startRecording() {
+    setState(() {
+      _recording = true;
+      _recordDuration = 0;
+      _waveform.clear();
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _recordDuration++;
+        });
+      }
+    });
+    _waveformTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (mounted) {
+        setState(() {
+          _waveform.add(_random.nextDouble() * 0.8 + 0.2);
+          if (_waveform.length > 30) {
+            _waveform.removeAt(0);
+          }
+        });
+      }
+    });
+  }
+
+  void _stopRecording() {
+    _timer?.cancel();
+    _waveformTimer?.cancel();
+    setState(() {
+      _recording = false;
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
   @override
   void dispose() {
     _notes.dispose();
+    _timer?.cancel();
+    _waveformTimer?.cancel();
     super.dispose();
   }
 
@@ -498,17 +566,57 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
       icon: Icons.mic_rounded,
       children: [
         Center(
-          child: IconButton.filled(
-            iconSize: 48,
-            onPressed: () => setState(() => _recording = !_recording),
-            icon: Icon(_recording ? Icons.stop_rounded : Icons.mic_rounded),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_recording) ...[
+                SizedBox(
+                  height: 60,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _waveform.map((amp) {
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 100),
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        width: 4,
+                        height: math.max(6.0, amp * 50.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE63946),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _formatDuration(_recordDuration),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFE63946),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              IconButton.filled(
+                iconSize: 48,
+                backgroundColor: _recording ? const Color(0xFFE63946) : const Color(0xFF2E6F60),
+                onPressed: () {
+                  if (_recording) {
+                    _stopRecording();
+                  } else {
+                    _startRecording();
+                  }
+                },
+                icon: Icon(_recording ? Icons.stop_rounded : Icons.mic_rounded),
+              ),
+              const SizedBox(height: 8),
+              Text(_recording ? 'Recording voice note...' : 'Tap to record'),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Center(
-          child: Text(_recording ? 'Recording placeholder' : 'Tap to record'),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         TextField(
           controller: _notes,
           minLines: 3,
@@ -521,6 +629,13 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: _loading ? null : _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF2E6F60),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
           icon: const Icon(Icons.send_rounded),
           label: const Text('Upload voice note'),
         ),
@@ -529,6 +644,7 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
   }
 
   Future<void> _submit() async {
+    _stopRecording();
     setState(() => _loading = true);
     try {
       await _api.sendCaseMessage(
@@ -541,7 +657,7 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
             'local-placeholder://voice-note/${DateTime.now().millisecondsSinceEpoch}',
       );
       if (!mounted) return;
-      context.go('/counselor-request-status/${widget.caseId}');
+      context.pushReplacement('/counselor-request-status/${widget.caseId}');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

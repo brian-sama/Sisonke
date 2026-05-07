@@ -66,6 +66,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ]),
+          _buildSettingsSection(context, 'General', [
+            _buildSettingsItem(
+              context,
+              'App Language',
+              Icons.translate_rounded,
+              () => context.push('/language'),
+            ),
+          ]),
           _buildSettingsSection(context, 'Notifications', [
             SwitchListTile(
               secondary: const Icon(Icons.notifications_rounded),

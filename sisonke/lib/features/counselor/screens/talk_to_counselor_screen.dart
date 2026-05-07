@@ -41,21 +41,21 @@ class TalkToCounselorScreen extends StatelessWidget {
               title: 'Start counselor request',
               body: 'Choose a category, share what’s on your mind, and create a private case.',
               color: const Color(0xFF2E6F60), // Calm Sage-Teal
-              onTap: () => context.push('/counselor-request'),
+              onTap: () => context.push('/counselor-request?method=live_chat'),
             ),
             _SupportOption(
               icon: Icons.call_rounded,
               title: 'Request callback',
               body: 'Have a counselor call you securely at a safe telephone number.',
               color: const Color(0xFFFFC857), // Amber Warmth
-              onTap: () => context.push('/counselor-request'),
+              onTap: () => context.push('/counselor-request?method=callback'),
             ),
             _SupportOption(
               icon: Icons.mic_rounded,
               title: 'Send voice note',
               body: 'If writing feels too heavy, leave a secure audio recording instead.',
               color: const Color(0xFF7361A9), // Royal Lavender
-              onTap: () => context.push('/counselor-request'),
+              onTap: () => context.push('/counselor-request?method=voice_note'),
             ),
             _SupportOption(
               icon: Icons.history_rounded,

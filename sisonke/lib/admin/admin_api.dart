@@ -203,6 +203,13 @@ class AdminApi {
     await _dio.post('/admin/counselor-cases/$id/notes', data: {'note': note});
   }
 
+  Future<List<Map<String, dynamic>>> counselorCaseMessages(String caseId) async {
+    final response = await _dio.get('/admin/counselor-cases/$caseId/messages');
+    return (response.data['data'] as List<dynamic>)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   Future<List<Map<String, dynamic>>> communityPosts() async {
     final response = await _dio.get('/admin/community-posts');
     return (response.data['data'] as List<dynamic>)

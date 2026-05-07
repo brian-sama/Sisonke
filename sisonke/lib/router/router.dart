@@ -260,7 +260,9 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/counselor-request',
-      builder: (context, state) => const CounselorRequestScreen(),
+      builder: (context, state) => CounselorRequestScreen(
+        initialMethod: state.uri.queryParameters['method'],
+      ),
     ),
     GoRoute(
       path: '/counselor-request-status/:caseId',

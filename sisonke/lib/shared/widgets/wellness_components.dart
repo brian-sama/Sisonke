@@ -20,8 +20,9 @@ class SisonkeScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: SisonkeColors.cream,
+      backgroundColor: isDark ? null : SisonkeColors.cream,
       appBar: SisonkeAppBar(
         title: title,
         actions: actions,
@@ -41,13 +42,17 @@ class SoftSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: SisonkeColors.charcoal,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: textColor,
             fontWeight: FontWeight.w900,
             height: 1.05,
           ),
@@ -56,8 +61,8 @@ class SoftSectionHeader extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             subtitle!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: SisonkeColors.charcoal.withValues(alpha: 0.72),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: textColor.withValues(alpha: 0.72),
               height: 1.35,
               fontWeight: FontWeight.w600,
             ),
@@ -86,9 +91,24 @@ class PastelToolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : color;
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
     return Material(
-      color: color,
+      color: cardBg,
       borderRadius: BorderRadius.circular(28),
+      shape: isDark
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+              side: BorderSide(
+                color: color.withValues(alpha: 0.35),
+                width: 1.5,
+              ),
+            )
+          : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(28),
@@ -100,14 +120,14 @@ class PastelToolCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _NatureBadge(icon: icon),
+                _NatureBadge(icon: icon, isDarkContext: isDark),
                 const Spacer(),
                 Text(
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: SisonkeColors.charcoal,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: textColor,
                     fontWeight: FontWeight.w900,
                     height: 1.08,
                   ),
@@ -117,8 +137,8 @@ class PastelToolCard extends StatelessWidget {
                   subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: SisonkeColors.charcoal.withValues(alpha: 0.68),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: textColor.withValues(alpha: 0.68),
                     fontWeight: FontWeight.w700,
                     height: 1.15,
                   ),
@@ -148,15 +168,27 @@ class WellnessIllustrationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : color;
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color,
+        color: cardBg,
         borderRadius: BorderRadius.circular(32),
+        border: isDark
+            ? Border.all(
+                color: color.withValues(alpha: 0.35),
+                width: 1.5,
+              )
+            : null,
       ),
       child: Row(
         children: [
-          _NatureBadge(icon: icon, size: 58),
+          _NatureBadge(icon: icon, size: 58, isDarkContext: isDark),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -164,16 +196,16 @@ class WellnessIllustrationCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: SisonkeColors.charcoal,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: textColor,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   body,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: SisonkeColors.charcoal.withValues(alpha: 0.72),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: textColor.withValues(alpha: 0.72),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -215,19 +247,30 @@ class RoundedPrimaryButton extends StatelessWidget {
 class _NatureBadge extends StatelessWidget {
   final IconData icon;
   final double size;
+  final bool isDarkContext;
 
-  const _NatureBadge({required this.icon, this.size = 52});
+  const _NatureBadge({
+    required this.icon,
+    this.size = 52,
+    this.isDarkContext = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
+        color: isDarkContext
+            ? theme.colorScheme.primary.withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(size * 0.34),
       ),
-      child: Icon(icon, color: SisonkeColors.forest),
+      child: Icon(
+        icon,
+        color: isDarkContext ? theme.colorScheme.primary : SisonkeColors.forest,
+      ),
     );
   }
 }

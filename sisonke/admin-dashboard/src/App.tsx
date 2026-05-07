@@ -697,6 +697,63 @@ const CounselorCases = () => {
     const [counselors, setCounselors] = useState<any[]>([]);
     const [syncError, setSyncError] = useState('');
     const loadCases = () => apiFetch('/api/admin/counselor-cases').then(data => setCases(Array.isArray(data) ? data : []));
+
+    // Messaging Integration State & Handlers
+    const [messages, setMessages] = useState<any[]>([]);
+    const [inputText, setInputText] = useState('');
+    const chatEndRef = React.useRef<HTMLDivElement>(null);
+
+    const loadMessages = (caseId: string) => {
+      return apiFetch(`/api/admin/counselor-cases/${caseId}/messages`)
+        .then(data => {
+          if (Array.isArray(data)) {
+            setMessages(data);
+          }
+        })
+        .catch(() => {});
+    };
+
+    useEffect(() => {
+      if (!activeChat) {
+        setMessages([]);
+        return;
+      }
+      
+      loadMessages(activeChat.id);
+      
+      const interval = window.setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          loadMessages(activeChat.id);
+        }
+      }, 2000);
+
+      return () => {
+        window.clearInterval(interval);
+      };
+    }, [activeChat]);
+
+    useEffect(() => {
+      if (chatEndRef.current) {
+        chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight;
+      }
+    }, [messages]);
+
+    const handleSendMessage = async () => {
+      if (!inputText.trim() || !activeChat) return;
+      const text = inputText;
+      setInputText('');
+      try {
+        const response = await apiFetch(`/api/admin/counselor-cases/${activeChat.id}/messages`, {
+          method: 'POST',
+          body: JSON.stringify({ content: text, messageType: 'text' })
+        });
+        if (response && response.success && response.data) {
+          setMessages(prev => [...prev, response.data]);
+        }
+      } catch (err) {
+        console.error('Failed to send message:', err);
+      }
+    };
     
     const isAdmin = hasAny(user, ['admin', 'super-admin', 'system-admin']);
 
@@ -880,22 +937,47 @@ const CounselorCases = () => {
                   <X size={20} strokeWidth={3} />
                 </button>
               </div>
-              <div className="flex-1 p-8 overflow-y-auto bg-zinc-50/30 flex flex-col items-center justify-center text-center space-y-4">
-                <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-300">
-                  <Activity size={32} />
-                </div>
-                <h4 className="text-xl font-display font-bold text-zinc-400">Connecting to client...</h4>
-                <p className="text-sm text-zinc-400 max-w-xs">The real-time chat interface is loading. You can start typing as soon as the client responds.</p>
+              <div ref={chatEndRef} className="flex-1 p-8 overflow-y-auto bg-zinc-50/30 space-y-4 flex flex-col">
+                {messages.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+                    <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-300">
+                      <MessageSquare size={32} />
+                    </div>
+                    <h4 className="text-xl font-display font-bold text-zinc-400">No messages yet</h4>
+                    <p className="text-sm text-zinc-400 max-w-xs">You can start the conversation by sending a message below.</p>
+                  </div>
+                ) : (
+                  messages.map((msg: any) => {
+                    const isMe = msg.senderUserId === user?.id || ['counselor', 'admin', 'system-admin', 'super-admin'].includes(String(msg.senderRole).toLowerCase());
+                    return (
+                      <div key={msg.id} className={cn("max-w-[75%] p-4 rounded-2xl text-sm font-semibold shadow-sm flex flex-col space-y-1", 
+                        isMe ? "bg-indigo-600 text-white self-end rounded-tr-none" : "bg-white text-zinc-800 self-start rounded-tl-none border border-zinc-100"
+                      )}>
+                        <span>{msg.content}</span>
+                        {msg.messageType === 'voice_note' && (
+                          <div className="flex items-center gap-2 mt-2 bg-zinc-500/10 p-2 rounded-lg text-xs font-bold text-zinc-600">
+                            <span>🎙️ Voice Note submitted</span>
+                          </div>
+                        )}
+                        <span className={cn("text-[10px] self-end font-bold", isMe ? "text-indigo-200" : "text-zinc-400")}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
               </div>
               <div className="p-8 bg-white border-t border-zinc-100">
-                 <div className="flex gap-4">
+                 <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-4">
                     <input 
                       type="text" 
                       placeholder="Type your message..." 
                       className="flex-1 px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
+                      value={inputText}
+                      onChange={e => setInputText(e.target.value)}
                     />
-                    <button className="px-8 py-4 bg-zinc-900 text-white rounded-2xl font-black shadow-lg shadow-zinc-900/20">Send</button>
-                 </div>
+                    <button type="submit" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl font-black shadow-lg shadow-zinc-900/20">Send</button>
+                 </form>
               </div>
             </motion.div>
           </div>

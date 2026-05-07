@@ -5,3 +5,4 @@ export 'sisonke_card.dart';
 export 'sisonke_text_field.dart';
 export 'sisonke_dialogs.dart';
 export 'wellness_components.dart';
+export 'pin_keypad.dart';

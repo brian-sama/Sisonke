@@ -1019,6 +1019,19 @@ class _AdminLiveChatViewState extends ConsumerState<_AdminLiveChatView> {
     _userId = 'admin';
 
     if (token != null && mounted) {
+      final api = AdminApi(prefs);
+      try {
+        final history = await api.counselorCaseMessages(widget.caseId);
+        if (mounted) {
+          setState(() {
+            _messages.clear();
+            _messages.addAll(history);
+          });
+        }
+      } catch (err) {
+        debugPrint('Failed to load chat history: $err');
+      }
+
       final chatService = ref.read(chatServiceProvider);
       chatService.connect(token);
       chatService.joinCase(widget.caseId);

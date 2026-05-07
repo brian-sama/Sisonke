@@ -34,16 +34,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    if ((isAuthenticated || hasCompletedOnboarding) && pinEnabled) {
-      context.go('/app-lock');
-    } else if (isAuthenticated) {
-      context.go('/home');
-    } else if (!hasCompletedOnboarding) {
-      context.go('/onboarding');
-    } else if (hasPin) {
-      context.go('/app-lock');
+    if (hasCompletedOnboarding || isAuthenticated) {
+      if (pinEnabled || hasPin) {
+        context.go('/app-lock');
+      } else {
+        context.go('/home');
+      }
     } else {
-      context.go('/auth');
+      context.go('/onboarding');
     }
   }
 

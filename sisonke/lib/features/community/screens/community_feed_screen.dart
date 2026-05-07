@@ -62,11 +62,15 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   @override
   Widget build(BuildContext context) {
     const groups = ['13-15', '16-17', '18-24', '25+'];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final sectionTitleColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
 
     return Scaffold(
-      backgroundColor: SisonkeColors.cream,
+      backgroundColor: isDark ? null : SisonkeColors.cream,
       appBar: const SisonkeAppBar(
-        title: 'Community',
+        title: 'Community Space',
         fallbackBackLocation: '/home',
       ),
       body: ListView(
@@ -84,9 +88,9 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           const SizedBox(height: 18),
           Text(
             'Choose an age group',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: SisonkeColors.charcoal,
+              color: sectionTitleColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -95,22 +99,28 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             runSpacing: 8,
             children: groups.map((group) {
               final isSelected = _ageGroup == group;
+              
+              final chipBg = isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white;
+              final chipSelectedBg = isDark ? theme.colorScheme.primary.withValues(alpha: 0.22) : SisonkeColors.lemon;
+              final checkColor = isDark ? theme.colorScheme.primary : SisonkeColors.forest;
+              final labelColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
               return ChoiceChip(
                 label: Text(group),
                 selected: isSelected,
-                selectedColor: SisonkeColors.lemon,
-                backgroundColor: Colors.white,
-                checkmarkColor: SisonkeColors.forest,
+                selectedColor: chipSelectedBg,
+                backgroundColor: chipBg,
+                checkmarkColor: checkColor,
                 labelStyle: TextStyle(
-                  color: SisonkeColors.charcoal,
+                  color: isSelected && !isDark ? SisonkeColors.charcoal : labelColor,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                   side: BorderSide(
                     color: isSelected
-                        ? SisonkeColors.forest.withValues(alpha: 0.36)
-                        : SisonkeColors.sage,
+                        ? (isDark ? theme.colorScheme.primary.withValues(alpha: 0.5) : SisonkeColors.forest.withValues(alpha: 0.36))
+                        : (isDark ? theme.colorScheme.outlineVariant : SisonkeColors.sage),
                   ),
                 ),
                 onSelected: (_) {
@@ -135,16 +145,16 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             children: [
               Text(
                 'Approved posts',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w900,
-                  color: SisonkeColors.charcoal,
+                  color: sectionTitleColor,
                 ),
               ),
               const Spacer(),
               Text(
                 '$_ageGroup room',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: SisonkeColors.forest,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -152,10 +162,12 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           ),
           const SizedBox(height: 10),
           if (_loading)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(28),
-                child: CircularProgressIndicator(color: SisonkeColors.forest),
+                padding: const EdgeInsets.all(28),
+                child: CircularProgressIndicator(
+                  color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+                ),
               ),
             )
           else if (_posts.isEmpty)
@@ -173,6 +185,8 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   }
 
   Widget _buildPostCard(Map<String, dynamic> post) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final postId = post['id'] ?? post['content'].toString().hashCode.toString();
 
     _reactionCounts.putIfAbsent(
@@ -187,37 +201,44 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     final selectedMap = _reactionSelected[postId]!;
     final countsMap = _reactionCounts[postId]!;
 
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white;
+    final textContentColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final borderSideColor = isDark ? theme.colorScheme.outlineVariant : SisonkeColors.sage.withValues(alpha: 0.9);
+    final dividerColor = isDark ? theme.colorScheme.outlineVariant : const Color(0xFFE4E8DF);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: SisonkeColors.sage.withValues(alpha: 0.9)),
-        boxShadow: [
-          BoxShadow(
-            color: SisonkeColors.forest.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: borderSideColor),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: SisonkeColors.forest.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.person_outline_rounded,
                 size: 17,
-                color: SisonkeColors.forest,
+                color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
               ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   'Anonymous member',
                   style: TextStyle(
-                    color: SisonkeColors.charcoal.withValues(alpha: 0.65),
+                    color: textContentColor.withValues(alpha: 0.65),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -229,13 +250,13 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: SisonkeColors.mint,
+                  color: isDark ? theme.colorScheme.primary.withValues(alpha: 0.15) : SisonkeColors.mint,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
                   '${post['ageGroup'] ?? post['age_group'] ?? _ageGroup}',
-                  style: const TextStyle(
-                    color: SisonkeColors.forest,
+                  style: TextStyle(
+                    color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -246,14 +267,14 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           const SizedBox(height: 12),
           Text(
             '${post['content']}',
-            style: const TextStyle(
-              color: SisonkeColors.charcoal,
+            style: TextStyle(
+              color: textContentColor,
               fontSize: 15,
               height: 1.45,
             ),
           ),
           const SizedBox(height: 14),
-          const Divider(height: 1, color: Color(0xFFE4E8DF)),
+          Divider(height: 1, color: dividerColor),
           const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,7 +289,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                       label: 'Helped',
                       count: countsMap['helped'] ?? 0,
                       isSelected: selectedMap['helped'] ?? false,
-                      selectedColor: SisonkeColors.forest,
+                      selectedColor: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
                       onTap: () => _toggleReaction(postId, 'helped'),
                     ),
                     _ReactionButton(
@@ -276,7 +297,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                       label: 'Relate',
                       count: countsMap['relate'] ?? 0,
                       isSelected: selectedMap['relate'] ?? false,
-                      selectedColor: const Color(0xFF7361A9),
+                      selectedColor: isDark ? const Color(0xFF917FCA) : const Color(0xFF7361A9),
                       onTap: () => _toggleReaction(postId, 'relate'),
                     ),
                     _ReactionButton(
@@ -284,7 +305,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                       label: 'Support',
                       count: countsMap['support'] ?? 0,
                       isSelected: selectedMap['support'] ?? false,
-                      selectedColor: const Color(0xFFD15F5F),
+                      selectedColor: isDark ? const Color(0xFFE47E7E) : const Color(0xFFD15F5F),
                       onTap: () => _toggleReaction(postId, 'support'),
                     ),
                   ],
@@ -292,7 +313,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.flag_outlined, size: 20),
-                color: SisonkeColors.charcoal.withValues(alpha: 0.6),
+                color: textContentColor.withValues(alpha: 0.6),
                 tooltip: 'Report post',
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -366,12 +387,19 @@ class _CommunityHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final headerBg = isDark ? theme.colorScheme.surfaceContainerHigh : SisonkeColors.mint;
+    final headerBorder = isDark ? theme.colorScheme.outlineVariant : SisonkeColors.sage;
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: SisonkeColors.mint,
+        color: headerBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: SisonkeColors.sage),
+        border: Border.all(color: headerBorder),
       ),
       child: Row(
         children: [
@@ -379,33 +407,33 @@ class _CommunityHeader extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? theme.colorScheme.surfaceContainer : Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.groups_2_rounded,
-              color: SisonkeColors.forest,
+              color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
               size: 28,
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Community Space',
                   style: TextStyle(
-                    color: SisonkeColors.charcoal,
+                    color: textColor,
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   'Share anonymously with people in your age group after moderator review.',
                   style: TextStyle(
-                    color: SisonkeColors.charcoal,
+                    color: textColor.withValues(alpha: 0.8),
                     height: 1.35,
                     fontSize: 13,
                   ),
@@ -432,12 +460,20 @@ class _PostComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white;
+    final inputBg = isDark ? theme.colorScheme.surfaceContainer : SisonkeColors.cream;
+    final textInputColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final borderSideColor = isDark ? theme.colorScheme.outlineVariant : SisonkeColors.sage;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: SisonkeColors.sage.withValues(alpha: 0.9)),
+        border: Border.all(color: isDark ? borderSideColor : SisonkeColors.sage.withValues(alpha: 0.9)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -446,29 +482,29 @@ class _PostComposer extends StatelessWidget {
             controller: controller,
             minLines: 3,
             maxLines: 5,
-            style: const TextStyle(
-              color: SisonkeColors.charcoal,
+            style: TextStyle(
+              color: textInputColor,
               fontSize: 14.5,
             ),
             decoration: InputDecoration(
               filled: true,
-              fillColor: SisonkeColors.cream,
+              fillColor: inputBg,
               labelText: 'Write an anonymous post',
               hintText: 'Share a thought, feeling, or encouragement...',
               helperText: 'Reviewed before it appears to others.',
               alignLabelWithHint: true,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: SisonkeColors.sage),
+                borderSide: BorderSide(color: borderSideColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: SisonkeColors.sage),
+                borderSide: BorderSide(color: borderSideColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(
-                  color: SisonkeColors.forest,
+                borderSide: BorderSide(
+                  color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
                   width: 1.5,
                 ),
               ),
@@ -501,12 +537,20 @@ class _InfoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white;
+    final iconBg = isDark ? theme.colorScheme.surfaceContainer : SisonkeColors.sage.withValues(alpha: 0.75);
+    final textContentColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final borderSideColor = isDark ? theme.colorScheme.outlineVariant : SisonkeColors.sage.withValues(alpha: 0.9);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: SisonkeColors.sage.withValues(alpha: 0.9)),
+        border: Border.all(color: borderSideColor),
       ),
       child: Row(
         children: [
@@ -514,10 +558,14 @@ class _InfoPanel extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: SisonkeColors.sage.withValues(alpha: 0.75),
+              color: iconBg,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 22, color: SisonkeColors.forest),
+            child: Icon(
+              icon,
+              size: 22,
+              color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -526,9 +574,9 @@ class _InfoPanel extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    color: SisonkeColors.charcoal,
+                    color: textContentColor,
                     fontSize: 14,
                   ),
                 ),
@@ -536,7 +584,7 @@ class _InfoPanel extends StatelessWidget {
                 Text(
                   body,
                   style: TextStyle(
-                    color: SisonkeColors.charcoal.withValues(alpha: 0.72),
+                    color: textContentColor.withValues(alpha: 0.72),
                     fontSize: 12.5,
                     height: 1.3,
                   ),
@@ -557,17 +605,24 @@ class _NoticePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final noticeBg = isDark ? theme.colorScheme.surfaceContainerHigh : SisonkeColors.lemon.withValues(alpha: 0.9);
+    final noticeBorder = isDark ? theme.colorScheme.primary.withValues(alpha: 0.4) : const Color(0xFFE7D17F);
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: SisonkeColors.lemon.withValues(alpha: 0.9),
+        color: noticeBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE7D17F)),
+        border: Border.all(color: noticeBorder),
       ),
       child: Text(
         message,
-        style: const TextStyle(
-          color: SisonkeColors.charcoal,
+        style: TextStyle(
+          color: textColor,
           fontWeight: FontWeight.w700,
           fontSize: 13,
         ),
@@ -595,6 +650,19 @@ class _ReactionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final btnBg = isSelected
+        ? selectedColor.withValues(alpha: 0.15)
+        : (isDark ? theme.colorScheme.surfaceContainer : SisonkeColors.cream);
+
+    final borderSideColor = isSelected
+        ? selectedColor
+        : (isDark ? theme.colorScheme.outlineVariant : SisonkeColors.sage);
+
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -602,12 +670,10 @@ class _ReactionButton extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? selectedColor.withValues(alpha: 0.12)
-              : SisonkeColors.cream,
+          color: btnBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? selectedColor : SisonkeColors.sage,
+            color: borderSideColor,
             width: 1.2,
           ),
         ),
@@ -619,7 +685,7 @@ class _ReactionButton extends StatelessWidget {
               size: 15,
               color: isSelected
                   ? selectedColor
-                  : SisonkeColors.charcoal.withValues(alpha: 0.62),
+                  : textColor.withValues(alpha: 0.62),
             ),
             const SizedBox(width: 5),
             Text(
@@ -627,7 +693,7 @@ class _ReactionButton extends StatelessWidget {
               style: TextStyle(
                 color: isSelected
                     ? selectedColor
-                    : SisonkeColors.charcoal.withValues(alpha: 0.72),
+                    : textColor.withValues(alpha: 0.72),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
@@ -638,7 +704,7 @@ class _ReactionButton extends StatelessWidget {
               style: TextStyle(
                 color: isSelected
                     ? selectedColor
-                    : SisonkeColors.charcoal.withValues(alpha: 0.62),
+                    : textColor.withValues(alpha: 0.62),
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
               ),

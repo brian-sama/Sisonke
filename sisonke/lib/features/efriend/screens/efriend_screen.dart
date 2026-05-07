@@ -43,9 +43,21 @@ class _EFriendScreenState extends State<EFriendScreen> {
     final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Scaffold(
-      appBar: const SisonkeAppBar(
+      appBar: SisonkeAppBar(
         title: 'Sisonke Friend',
         fallbackBackLocation: '/home',
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.support_agent_rounded,
+              color: _messages.any((m) => m.risk == 'HIGH')
+                  ? Theme.of(context).colorScheme.error
+                  : null,
+            ),
+            tooltip: 'Speak to a human counselor',
+            onPressed: () => context.push('/talk-to-counselor'),
+          ),
+        ],
       ),
       body: AnimatedContainer(
         duration: const Duration(seconds: 1),
@@ -243,22 +255,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
                 ),
               ),
 
-            // Talk to counselor block
-            if (!isKeyboardVisible)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: SisonkeButton(
-                  label: _messages.any((m) => m.risk == 'HIGH')
-                      ? 'I deserve counselor support right now'
-                      : 'Speak to a human counselor',
-                  icon: Icons.support_agent_rounded,
-                  isFullWidth: true,
-                  onPressed: () => context.push('/talk-to-counselor'),
-                ),
-              ),
+
 
             SafeArea(
               top: false,

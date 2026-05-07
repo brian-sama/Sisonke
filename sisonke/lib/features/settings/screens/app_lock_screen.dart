@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/services/security_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 
 class AppLockScreen extends StatefulWidget {
   const AppLockScreen({super.key});
@@ -49,6 +50,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
           (prefs.getBool(AppConstants.biometricEnabledKey) ?? false);
       _loading = false;
     });
+
+    if (hasPin && _biometricAvailable && _biometricEnabled) {
+      _useBiometrics();
+    }
   }
 
   Future<void> _submit() async {
@@ -66,6 +71,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
         return;
       }
       setState(() {
+        _pin.clear();
         _checking = false;
         _error = 'That PIN did not match. Please try again.';
       });
@@ -73,10 +79,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
     }
 
     final confirm = _confirmPin.text.trim();
-    if (pin.length < 4 || pin.length > 8 || pin != confirm) {
+    if (pin.length != 4 || pin != confirm) {
       setState(() {
         _checking = false;
-        _error = 'Create a matching 4-8 digit PIN.';
+        _error = 'Create a matching 4-digit PIN.';
       });
       return;
     }
@@ -105,109 +111,225 @@ class _AppLockScreenState extends State<AppLockScreen> {
     });
   }
 
+  void _onKeyPress(String value) {
+    if (_pin.text.length >= 4) return;
+    setState(() {
+      _pin.text += value;
+      _error = null;
+    });
+
+    if (_pin.text.length == 4) {
+      _submit();
+    }
+  }
+
+  void _onBackspace() {
+    if (_pin.text.isEmpty) return;
+    setState(() {
+      _pin.text = _pin.text.substring(0, _pin.text.length - 1);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = _hasPin ? 'Unlock Sisonke' : 'Create your PIN';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: const SisonkeAppBar(title: 'App Lock', showBackButton: false),
-      body: SafeArea(
-        child: Center(
-          child: _loading
-              ? const CircularProgressIndicator()
-              : SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.all(24),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Icon(
-                          Icons.lock_rounded,
-                          size: 72,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _hasPin
-                              ? 'Enter your PIN to continue.'
-                              : 'Choose a PIN you will remember. It protects private areas on this device.',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                        TextField(
-                          controller: _pin,
-                          obscureText: true,
-                          keyboardType: TextInputType.number,
-                          maxLength: 8,
-                          decoration: InputDecoration(
-                            labelText: _hasPin ? 'PIN' : 'New PIN',
-                            prefixIcon: const Icon(Icons.pin_rounded),
-                            counterText: '',
-                          ),
-                          onSubmitted: (_) => _checking ? null : _submit(),
-                        ),
-                        if (!_hasPin) ...[
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _confirmPin,
-                            obscureText: true,
-                            keyboardType: TextInputType.number,
-                            maxLength: 8,
-                            decoration: const InputDecoration(
-                              labelText: 'Confirm PIN',
-                              prefixIcon: Icon(Icons.check_rounded),
-                              counterText: '',
-                            ),
-                            onSubmitted: (_) => _checking ? null : _submit(),
-                          ),
-                        ],
-                        if (_error != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            _error!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                        const SizedBox(height: 18),
-                        SisonkeButton(
-                          label: _checking
-                              ? 'Checking...'
-                              : (_hasPin ? 'Unlock' : 'Save PIN'),
-                          isLoading: _checking,
-                          isEnabled: !_checking,
-                          onPressed: _submit,
-                        ),
-                        if (_hasPin &&
-                            _biometricEnabled &&
-                            _biometricAvailable) ...[
-                          const SizedBox(height: 10),
-                          SisonkeButton(
-                            label: 'Use biometric unlock',
-                            icon: Icons.fingerprint_rounded,
-                            buttonType: ButtonType.secondary,
-                            isEnabled: !_checking,
-                            onPressed: _useBiometrics,
-                          ),
-                        ],
-                      ],
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Unlocking Mode: Premium Circular PinKeypad Screen
+    if (_hasPin) {
+      return Scaffold(
+        appBar: const SisonkeAppBar(title: 'Lock Screen', showBackButton: false),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(),
+              // Safe Space Branding Header
+              Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                          : SisonkeColors.mint,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.spa_rounded,
+                      size: 40,
+                      color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Sisonke Space',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Unlock your safe space 🌱',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+
+              // PIN Entry Visual Dots Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(4, (index) {
+                  final isFilled = index < _pin.text.length;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 140),
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isFilled
+                          ? theme.colorScheme.primary
+                          : Colors.transparent,
+                      border: Border.all(
+                        color: isFilled
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.28),
+                        width: 2,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+
+              // Fixed height error label
+              SizedBox(
+                height: 24,
+                child: _error != null
+                    ? Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const Spacer(),
+
+              // Circular PIN Keypad Widget
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: PinKeypad(
+                  onKeyPress: _onKeyPress,
+                  onBackspace: _onBackspace,
+                  showBiometricButton: _biometricAvailable && _biometricEnabled,
+                  biometricIcon: Icons.fingerprint_rounded,
+                  onBiometricTrigger: _useBiometrics,
                 ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Passcode Setup Mode: Standard Inputs
+    return Scaffold(
+      appBar: const SisonkeAppBar(title: 'Setup PIN', showBackButton: false),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 72,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Create your PIN',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Choose a PIN you will remember. It protects private areas on this device.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _pin,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'New PIN (4 digits)',
+                      prefixIcon: Icon(Icons.pin_rounded),
+                      counterText: '',
+                    ),
+                    onSubmitted: (_) => _checking ? null : _submit(),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _confirmPin,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm PIN',
+                      prefixIcon: Icon(Icons.check_rounded),
+                      counterText: '',
+                    ),
+                    onSubmitted: (_) => _checking ? null : _submit(),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  SisonkeButton(
+                    label: _checking ? 'Saving PIN...' : 'Save PIN',
+                    isLoading: _checking,
+                    isEnabled: !_checking,
+                    onPressed: _submit,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

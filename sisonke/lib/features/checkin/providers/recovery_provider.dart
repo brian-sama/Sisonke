@@ -25,14 +25,37 @@ class RecoveryNotifier extends StateNotifier<List<RecoveryEntry>> {
     required RecoveryEventType type,
     String? reflection,
   }) async {
-    // Simple streak calculation (placeholder)
     int streak = 0;
     if (type == RecoveryEventType.victory) {
-      if (state.isNotEmpty && state.first.type == RecoveryEventType.victory) {
-        streak = (state.first.streakDays ?? 0) + 1;
+      if (state.isNotEmpty) {
+        final last = state.first;
+        if (last.type == RecoveryEventType.victory) {
+          final now = DateTime.now();
+          final lastDate = DateTime(last.timestamp.year, last.timestamp.month, last.timestamp.day);
+          final todayDate = DateTime(now.year, now.month, now.day);
+          final diff = todayDate.difference(lastDate).inDays;
+          
+          if (diff == 0) {
+            // Already logged a victory today, preserve current streak
+            streak = last.streakDays ?? 1;
+          } else if (diff == 1) {
+            // Yesterday was a victory, increment streak
+            streak = (last.streakDays ?? 0) + 1;
+          } else {
+            // Gapped day, reset streak to 1
+            streak = 1;
+          }
+        } else {
+          // Last entry was a relapse/reset, start new streak
+          streak = 1;
+        }
       } else {
+        // First entry ever
         streak = 1;
       }
+    } else {
+      // Relapse resets streak to 0
+      streak = 0;
     }
 
     final entry = RecoveryEntry(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -34,8 +36,15 @@ class SecurityService {
     }
   }
 
+  String _hashPIN(String pin) {
+    final bytes = utf8.encode(pin);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
   Future<void> setPIN(String pin) async {
-    await _storage.write(key: _pinKey, value: pin);
+    final hashed = _hashPIN(pin);
+    await _storage.write(key: _pinKey, value: hashed);
   }
 
   Future<void> clearPIN() async {
@@ -44,7 +53,23 @@ class SecurityService {
 
   Future<bool> verifyPIN(String pin) async {
     final storedPin = await _storage.read(key: _pinKey);
-    return storedPin == pin;
+    if (storedPin == null) return false;
+
+    final hashedInput = _hashPIN(pin);
+
+    // SHA-256 hex string is exactly 64 characters
+    if (storedPin.length == 64) {
+      return storedPin == hashedInput;
+    }
+
+    // Legacy unhashed raw PIN support
+    if (storedPin == pin) {
+      // Auto-upgrade legacy stored PIN to secure hashed PIN
+      await setPIN(pin);
+      return true;
+    }
+
+    return false;
   }
 
   Future<bool> hasPIN() async {

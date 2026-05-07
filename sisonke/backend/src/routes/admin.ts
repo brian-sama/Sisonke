@@ -9,6 +9,7 @@ import {
   cmsContent,
   communityPosts,
   counselorCases,
+  counselingMessages,
   emergencyContacts,
   moodCheckins,
   questions,
@@ -623,6 +624,46 @@ router.post('/counselor-cases/:id/notes', dashboardAccess, asyncHandler(async (r
   });
 
   res.status(201).json({ success: true });
+}));
+
+router.get('/counselor-cases/:id/messages', dashboardAccess, asyncHandler(async (req, res) => {
+  const [existing] = await db.select().from(counselorCases).where(eq(counselorCases.id, req.params.id)).limit(1);
+  if (!existing) return res.status(404).json({ success: false, error: 'Case not found' });
+
+  const messages = await db
+    .select()
+    .from(counselingMessages)
+    .where(eq(counselingMessages.caseId, req.params.id))
+    .orderBy(counselingMessages.createdAt);
+
+  res.json({ success: true, data: messages });
+}));
+
+router.post('/counselor-cases/:id/messages', dashboardAccess, asyncHandler(async (req, res) => {
+  const [existing] = await db.select().from(counselorCases).where(eq(counselorCases.id, req.params.id)).limit(1);
+  if (!existing) return res.status(404).json({ success: false, error: 'Case not found' });
+
+  const content = String(req.body.content || '').trim();
+  const messageType = String(req.body.messageType || 'text');
+  const mediaUrl = req.body.mediaUrl ? String(req.body.mediaUrl) : undefined;
+
+  if (!content && !mediaUrl) {
+    return res.status(400).json({ success: false, error: 'Content or media is required' });
+  }
+
+  const [message] = await db.insert(counselingMessages).values({
+    caseId: req.params.id,
+    senderUserId: req.user!.id,
+    senderRole: req.user!.roles[0] || 'counselor',
+    messageType,
+    mediaUrl,
+    content,
+  }).returning();
+
+  // Notify client/staff via WebSockets
+  SocketService.emitCaseEvent(req.params.id, existing.userId, 'case:message', { caseId: req.params.id, message });
+
+  res.status(201).json({ success: true, data: message });
 }));
 
 router.get('/cms-content', dashboardAccess, asyncHandler(async (_req, res) => {
