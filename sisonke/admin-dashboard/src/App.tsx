@@ -955,8 +955,25 @@ const CounselorCases = () => {
                       )}>
                         <span>{msg.content}</span>
                         {msg.messageType === 'voice_note' && (
-                          <div className="flex items-center gap-2 mt-2 bg-zinc-500/10 p-2 rounded-lg text-xs font-bold text-zinc-600">
-                            <span>🎙️ Voice Note submitted</span>
+                          <div className={cn("mt-3 p-4 rounded-3xl flex flex-col gap-3 min-w-[260px] border", 
+                            isMe ? "bg-white/10 border-white/20 text-white" : "bg-zinc-50 border-zinc-100 text-zinc-800"
+                          )}>
+                            <div className="flex items-center gap-3">
+                              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm",
+                                isMe ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"
+                              )}>
+                                <Activity size={18} strokeWidth={2.5} className="animate-pulse" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-black uppercase tracking-wider opacity-80">Voice Note Message</p>
+                                <p className="text-[10px] opacity-60">Play/pause to listen</p>
+                              </div>
+                            </div>
+                            <audio 
+                              controls 
+                              src={msg.mediaUrl && msg.mediaUrl.startsWith('http') ? msg.mediaUrl : "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"} 
+                              className={cn("w-full h-8 outline-none mt-1", isMe ? "brightness-95 contrast-125" : "")} 
+                            />
                           </div>
                         )}
                         <span className={cn("text-[10px] self-end font-bold", isMe ? "text-indigo-200" : "text-zinc-400")}>
