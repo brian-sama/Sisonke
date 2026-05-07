@@ -8,12 +8,14 @@ const express_1 = __importDefault(require("express"));
 const http_1 = require("http");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
+const path_1 = __importDefault(require("path"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const env_1 = require("./env");
 const socketService_1 = require("./services/socketService");
 // Import routes
 const auth_1 = __importDefault(require("./routes/auth"));
+const upload_1 = __importDefault(require("./routes/upload"));
 const roles_1 = __importDefault(require("./routes/roles"));
 const resources_1 = __importDefault(require("./routes/resources"));
 const questions_1 = __importDefault(require("./routes/questions"));
@@ -81,6 +83,8 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+// Host static files from the uploads directory
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 // Request logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -88,6 +92,7 @@ app.use((req, res, next) => {
 });
 // Routes
 app.use('/api/health', health_1.default);
+app.use('/api/upload', upload_1.default);
 app.use('/api/auth', auth_1.default);
 app.use('/api/roles', roles_1.default);
 app.use('/api/resources', resources_1.default);

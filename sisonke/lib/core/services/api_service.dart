@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -670,6 +671,32 @@ class ApiService {
         return Map<String, dynamic>.from(response.data['data'] as Map);
       }
       throw ApiException(response.data['error'] ?? 'Case message failed');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<String> uploadFile(String filePath) async {
+    await ensureGuestSession();
+    try {
+      final fileName = path.basename(filePath);
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+      });
+
+      final response = await _dio.post(
+        '/upload',
+        data: formData,
+      );
+
+      if (response.data['success']) {
+        return response.data['data']['url'] as String;
+      } else {
+        throw ApiException(response.data['error'] ?? 'Upload failed');
+      }
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

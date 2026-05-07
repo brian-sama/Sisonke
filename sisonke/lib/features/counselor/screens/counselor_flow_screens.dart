@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
@@ -503,6 +505,8 @@ class VoiceNoteRecorderScreen extends StatefulWidget {
 class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
   final _notes = TextEditingController();
   final _api = ApiService();
+  final _audioRecorder = AudioRecorder();
+  String? _recordedFilePath;
   var _recording = false;
   var _loading = false;
 
@@ -512,37 +516,68 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
   final _random = math.Random();
   Timer? _waveformTimer;
 
-  void _startRecording() {
-    setState(() {
-      _recording = true;
-      _recordDuration = 0;
-      _waveform.clear();
-    });
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+  void _startRecording() async {
+    try {
+      if (await _audioRecorder.hasPermission()) {
+        final tempDir = await getTemporaryDirectory();
+        _recordedFilePath = '${tempDir.path}/vn_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+        await _audioRecorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: _recordedFilePath!,
+        );
+
         setState(() {
-          _recordDuration++;
+          _recording = true;
+          _recordDuration = 0;
+          _waveform.clear();
         });
-      }
-    });
-    _waveformTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (mounted) {
-        setState(() {
-          _waveform.add(_random.nextDouble() * 0.8 + 0.2);
-          if (_waveform.length > 30) {
-            _waveform.removeAt(0);
+
+        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (mounted) {
+            setState(() {
+              _recordDuration++;
+            });
+          }
+        });
+
+        _waveformTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+          if (mounted) {
+            setState(() {
+              _waveform.add(_random.nextDouble() * 0.8 + 0.2);
+              if (_waveform.length > 30) {
+                _waveform.removeAt(0);
+              }
+            });
           }
         });
       }
-    });
+    } catch (e) {
+      debugPrint('Error starting audio recorder: $e');
+    }
   }
 
-  void _stopRecording() {
+  void _stopRecording() async {
     _timer?.cancel();
     _waveformTimer?.cancel();
-    setState(() {
-      _recording = false;
-    });
+    try {
+      final path = await _audioRecorder.stop();
+      if (mounted) {
+        setState(() {
+          _recording = false;
+          if (path != null) {
+            _recordedFilePath = path;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error stopping audio recorder: $e');
+      if (mounted) {
+        setState(() {
+          _recording = false;
+        });
+      }
+    }
   }
 
   String _formatDuration(int seconds) {
@@ -556,6 +591,7 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
     _notes.dispose();
     _timer?.cancel();
     _waveformTimer?.cancel();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -649,13 +685,22 @@ class _VoiceNoteRecorderScreenState extends State<VoiceNoteRecorderScreen> {
     _stopRecording();
     setState(() => _loading = true);
     try {
+      String? finalMediaUrl;
+      if (_recordedFilePath != null) {
+        try {
+          finalMediaUrl = await _api.uploadFile(_recordedFilePath!);
+        } catch (e) {
+          debugPrint('Failed to upload actual voice note, falling back: $e');
+        }
+      }
+
       await _api.sendCaseMessage(
         caseId: widget.caseId,
         content: _notes.text.trim().isEmpty
             ? 'Voice note submitted'
             : _notes.text.trim(),
         messageType: 'voice_note',
-        mediaUrl:
+        mediaUrl: finalMediaUrl ??
             'local-placeholder://voice-note/${DateTime.now().millisecondsSinceEpoch}',
       );
       if (!mounted) return;

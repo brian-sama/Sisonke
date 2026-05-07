@@ -48,6 +48,7 @@ dependencies:
   # Charts & UI
   table_calendar: ^3.0.8
   encrypt: ^5.0.3
+  record: ^5.1.2
 
   # Icons
   cupertino_icons: ^1.0.8

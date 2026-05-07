@@ -528,6 +528,39 @@ router.post('/counselor-cases/:id/notes', auth_1.dashboardAccess, (0, errorHandl
     });
     res.status(201).json({ success: true });
 }));
+router.get('/counselor-cases/:id/messages', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const [existing] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).limit(1);
+    if (!existing)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    const messages = await db_1.db
+        .select()
+        .from(schema_1.counselingMessages)
+        .where((0, drizzle_orm_1.eq)(schema_1.counselingMessages.caseId, req.params.id))
+        .orderBy(schema_1.counselingMessages.createdAt);
+    res.json({ success: true, data: messages });
+}));
+router.post('/counselor-cases/:id/messages', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const [existing] = await db_1.db.select().from(schema_1.counselorCases).where((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, req.params.id)).limit(1);
+    if (!existing)
+        return res.status(404).json({ success: false, error: 'Case not found' });
+    const content = String(req.body.content || '').trim();
+    const messageType = String(req.body.messageType || 'text');
+    const mediaUrl = req.body.mediaUrl ? String(req.body.mediaUrl) : undefined;
+    if (!content && !mediaUrl) {
+        return res.status(400).json({ success: false, error: 'Content or media is required' });
+    }
+    const [message] = await db_1.db.insert(schema_1.counselingMessages).values({
+        caseId: req.params.id,
+        senderUserId: req.user.id,
+        senderRole: req.user.roles[0] || 'counselor',
+        messageType,
+        mediaUrl,
+        content,
+    }).returning();
+    // Notify client/staff via WebSockets
+    socketService_1.SocketService.emitCaseEvent(req.params.id, existing.userId, 'case:message', { caseId: req.params.id, message });
+    res.status(201).json({ success: true, data: message });
+}));
 router.get('/cms-content', auth_1.dashboardAccess, (0, errorHandler_1.asyncHandler)(async (_req, res) => {
     const rows = await db_1.db.select().from(schema_1.cmsContent).orderBy((0, drizzle_orm_1.desc)(schema_1.cmsContent.createdAt)).limit(100);
     res.json({ success: true, data: rows });
