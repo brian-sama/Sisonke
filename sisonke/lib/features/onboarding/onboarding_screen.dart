@@ -1,14 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
-import 'package:sisonke/core/exceptions/api_exception.dart';
 import 'package:sisonke/core/services/api_service.dart';
-import 'package:sisonke/core/services/security_service.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
+/// Streamlined 3-step onboarding:
+/// 1. Nickname  2. Companion style  3. Consent + launch
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -17,80 +16,21 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  late PageController _pageController;
+  final _pageController = PageController();
   final _api = ApiService();
-  final _nickname = TextEditingController();
-  final _age = TextEditingController(text: '18');
-  final _location = TextEditingController();
-  final _pinController = TextEditingController();
-  var _gender = 'Prefer not to say';
+  final _nicknameController = TextEditingController();
   var _persona = 'female';
-  var _pinEnabled = true;
-  var _biometricEnabled = false;
   var _consentAccepted = false;
   var _saving = false;
   String? _error;
   int _currentPage = 0;
-  final _screeningAnswers = <String, bool>{
-    'overwhelmed': false,
-    'sleep': false,
-    'alone': false,
-    'lostInterest': false,
-    'unsafe': false,
-    'speakToSomeone': false,
-  };
 
-  final List<OnboardingPage> pages = [
-    OnboardingPage(
-      title: 'Name or nickname',
-      description: 'Choose what the app should call you. A nickname is okay.',
-      icon: Icons.badge_outlined,
-    ),
-    OnboardingPage(
-      title: 'Age, gender, and location',
-      description:
-          'This helps the backend place you in the right age group and show safer content.',
-      icon: Icons.person_outline_rounded,
-    ),
-    OnboardingPage(
-      title: 'Consent agreement',
-      description:
-          'Private spaces stay private. Public posts are moderated for safety.',
-      icon: Icons.verified_user_outlined,
-    ),
-    OnboardingPage(
-      title: 'Safety PIN',
-      description:
-          'Set a PIN for mood logs, journal entries, screening answers, and counseling chats.',
-      icon: Icons.pin_outlined,
-    ),
-    OnboardingPage(
-      title: 'Gentle check-in',
-      description:
-          'Have you felt overwhelmed, struggled to sleep, felt alone, lost interest, felt unsafe, or wanted to speak to someone?',
-      icon: Icons.check_circle_outline_rounded,
-    ),
-    OnboardingPage(
-      title: "Choose your Companion's Style",
-      description:
-          "Select an emotionally safe digital companion archetype that fits your state today.",
-      icon: Icons.favorite_outline_rounded,
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
+  static const _pageCount = 3;
 
   @override
   void dispose() {
     _pageController.dispose();
-    _nickname.dispose();
-    _age.dispose();
-    _location.dispose();
-    _pinController.dispose();
+    _nicknameController.dispose();
     super.dispose();
   }
 
@@ -100,21 +40,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: SisonkeColors.cream,
       body: SafeArea(
         child: Stack(
           children: [
-            PageView.builder(
+            PageView(
               controller: _pageController,
-              onPageChanged: (int page) {
-                setState(() {
-                  _currentPage = page;
-                });
-              },
-              itemCount: pages.length,
-              itemBuilder: (context, index) {
-                return _buildPage(pages[index]);
-              },
+              onPageChanged: (p) => setState(() => _currentPage = p),
+              children: [
+                _NicknamePage(controller: _nicknameController, error: _error),
+                _CompanionPage(
+                  persona: _persona,
+                  onChanged: (v) => setState(() => _persona = v),
+                ),
+                _ConsentPage(
+                  accepted: _consentAccepted,
+                  onChanged: (v) => setState(() => _consentAccepted = v),
+                  error: _error,
+                ),
+              ],
             ),
+
+            // Bottom navigation — hides when keyboard is up
             AnimatedPositioned(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
@@ -129,24 +76,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Progress dots
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          pages.length,
-                          (index) => Container(
+                        children: List.generate(_pageCount, (i) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
                             margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentPage == index ? 32 : 8,
+                            width: _currentPage == i ? 28 : 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey.shade300,
+                              color: _currentPage == i
+                                  ? SisonkeColors.primary
+                                  : SisonkeColors.primaryMid,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                          ),
-                        ),
+                          );
+                        }),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       Row(
                         children: [
                           if (_currentPage > 0) ...[
@@ -154,41 +102,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               child: SisonkeButton(
                                 label: 'Back',
                                 buttonType: ButtonType.secondary,
-                                onPressed: () {
-                                  _pageController.previousPage(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                },
+                                onPressed: () => _pageController.previousPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
                           ],
                           Expanded(
                             child: SisonkeButton(
-                              label: _currentPage == pages.length - 1
-                                  ? (_saving ? 'Saving...' : 'Get Started')
+                              label: _currentPage == _pageCount - 1
+                                  ? (_saving ? 'Starting…' : 'Begin')
                                   : 'Next',
                               isLoading: _saving,
-                              onPressed: () {
-                                if (_currentPage == pages.length - 1) {
-                                  _finishOnboarding();
-                                } else {
-                                  if (_currentPage == 3 && _pinEnabled && _pinController.text.length != 4) {
-                                    setState(() {
-                                      _error = 'Please enter a valid 4-digit security PIN.';
-                                    });
-                                    return;
-                                  }
-                                  setState(() {
-                                    _error = null;
-                                  });
-                                  _pageController.nextPage(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                }
-                              },
+                              onPressed: _onNext,
                             ),
                           ),
                         ],
@@ -204,272 +132,243 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildPage(OnboardingPage page) {
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final isKeyboardVisible = keyboardInset > 0;
-    final bottomPadding = isKeyboardVisible ? keyboardInset + 32 : 156.0;
+  void _onNext() {
+    setState(() => _error = null);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final contentMinHeight = (constraints.maxHeight - bottomPadding)
-            .clamp(0.0, double.infinity)
-            .toDouble();
+    if (_currentPage == 0) {
+      // Nickname is optional — default to 'Friend' if empty
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
 
-        return SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.fromLTRB(
-            24,
-            isKeyboardVisible ? 16 : 24,
-            24,
-            bottomPadding,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: contentMinHeight),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  page.icon,
-                  size: isKeyboardVisible ? 72 : 100,
-                  color: Theme.of(context).primaryColor,
-                ),
-                SizedBox(height: isKeyboardVisible ? 20 : 32),
-                Text(
-                  page.title,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  page.description,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                _buildStepFields(),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    if (_currentPage == 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
+
+    // Final page
+    if (!_consentAccepted) {
+      setState(() => _error = 'Please agree to continue.');
+      return;
+    }
+    _finish();
   }
 
-  Widget _buildStepFields() {
-    switch (_currentPage) {
-      case 0:
-        return TextField(
-          controller: _nickname,
-          decoration: const InputDecoration(
-            labelText: 'Nickname',
-            prefixIcon: Icon(Icons.badge_outlined),
-          ),
-        );
-      case 1:
-        return Column(
-          children: [
-            TextField(
-              controller: _age,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Age',
-                prefixIcon: Icon(Icons.cake_outlined),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _gender,
-              decoration: const InputDecoration(
-                labelText: 'Gender',
-                prefixIcon: Icon(Icons.person_outline_rounded),
-              ),
-              items: const ['Female', 'Male', 'Non-binary', 'Prefer not to say']
-                  .map(
-                    (value) =>
-                        DropdownMenuItem(value: value, child: Text(value)),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() => _gender = value ?? _gender),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _location,
-              decoration: const InputDecoration(
-                labelText: 'Location',
-                prefixIcon: Icon(Icons.location_on_outlined),
-              ),
-            ),
-          ],
-        );
-      case 2:
-        return _ConsentPanel(
-          accepted: _consentAccepted,
-          onChanged: (value) => setState(() => _consentAccepted = value),
-        );
-      case 3:
-        return Column(
-          children: [
-            SwitchListTile(
-              value: _pinEnabled,
-              onChanged: (value) => setState(() => _pinEnabled = value),
-              title: const Text('Enable PIN lock'),
-            ),
-            if (_pinEnabled) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _pinController,
-                obscureText: true,
-                maxLength: 4,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Choose a 4-Digit Security PIN',
-                  prefixIcon: Icon(Icons.lock_outline_rounded),
-                  counterText: '',
-                ),
-                style: const TextStyle(letterSpacing: 8, fontSize: 18, fontWeight: FontWeight.bold),
-                onChanged: (val) {
-                  if (val.length == 4) {
-                    setState(() {
-                      _error = null;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Make sure it is memorable. This is required to open your app lock.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-              ),
-            ],
-            SwitchListTile(
-              value: _biometricEnabled,
-              onChanged: (value) => setState(() => _biometricEnabled = value),
-              title: const Text('Enable biometric unlock'),
-            ),
-          ],
-        );
-      case 4:
-        return Column(
-          children: [
-            _CheckTile(
-              label: 'Have you felt overwhelmed recently?',
-              value: _screeningAnswers['overwhelmed']!,
-              onChanged: (value) => _setAnswer('overwhelmed', value),
-            ),
-            _CheckTile(
-              label: 'Have you struggled to sleep?',
-              value: _screeningAnswers['sleep']!,
-              onChanged: (value) => _setAnswer('sleep', value),
-            ),
-            _CheckTile(
-              label: 'Have you felt alone or unsupported?',
-              value: _screeningAnswers['alone']!,
-              onChanged: (value) => _setAnswer('alone', value),
-            ),
-            _CheckTile(
-              label: 'Have you lost interest in things you enjoy?',
-              value: _screeningAnswers['lostInterest']!,
-              onChanged: (value) => _setAnswer('lostInterest', value),
-            ),
-            _CheckTile(
-              label: 'Have you felt unsafe or at risk?',
-              value: _screeningAnswers['unsafe']!,
-              onChanged: (value) => _setAnswer('unsafe', value),
-            ),
-            _CheckTile(
-              label: 'Would you like to speak to someone?',
-              value: _screeningAnswers['speakToSomeone']!,
-              onChanged: (value) => _setAnswer('speakToSomeone', value),
-            ),
-          ],
-        );
-      case 5:
-        final styles = [
-          {
-            'id': 'female', // Soft & Understanding
-            'name': 'Soft & Understanding',
-            'quote':
-                '“I’m here with you. We can take this one step at a time.”',
-            'icon': Icons.spa_rounded,
-            'color': const Color(0xFFEBCBD0), // blush
-          },
-          {
-            'id': 'female_calm', // Calm & Encouraging
-            'name': 'Calm & Encouraging',
-            'quote':
-                '“You are doing better than you think. Let’s find your balance.”',
-            'icon': Icons.wb_sunny_rounded,
-            'color': const Color(0xFFCFE6D2), // sage
-          },
-          {
-            'id': 'male', // Gentle Listener
-            'name': 'Gentle Listener',
-            'quote':
-                '“Your thoughts are safe here. I am listening whenever you are ready.”',
-            'icon': Icons.hearing_rounded,
-            'color': const Color(0xFFD8EEF8), // sky
-          },
-          {
-            'id': 'female_motivating', // Motivating Friend
-            'name': 'Motivating Friend',
-            'quote':
-                '“I believe in you! Let’s take on small, joyful steps together today.”',
-            'icon': Icons.bolt_rounded,
-            'color': const Color(0xFFF7E8B5), // lemon
-          },
-          {
-            'id': 'male_quiet', // Quiet & Comforting
-            'name': 'Quiet & Comforting',
-            'quote':
-                '“No pressure to speak. Let’s just sit in quiet reflection together.”',
-            'icon': Icons.nightlight_round,
-            'color': const Color(0xFFE4DDF6), // lavender
-          },
-        ];
+  Future<void> _finish() async {
+    setState(() => _saving = true);
 
-        return Column(
-          children: styles.map((style) {
-            final isSelected = _persona == style['id'];
+    final nickname = _nicknameController.text.trim().isEmpty
+        ? 'Friend'
+        : _nicknameController.text.trim();
+
+    try {
+      try {
+        await _api.saveOnboardingProfile(
+          nickname: nickname,
+          age: 18,
+          gender: 'Prefer not to say',
+          location: '',
+          chatbotPersona: _persona,
+          screeningAnswers: const {},
+          pinEnabled: false,
+          biometricEnabled: false,
+          consentAccepted: true,
+        );
+      } catch (_) {
+        // Backend unavailable — offline-first continues below
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_completed', true);
+      await prefs.setBool(AppConstants.pinEnabledKey, false);
+      await prefs.setBool(AppConstants.biometricEnabledKey, false);
+      await prefs.setString('user_nickname', nickname);
+      await prefs.setString('user_persona', _persona);
+
+      if (mounted) context.go('/e-friend');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = 'Something went wrong. Please try again.';
+      });
+    }
+  }
+}
+
+// ─── Page 1: Nickname ────────────────────────────────────────────────────────
+
+class _NicknamePage extends StatelessWidget {
+  final TextEditingController controller;
+  final String? error;
+
+  const _NicknamePage({required this.controller, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(28, 60, 28, 160),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Sisonke',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: SisonkeColors.primary,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'What should we call you?',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: SisonkeColors.charcoal,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'A nickname is fine. You can change this any time in settings.',
+            style: TextStyle(
+              fontSize: 15,
+              color: SisonkeColors.charcoal.withOpacity(0.6),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 36),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              hintText: 'Tino, Sibo, Friend…',
+              prefixIcon: const Icon(Icons.person_outline_rounded),
+              filled: true,
+              fillColor: SisonkeColors.muted,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(
+                  color: SisonkeColors.primary,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 12),
+            Text(error!, style: const TextStyle(color: SisonkeColors.danger)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Page 2: Companion style ─────────────────────────────────────────────────
+
+class _CompanionPage extends StatelessWidget {
+  final String persona;
+  final ValueChanged<String> onChanged;
+
+  const _CompanionPage({
+    required this.persona,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const companions = [
+      _Companion(
+        id: 'female',
+        name: 'Sister',
+        quote: '"I\'m here with you. We can take this one breath at a time."',
+        icon: Icons.spa_rounded,
+        color: Color(0xFFEBCBD0),
+      ),
+      _Companion(
+        id: 'male',
+        name: 'Brother',
+        quote:
+            '"Your thoughts are safe here. I am listening whenever you are ready."',
+        icon: Icons.air_rounded,
+        color: Color(0xFFD8EEF8),
+      ),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(28, 60, 28, 160),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Sisonke',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: SisonkeColors.primary,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Who would you like to talk to?',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: SisonkeColors.charcoal,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'You can switch companions any time during a conversation.',
+            style: TextStyle(
+              fontSize: 15,
+              color: SisonkeColors.charcoal.withOpacity(0.6),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 36),
+          ...companions.map((c) {
+            final isSelected = persona == c.id;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 16),
               child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _persona = style['id'] as String;
-                  });
-                },
-                borderRadius: BorderRadius.circular(24),
+                onTap: () => onChanged(c.id),
+                borderRadius: BorderRadius.circular(28),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  padding: const EdgeInsets.all(18),
+                  duration: const Duration(milliseconds: 220),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: style['color'] as Color,
-                    borderRadius: BorderRadius.circular(24),
+                    color: c.color,
+                    borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isSelected
-                          ? const Color(0xFF2E6F60) // AppTheme.primary
+                          ? SisonkeColors.primary
                           : Colors.transparent,
                       width: 2.5,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: (style['color'] as Color).withValues(
-                                alpha: 0.4,
-                              ),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                              color: SisonkeColors.primary.withOpacity(0.18),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
                           ]
                         : null,
@@ -477,16 +376,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: const BoxDecoration(
-                          color: Colors.white24,
+                          color: Colors.white30,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          style['icon'] as IconData,
-                          size: 28,
-                          color: const Color(0xFF2F3433), // charcoal
-                        ),
+                        child: Icon(c.icon, size: 26, color: SisonkeColors.charcoal),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -494,125 +389,219 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              style['name'] as String,
+                              c.name,
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2F3433),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: SisonkeColors.charcoal,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              style['quote'] as String,
+                              c.quote,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
-                                color: const Color(
-                                  0xFF2F3433,
-                                ).withValues(alpha: 0.85),
+                                color: SisonkeColors.charcoal.withOpacity(0.75),
+                                height: 1.4,
                               ),
                             ),
                           ],
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: Color(0xFF2E6F60),
-                          size: 28,
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: Icon(
+                            Icons.check_circle_rounded,
+                            color: SisonkeColors.primary,
+                            size: 26,
+                          ),
                         ),
                     ],
                   ),
                 ),
               ),
             );
-          }).toList(),
-        );
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  void _setAnswer(String key, bool value) {
-    setState(() => _screeningAnswers[key] = value);
-  }
-
-  Future<void> _finishOnboarding() async {
-    final age = int.tryParse(_age.text.trim()) ?? 18;
-    final nickname = _nickname.text.trim().isEmpty
-        ? 'Friend'
-        : _nickname.text.trim();
-
-    if (!_consentAccepted) {
-      setState(
-        () => _error = 'Please review and accept consent before continuing.',
-      );
-      _pageController.animateToPage(
-        2,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      return;
-    }
-
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      final dbPersona = _persona.startsWith('female') ? 'female' : 'male';
-      
-      // Try saving to backend, but handle network/loopback failures gracefully
-      try {
-        await _api.saveOnboardingProfile(
-          nickname: nickname,
-          age: age,
-          gender: _gender,
-          location: _location.text.trim(),
-          chatbotPersona: dbPersona,
-          screeningAnswers: _screeningAnswers,
-          pinEnabled: _pinEnabled,
-          biometricEnabled: _biometricEnabled,
-          consentAccepted: _consentAccepted,
-        );
-      } catch (e) {
-        debugPrint('Onboarding backend sync failed: $e. Saving locally instead.');
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('onboarding_completed', true);
-      await prefs.setBool(AppConstants.pinEnabledKey, _pinEnabled);
-      await prefs.setBool(
-        AppConstants.biometricEnabledKey,
-        _pinEnabled && _biometricEnabled,
-      );
-
-      // Save local backup copies of profile parameters so Sisonke is fully offline-capable
-      await prefs.setString('user_nickname', nickname);
-      await prefs.setInt('user_age', age);
-      await prefs.setString('user_gender', _gender);
-      await prefs.setString('user_location', _location.text.trim());
-      await prefs.setString('user_persona', dbPersona);
-      await prefs.setString('user_screening', jsonEncode(_screeningAnswers));
-
-      // Set the PIN using SecurityService
-      if (_pinEnabled && _pinController.text.length == 4) {
-        final securityService = SecurityService();
-        await securityService.setPIN(_pinController.text);
-      }
-
-      if (mounted) context.go(_pinEnabled ? '/app-lock' : '/home');
-    } catch (e) {
-      debugPrint('Critical onboarding error: $e');
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = 'An unexpected error occurred: $e';
-      });
-    }
+          }),
+        ],
+      ),
+    );
   }
 }
 
+class _Companion {
+  final String id;
+  final String name;
+  final String quote;
+  final IconData icon;
+  final Color color;
+
+  const _Companion({
+    required this.id,
+    required this.name,
+    required this.quote,
+    required this.icon,
+    required this.color,
+  });
+}
+
+// ─── Page 3: Consent ─────────────────────────────────────────────────────────
+
+class _ConsentPage extends StatelessWidget {
+  final bool accepted;
+  final ValueChanged<bool> onChanged;
+  final String? error;
+
+  const _ConsentPage({
+    required this.accepted,
+    required this.onChanged,
+    required this.error,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(28, 60, 28, 160),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Sisonke',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: SisonkeColors.primary,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Your space, your privacy.',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: SisonkeColors.charcoal,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'A few things to know before we begin:',
+            style: TextStyle(
+              fontSize: 15,
+              color: SisonkeColors.charcoal.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 28),
+          _ConsentPoint(
+            icon: Icons.lock_rounded,
+            text:
+                'Your mood logs, journal, and counselor chats are private and access-controlled. Only you can see them.',
+          ),
+          const SizedBox(height: 14),
+          _ConsentPoint(
+            icon: Icons.groups_rounded,
+            text:
+                'Community posts are anonymous, age-grouped, and moderated before they appear publicly.',
+          ),
+          const SizedBox(height: 14),
+          _ConsentPoint(
+            icon: Icons.health_and_safety_rounded,
+            text:
+                'Sisonke is not an emergency service. If you are in immediate danger, please contact emergency services.',
+          ),
+          const SizedBox(height: 28),
+          InkWell(
+            onTap: () => onChanged(!accepted),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: accepted ? SisonkeColors.primaryDim : SisonkeColors.muted,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: accepted
+                      ? SisonkeColors.primary
+                      : SisonkeColors.primaryMid,
+                  width: accepted ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    accepted
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    color: accepted
+                        ? SisonkeColors.primary
+                        : SisonkeColors.charcoal.withOpacity(0.4),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'I understand and agree',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: SisonkeColors.charcoal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 12),
+            Text(error!, style: const TextStyle(color: SisonkeColors.danger)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ConsentPoint extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _ConsentPoint({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: SisonkeColors.primaryDim,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 18, color: SisonkeColors.primary),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: SisonkeColors.charcoal.withOpacity(0.8),
+                height: 1.5,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Kept for backward compat (router.dart references OnboardingPage type nowhere, but
+// the language_selection_screen and topic_selection_screen may reference it)
 class OnboardingPage {
   final String title;
   final String description;
@@ -623,90 +612,4 @@ class OnboardingPage {
     required this.description,
     required this.icon,
   });
-}
-
-class _ConsentPanel extends StatelessWidget {
-  final bool accepted;
-  final ValueChanged<bool> onChanged;
-
-  const _ConsentPanel({required this.accepted, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const _ConsentLine(
-              icon: Icons.lock_rounded,
-              text:
-                  'Mood, journal, and counselor spaces are private and access-controlled.',
-            ),
-            const _ConsentLine(
-              icon: Icons.groups_rounded,
-              text:
-                  'Community posts are anonymous, age-grouped, and moderated before public display.',
-            ),
-            const _ConsentLine(
-              icon: Icons.health_and_safety_rounded,
-              text:
-                  'Sisonke is not an emergency or medical service. Serious safety concerns may be escalated to authorized support roles.',
-            ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: accepted,
-              onChanged: (value) => onChanged(value ?? false),
-              title: const Text('I understand and agree'),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConsentLine extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _ConsentLine({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckTile extends StatelessWidget {
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _CheckTile({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CheckboxListTile(
-      value: value,
-      onChanged: (checked) => onChanged(checked ?? false),
-      title: Text(label),
-      controlAffinity: ListTileControlAffinity.leading,
-    );
-  }
 }

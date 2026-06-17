@@ -20,8 +20,10 @@ export function getAllowedOrigins() {
     origins.push('https://sisonke.mmpzmne.co.zw');
   }
 
-  // Always allow any localhost port for easier dev/debug
-  origins.push(/^http:\/\/localhost:\d+$/);
+  // Allow any localhost port only outside of production
+  if (process.env.NODE_ENV !== 'production') {
+    origins.push(/^http:\/\/localhost:\d+$/);
+  }
   
   return origins;
 }

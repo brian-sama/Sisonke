@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
@@ -13,20 +14,35 @@ class EFriendScreen extends StatefulWidget {
 }
 
 class _EFriendScreenState extends State<EFriendScreen> {
-  var _persona = 'female';
+  var _persona = ‘female’;
   String? _emotion;
   final _api = ApiService();
   final _messages = <_ChatMessage>[
     const _ChatMessage(
       fromUser: false,
       text:
-          'Take a slow, deep breath. I’m here to listen. Tell me what is on your mind today.',
-      risk: 'LOW',
+          ‘Take a slow, deep breath. I’m here to listen. Tell me what is on your mind today.’,
+      risk: ‘LOW’,
     ),
   ];
   final _controller = TextEditingController();
   String? _sessionId;
   var _sending = false;
+  String _trustedContactName = ‘’;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrustedContact();
+  }
+
+  Future<void> _loadTrustedContact() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _trustedContactName = prefs.getString(‘trusted_contact_name’) ?? ‘’;
+    });
+  }
 
   Gradient get _ambientBackground {
     if (_emotion == 'Sad' || _emotion == 'Lonely' || _emotion == 'Confused') {
@@ -47,6 +63,12 @@ class _EFriendScreenState extends State<EFriendScreen> {
         title: 'Sisonke Friend',
         fallbackBackLocation: '/home',
         actions: [
+          if (_trustedContactName.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.volunteer_activism_outlined),
+              tooltip: 'Check on me — notify my trusted contact',
+              onPressed: () => _showCheckOnMeSheet(context),
+            ),
           IconButton(
             icon: Icon(
               Icons.support_agent_rounded,
@@ -64,84 +86,45 @@ class _EFriendScreenState extends State<EFriendScreen> {
         decoration: BoxDecoration(gradient: _ambientBackground),
         child: Column(
           children: [
-            if (!isKeyboardVisible)
+            // Compact persona toggle — only visible before conversation starts
+            if (!isKeyboardVisible && _messages.length <= 1)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'How are you arriving today?',
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    color: const Color(0xFF2F3433),
-                                  ),
-                            ),
-                          ),
-                          // Soft style selection toggle
-                          SegmentedButton<String>(
-                            segments: const [
-                              ButtonSegment(
-                                value: 'female',
-                                icon: Icon(Icons.spa_outlined, size: 16),
-                                label: Text(
-                                  'Sister',
-                                  style: TextStyle(fontSize: 11),
-                                ),
-                              ),
-                              ButtonSegment(
-                                value: 'male',
-                                icon: Icon(Icons.air_outlined, size: 16),
-                                label: Text(
-                                  'Brother',
-                                  style: TextStyle(fontSize: 11),
-                                ),
-                              ),
-                            ],
-                            selected: {_persona},
-                            onSelectionChanged: (value) =>
-                                setState(() => _persona = value.first),
-                          ),
-                        ],
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Talk with your',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: const Color(0xFF2F3433).withOpacity(0.55),
                       ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children:
-                            const [
-                              'Sad',
-                              'Anxious',
-                              'Angry',
-                              'Confused',
-                              'Lonely',
-                              'Okay',
-                              'Happy',
-                            ].map((emotion) {
-                              return _EmotionChip(
-                                emotion: emotion,
-                                selected: _emotion == emotion,
-                                onSelected: () => _selectEmotion(emotion),
-                              );
-                            }).toList(),
+                    ),
+                    const SizedBox(width: 10),
+                    SegmentedButton<String>(
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity(
+                          horizontal: VisualDensity.minimumDensity,
+                          vertical: VisualDensity.minimumDensity,
+                        ),
                       ),
-                      if (_emotion != null) ...[
-                        const SizedBox(height: 12),
-                        _RiskCheckBanner(emotion: _emotion!),
+                      segments: const [
+                        ButtonSegment(
+                          value: 'female',
+                          icon: Icon(Icons.spa_outlined, size: 14),
+                          label: Text('Sister', style: TextStyle(fontSize: 11)),
+                        ),
+                        ButtonSegment(
+                          value: 'male',
+                          icon: Icon(Icons.air_outlined, size: 14),
+                          label: Text('Brother', style: TextStyle(fontSize: 11)),
+                        ),
                       ],
-                    ],
-                  ),
+                      selected: {_persona},
+                      onSelectionChanged: (value) =>
+                          setState(() => _persona = value.first),
+                    ),
+                  ],
                 ),
               ),
 
@@ -334,20 +317,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
         _sending = false;
       });
 
-      if (response['escalationRequired'] == true && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Color(0xFFD68A7F),
-            content: Text(
-              'I think you deserve some friendly human support right now. Consider chatting with a counselor.',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            duration: Duration(seconds: 6),
-          ),
-        );
+      if (response[‘escalationRequired’] == true && mounted) {
+        context.push(‘/crisis-pathway’);
       }
     } catch (_) {
       final risk = _riskFor(text);
@@ -356,14 +327,18 @@ class _EFriendScreenState extends State<EFriendScreen> {
         _messages.add(
           _ChatMessage(
             fromUser: false,
-            text: risk == 'HIGH'
-                ? 'I think you deserve warm human support right now. Please press the "I deserve counselor support" button above. I will stand with you until we connect.'
-                : 'I couldn’t reach my system, but please take a slow breath. Your peace is what matters. Let’s try again when you are ready.',
+            text: risk == ‘HIGH’
+                ? "I think you deserve warm human support right now. I’m opening a safe space for us to take this step by step."
+                : "I couldn’t reach my system, but please take a slow breath. Your peace is what matters. Let’s try again when you are ready.",
             risk: risk,
           ),
         );
         _sending = false;
       });
+      if (risk == ‘HIGH’ && mounted) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) context.push(‘/crisis-pathway’);
+      }
     }
   }
 
@@ -394,6 +369,87 @@ class _EFriendScreenState extends State<EFriendScreen> {
       return 'HIGH';
     }
     return 'LOW';
+  }
+
+  void _showCheckOnMeSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Send a check-in to $_trustedContactName',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(sheetContext),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'This will let them know you could use a friendly check-in today.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SisonkeColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    try {
+                      await _api.post('/api/profiles/check-on-me', {});
+                    } catch (_) {
+                      // Fire-and-forget — still show confirmation
+                    }
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Your trusted contact has been notified.',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Send check-in',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -556,8 +612,10 @@ class _ChatBubble extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isUser
-              ? const Color(0xFF2E6F60).withOpacity(0.85) // primary glass
-              : Colors.white.withOpacity(0.82), // white glass
+              ? const Color(0xFF2E6F60).withOpacity(0.85)
+              : (message.risk == 'HIGH'
+                  ? const Color(0xFFFFF3E8).withOpacity(0.95) // warm amber safety tint
+                  : Colors.white.withOpacity(0.82)),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(24),
             topRight: const Radius.circular(24),
@@ -571,9 +629,12 @@ class _ChatBubble extends StatelessWidget {
               offset: const Offset(0, 3),
             ),
           ],
-          border: message.risk == 'HIGH'
-              ? Border.all(color: Colors.redAccent, width: 2)
-              : Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+          border: Border.all(
+            color: message.risk == 'HIGH'
+                ? const Color(0xFFD68A7F).withOpacity(0.45) // warm terracotta, not red alarm
+                : Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
         ),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
@@ -589,15 +650,26 @@ class _ChatBubble extends StatelessWidget {
                 color: isUser ? Colors.white : const Color(0xFF2F3433),
               ),
             ),
-            if (message.risk != 'LOW' && message.risk != 'CHECKING') ...[
-              const SizedBox(height: 4),
-              Text(
-                'Safety Status: ${message.risk}',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.redAccent,
-                ),
+            if (message.risk == 'HIGH' && !isUser) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.health_and_safety_outlined,
+                    size: 13,
+                    color: Color(0xFFD68A7F),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'I am here with you',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFD68A7F).withOpacity(0.85),
+                    ),
+                  ),
+                ],
               ),
             ],
           ],

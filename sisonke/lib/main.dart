@@ -9,6 +9,7 @@ import 'package:sisonke/core/services/local_database_service.dart';
 import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/router/router.dart';
 import 'package:sisonke/theme/app_theme.dart';
+import 'package:sisonke/theme/night_mode_provider.dart';
 import 'package:sisonke/core/providers/app_providers.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/core/services/bootstrap_content_service.dart';
@@ -16,6 +17,7 @@ import 'package:sisonke/core/services/public_content_sync_service.dart';
 import 'package:sisonke/core/services/push_notification_service.dart';
 import 'package:sisonke/core/services/widget_service.dart';
 import 'package:sisonke/core/widgets/privacy_guard.dart';
+import 'package:sisonke/shared/widgets/offline_banner.dart';
 import 'package:sisonke/l10n/app_localizations.dart';
 
 void main() async {
@@ -74,18 +76,21 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isNight = ref.watch(isNightModeProvider);
     return MaterialApp.router(
       title: 'Sisonke',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: isNight ? ThemeMode.dark : ThemeMode.system,
       routerConfig: router,
-      builder: (context, child) => PrivacyGuard(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => OfflineBanner(
+        child: PrivacyGuard(child: child ?? const SizedBox.shrink()),
+      ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

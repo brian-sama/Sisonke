@@ -7,10 +7,20 @@
     "dev": "npx tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "node dist/scripts/migrate.js",
     "db:studio": "npx drizzle-kit studio",
     "admin:create": "node dist/scripts/createAdmin.js"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.test.ts"],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
   },
   "keywords": [
     "wellness",
@@ -43,11 +53,14 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/multer": "^2.1.0",
     "@types/node": "^20.10.0",
     "@types/socket.io": "^3.0.1",
     "drizzle-kit": "^0.20.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "tsx": "^4.6.0",
     "typescript": "^5.3.0"
   }

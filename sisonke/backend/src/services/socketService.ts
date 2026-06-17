@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { AuthService } from './authService';
+import { getAllowedOrigins } from '../env';
 
 /**
  * SocketService handles real-time bidirectional communication
@@ -13,8 +14,9 @@ export class SocketService {
   static init(server: HttpServer) {
     this.io = new Server(server, {
       cors: {
-        origin: '*', // Adjust for production
-        methods: ['GET', 'POST']
+        origin: getAllowedOrigins(),
+        methods: ['GET', 'POST'],
+        credentials: true,
       }
     });
 
@@ -22,8 +24,10 @@ export class SocketService {
       const token = socket.handshake.auth.token;
       if (!token) return next(new Error('Authentication error'));
 
+      if (!process.env.JWT_SECRET) return next(new Error('Server misconfiguration'));
+
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret') as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
         
         // Fetch user roles dynamically from DB to support the new multi-role junction table architecture
         const userRolesList = await AuthService.getUserRoles(decoded.userId);

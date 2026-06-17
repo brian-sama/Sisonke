@@ -53,6 +53,7 @@ lib/app/core/constants/config.dart
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Database and sensitive files
 setup_neon.sql

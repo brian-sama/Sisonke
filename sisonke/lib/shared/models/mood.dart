@@ -49,14 +49,16 @@ class MoodEntry {
 }
 
 enum MoodType {
-  great('Sunlight', '🌻'),
-  okay('Gentle Breeze', '🍃'),
-  low('Cool Rain', '🌧️'),
-  anxious('Storm Cloud', '⛈️'),
-  angry('Wild Fire', '🔥'),
-  overwhelmed('Heavy Fog', '🌫️');
+  great(    'Sunlight',      '🌻', 'Kulungile',      'all is well'),          // Ndebele
+  okay(     'Gentle Breeze', '🍃', 'Getting by',     'I am managing'),        // English
+  low(      'Cool Rain',     '🌧️', 'Ndinosuwa',     'heavy-hearted'),        // Shona
+  anxious(  'Storm Cloud',   '⛈️', 'Ngesaba',        'I am afraid'),         // Ndebele
+  angry(    'Wild Fire',     '🔥', 'Kutsamwa',       'burning inside'),       // Shona
+  overwhelmed('Heavy Fog',   '🌫️', 'Kufungisisa',   'thinking too much');    // Shona
 
   final String label;
   final String emoji;
-  const MoodType(this.label, this.emoji);
+  final String localLabel;
+  final String localNote;
+  const MoodType(this.label, this.emoji, this.localLabel, this.localNote);
 }

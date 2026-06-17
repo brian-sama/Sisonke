@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
@@ -7,7 +8,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class SecurityService {
   final LocalAuthentication _auth = LocalAuthentication();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
   static const String _pinKey = 'app_pin';
+  static const String _pinSaltKey = 'app_pin_salt';
 
   Future<bool> isBiometricAvailable() async {
     if (!_supportsBiometricsOnCurrentPlatform) return false;
@@ -36,36 +39,51 @@ class SecurityService {
     }
   }
 
-  String _hashPIN(String pin) {
-    final bytes = utf8.encode(pin);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+  // Generate a 32-byte cryptographically random hex salt.
+  String _generateSalt() {
+    final rng = Random.secure();
+    final bytes = List<int>.generate(32, (_) => rng.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  String _hashPINWithSalt(String pin, String salt) {
+    final bytes = utf8.encode('$salt:$pin');
+    return sha256.convert(bytes).toString();
   }
 
   Future<void> setPIN(String pin) async {
-    final hashed = _hashPIN(pin);
+    final salt = _generateSalt();
+    final hashed = _hashPINWithSalt(pin, salt);
+    await _storage.write(key: _pinSaltKey, value: salt);
     await _storage.write(key: _pinKey, value: hashed);
   }
 
   Future<void> clearPIN() async {
     await _storage.delete(key: _pinKey);
+    await _storage.delete(key: _pinSaltKey);
   }
 
   Future<bool> verifyPIN(String pin) async {
-    final storedPin = await _storage.read(key: _pinKey);
-    if (storedPin == null) return false;
+    final storedHash = await _storage.read(key: _pinKey);
+    if (storedHash == null) return false;
 
-    final hashedInput = _hashPIN(pin);
+    final salt = await _storage.read(key: _pinSaltKey);
 
-    // SHA-256 hex string is exactly 64 characters
-    if (storedPin.length == 64) {
-      return storedPin == hashedInput;
+    if (salt != null) {
+      // Current format: salted SHA-256
+      return storedHash == _hashPINWithSalt(pin, salt);
     }
 
-    // Legacy unhashed raw PIN support
-    if (storedPin == pin) {
-      // Auto-upgrade legacy stored PIN to secure hashed PIN
-      await setPIN(pin);
+    // Legacy: unsalted SHA-256 — upgrade on successful match
+    final unsaltedHash = sha256.convert(utf8.encode(pin)).toString();
+    if (storedHash == unsaltedHash) {
+      await setPIN(pin); // re-store with salt
+      return true;
+    }
+
+    // Legacy: plaintext PIN stored directly
+    if (storedHash == pin) {
+      await setPIN(pin); // re-store hashed + salted
       return true;
     }
 
@@ -77,13 +95,14 @@ class SecurityService {
     return storedPin != null;
   }
 
-  Future<void> enableScreenshotProtection() async {
-    // TODO: Re-enable Android FLAG_SECURE with a maintained plugin or native channel.
-  }
+  // FLAG_SECURE is applied unconditionally in MainActivity.onCreate(), which
+  // blocks screenshots and hides the app preview in the Android recents screen
+  // across every route. These methods are intentional no-ops — removing the
+  // global flag would require a native-channel toggle, which is not needed
+  // because Sisonke should always prevent screen capture.
+  Future<void> enableScreenshotProtection() async {}
 
-  Future<void> disableScreenshotProtection() async {
-    // TODO: Re-enable Android FLAG_SECURE with a maintained plugin or native channel.
-  }
+  Future<void> disableScreenshotProtection() async {}
 
   bool get _supportsBiometricsOnCurrentPlatform {
     if (kIsWeb) return false;

@@ -30,6 +30,10 @@ import 'package:sisonke/features/counselor/screens/case_chat_screen.dart';
 import 'package:sisonke/features/counselor/screens/counselor_flow_screens.dart';
 import 'package:sisonke/features/counselor/screens/counselor_mobile_workspace_screen.dart';
 import 'package:sisonke/features/settings/screens/profile_safety_screen.dart';
+import 'package:sisonke/features/crisis/screens/crisis_pathway_screen.dart';
+import 'package:sisonke/features/circles/screens/circles_screen.dart';
+import 'package:sisonke/features/circles/screens/circle_chat_screen.dart';
+import 'package:sisonke/features/journal/screens/voice_journal_screen.dart';
 
 // Placeholder imports for remaining deleted all_screens.dart members
 // I will create these files next if they don't exist.
@@ -71,7 +75,7 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const QuickExitScreen(),
     ),
 
-    /// ==================== Main Navigation Tabs ====================
+    /// ==================== Main Navigation (3 tabs) ====================
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return BottomNavigationShell(
@@ -80,25 +84,7 @@ final GoRouter router = GoRouter(
         );
       },
       branches: [
-        /// ========== Home Tab ==========
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomeScreen(),
-              routes: [
-                GoRoute(
-                  path: 'resources/:resourceId',
-                  builder: (context, state) => ResourceDetailScreen(
-                    resourceId: state.pathParameters['resourceId']!,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-
-        /// ========== E-Friend Tab ==========
+        /// ========== Tab 0: Talk (SisonkeFriend AI) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -108,7 +94,7 @@ final GoRouter router = GoRouter(
           ],
         ),
 
-        /// ========== Check-In Tab ==========
+        /// ========== Tab 1: Feel (mood · journal · tools) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -132,17 +118,7 @@ final GoRouter router = GoRouter(
           ],
         ),
 
-        /// ========== Community Tab ==========
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/community',
-              builder: (context, state) => const CommunityFeedScreen(),
-            ),
-          ],
-        ),
-
-        /// ========== Support Tab ==========
+        /// ========== Tab 2: Reach (community · counselors · resources) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -150,18 +126,42 @@ final GoRouter router = GoRouter(
               builder: (context, state) => const SupportDirectoryScreen(),
               routes: [
                 GoRoute(
-                  path: 'directory',
-                  builder: (context, state) => const SupportDirectoryScreen(),
+                  path: 'community',
+                  builder: (context, state) => const CommunityFeedScreen(),
                 ),
                 GoRoute(
                   path: 'bookmarks',
                   builder: (context, state) => const BookmarksScreen(),
+                ),
+                GoRoute(
+                  path: 'counselor',
+                  builder: (context, state) => const TalkToCounselorScreen(),
                 ),
               ],
             ),
           ],
         ),
       ],
+    ),
+
+    /// ========== Home screen (accessible from profile menu) ==========
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeScreen(),
+      routes: [
+        GoRoute(
+          path: 'resources/:resourceId',
+          builder: (context, state) => ResourceDetailScreen(
+            resourceId: state.pathParameters['resourceId']!,
+          ),
+        ),
+      ],
+    ),
+
+    /// ========== Community (direct deep-link) ==========
+    GoRoute(
+      path: '/community',
+      builder: (context, state) => const CommunityFeedScreen(),
     ),
 
     /// ==================== Feature Screens ====================
@@ -298,6 +298,31 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/profile-safety',
       builder: (context, state) => const ProfileSafetyScreen(),
+    ),
+    GoRoute(
+      path: '/crisis-pathway',
+      builder: (context, state) => const CrisisPathwayScreen(),
+    ),
+
+    /// ==================== Ubuntu Circles ====================
+    GoRoute(
+      path: '/circles',
+      builder: (context, state) => const CirclesScreen(),
+      routes: [
+        GoRoute(
+          path: ':circleId',
+          builder: (context, state) => CircleChatScreen(
+            circleId: state.pathParameters['circleId']!,
+            theme: state.uri.queryParameters['theme'] ?? 'Circle',
+          ),
+        ),
+      ],
+    ),
+
+    /// ==================== Voice Journal ====================
+    GoRoute(
+      path: '/voice-journal',
+      builder: (context, state) => const VoiceJournalScreen(),
     ),
   ],
 );

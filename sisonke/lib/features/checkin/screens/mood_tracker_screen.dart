@@ -8,6 +8,205 @@ import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
+// ─── Mood insights helpers ────────────────────────────────────────────────────
+
+/// Returns 0 (great) … 5 (overwhelmed) — higher = harder mood
+int _moodOrdinal(MoodType m) => MoodType.values.indexOf(m);
+
+/// True for positive moods (great / okay)
+bool _isPositive(MoodType m) => m == MoodType.great || m == MoodType.okay;
+
+/// True for difficult moods
+bool _isDifficult(MoodType m) =>
+    m == MoodType.low ||
+    m == MoodType.anxious ||
+    m == MoodType.overwhelmed ||
+    m == MoodType.angry;
+
+class _MoodInsights {
+  final String bestDay;
+  final String worstDay;
+  final String trend; // "improving", "stable", "declining"
+
+  const _MoodInsights({
+    required this.bestDay,
+    required this.worstDay,
+    required this.trend,
+  });
+}
+
+_MoodInsights _computeInsights(List<MoodEntry> entries) {
+  // ── Day of week analysis ─────────────────────────────────────────────────
+  // dayPositive[weekday] = count of positive entries on that day (1=Mon…7=Sun)
+  final dayPositive = <int, int>{};
+  final dayDifficult = <int, int>{};
+  for (final e in entries) {
+    final wd = e.timestamp.weekday;
+    dayPositive[wd] = (dayPositive[wd] ?? 0) + (_isPositive(e.mood) ? 1 : 0);
+    dayDifficult[wd] =
+        (dayDifficult[wd] ?? 0) + (_isDifficult(e.mood) ? 1 : 0);
+  }
+  const dayNames = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  String bestDay = 'Fri';
+  int bestCount = -1;
+  for (final kv in dayPositive.entries) {
+    if (kv.value > bestCount) {
+      bestCount = kv.value;
+      bestDay = dayNames[kv.key];
+    }
+  }
+  String worstDay = 'Mon';
+  int worstCount = -1;
+  for (final kv in dayDifficult.entries) {
+    if (kv.value > worstCount) {
+      worstCount = kv.value;
+      worstDay = dayNames[kv.key];
+    }
+  }
+
+  // ── 7-day trend: compare first 3 vs last 3 by ordinal ────────────────────
+  final sorted = [...entries]
+    ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+  double firstAvg = 0;
+  double lastAvg = 0;
+  if (sorted.length >= 6) {
+    final first3 = sorted.take(3).map((e) => _moodOrdinal(e.mood));
+    final last3 = sorted.reversed.take(3).map((e) => _moodOrdinal(e.mood));
+    firstAvg = first3.reduce((a, b) => a + b) / 3;
+    lastAvg = last3.reduce((a, b) => a + b) / 3;
+  }
+  // Lower ordinal = better mood, so lastAvg < firstAvg means improving
+  String trend;
+  if (lastAvg < firstAvg - 0.4) {
+    trend = 'improving';
+  } else if (lastAvg > firstAvg + 0.4) {
+    trend = 'declining';
+  } else {
+    trend = 'stable';
+  }
+
+  return _MoodInsights(bestDay: bestDay, worstDay: worstDay, trend: trend);
+}
+
+// ─── Insights panel widget ────────────────────────────────────────────────────
+class _InsightsPanel extends StatelessWidget {
+  final List<MoodEntry> entries;
+  const _InsightsPanel({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final insights = _computeInsights(entries);
+    final trendIcon =
+        insights.trend == 'improving' ? '↑' : (insights.trend == 'declining' ? '↓' : '→');
+    final trendLabel =
+        insights.trend == 'improving'
+            ? 'Improving'
+            : (insights.trend == 'declining' ? 'Watch this' : 'Stable');
+    final trendColor =
+        insights.trend == 'improving'
+            ? SisonkeColors.riskLow
+            : (insights.trend == 'declining'
+                ? SisonkeColors.riskHigh
+                : SisonkeColors.riskMedium);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.55)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your patterns',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: const Color(0xFF2F3433).withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _StatChip(
+                label: 'Best',
+                value: insights.bestDay,
+                color: SisonkeColors.riskLow,
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                label: 'Needs care',
+                value: insights.worstDay,
+                color: SisonkeColors.riskMedium,
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                label: 'Trend',
+                value: '$trendIcon $trendLabel',
+                color: trendColor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _StatChip({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: color.withOpacity(0.75),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class MoodTrackerScreen extends ConsumerStatefulWidget {
   const MoodTrackerScreen({super.key});
 
@@ -97,9 +296,14 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: moods.length,
+                itemCount: moods.length + (moods.length >= 7 ? 1 : 0),
                 itemBuilder: (context, index) {
-                  final entry = moods[index];
+                  // Slot 0: insights panel when 7+ entries exist
+                  if (moods.length >= 7 && index == 0) {
+                    return _InsightsPanel(entries: moods);
+                  }
+                  final entryIndex = moods.length >= 7 ? index - 1 : index;
+                  final entry = moods[entryIndex];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(

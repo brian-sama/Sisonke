@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from '../db';
 import { analyticsEvents, communityPosts, reports } from '../db/schema';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, adminOnly } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CommunityPostSchema } from '../types';
 import { detectRiskLevel } from '../services/riskService';
@@ -69,10 +69,79 @@ router.post('/reports', authMiddleware, asyncHandler(async (req, res) => {
     description: req.body.description,
     reporterDeviceId: req.user!.deviceId,
   }).returning();
-  
+
   SocketService.broadcastDashboardUpdate({ type: 'report', action: 'created' });
 
   res.status(201).json({ success: true, data: report });
+}));
+
+// GET /api/community/pending — posts awaiting moderation (admin only)
+router.get('/pending', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const rows = await db
+    .select()
+    .from(communityPosts)
+    .where(eq(communityPosts.status, 'pending'))
+    .orderBy(desc(communityPosts.createdAt))
+    .limit(100);
+
+  res.json({ success: true, data: rows });
+}));
+
+// POST /api/community/:id/approve — approve a pending post (admin only)
+router.post('/:id/approve', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const [post] = await db
+    .select()
+    .from(communityPosts)
+    .where(eq(communityPosts.id, id))
+    .limit(1);
+
+  if (!post) {
+    return res.status(404).json({ success: false, error: 'Post not found.' });
+  }
+
+  const [updated] = await db
+    .update(communityPosts)
+    .set({ status: 'approved', reviewedAt: new Date(), reviewedBy: req.user!.id })
+    .where(eq(communityPosts.id, id))
+    .returning();
+
+  SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'approved' });
+
+  res.json({ success: true, data: updated });
+}));
+
+// POST /api/community/:id/reject — reject and soft-remove a post (admin only)
+router.post('/:id/reject', authMiddleware, adminOnly, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const moderationReason = String(req.body.reason || 'Rejected by moderator').trim();
+
+  const [post] = await db
+    .select()
+    .from(communityPosts)
+    .where(eq(communityPosts.id, id))
+    .limit(1);
+
+  if (!post) {
+    return res.status(404).json({ success: false, error: 'Post not found.' });
+  }
+
+  const [updated] = await db
+    .update(communityPosts)
+    .set({
+      status: 'removed',
+      moderationReason,
+      reviewedAt: new Date(),
+      reviewedBy: req.user!.id,
+      removedAt: new Date(),
+    })
+    .where(eq(communityPosts.id, id))
+    .returning();
+
+  SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'rejected' });
+
+  res.json({ success: true, data: updated });
 }));
 
 export default router;

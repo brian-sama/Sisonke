@@ -163,17 +163,29 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                               children: [
                                 Text(
                                   mood.emoji,
-                                  style: const TextStyle(fontSize: 34),
+                                  style: const TextStyle(fontSize: 28),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  mood.label,
+                                  mood.localLabel,
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 12.5,
+                                    fontSize: 12,
                                     fontWeight: isSelected
                                         ? FontWeight.w900
-                                        : FontWeight.w600,
+                                        : FontWeight.w700,
                                     color: const Color(0xFF2F3433),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  mood.localNote,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF2F3433).withOpacity(0.55),
+                                    fontStyle: FontStyle.italic,
                                   ),
                                 ),
                               ],

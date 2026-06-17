@@ -250,100 +250,269 @@ class _QuickExitDetectorState extends State<QuickExitDetector>
   }
 }
 
-class QuickExitScreen extends StatelessWidget {
+class QuickExitScreen extends StatefulWidget {
   final Map<String, dynamic> content;
   final VoidCallback? onReturn;
 
   const QuickExitScreen({super.key, required this.content, this.onReturn});
 
   @override
+  State<QuickExitScreen> createState() => _QuickExitScreenState();
+}
+
+class _QuickExitScreenState extends State<QuickExitScreen> {
+  // --- Calculator state ---
+  String _display = '0';
+  double? _firstOperand;
+  String? _pendingOp;
+  bool _shouldReplace = false;
+
+  // --- Notes state ---
+  late List<Map<String, String>> _notes;
+  late List<TextEditingController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    final rawNotes = widget.content['notes'] as List? ?? [];
+    _notes = rawNotes
+        .map<Map<String, String>>((n) => {
+              'title': n['title']?.toString() ?? '',
+              'content': n['content']?.toString() ?? '',
+              'date': n['date']?.toString() ?? '',
+            })
+        .toList();
+    _controllers = _notes
+        .map((n) => TextEditingController(text: n['content']))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  // --- Calculator logic ---
+  void _onCalcButton(String label) {
+    setState(() {
+      if (label == 'C') {
+        _display = '0';
+        _firstOperand = null;
+        _pendingOp = null;
+        _shouldReplace = false;
+        return;
+      }
+      if (label == '=') {
+        if (_firstOperand != null && _pendingOp != null) {
+          final second = double.tryParse(_display) ?? 0;
+          double result;
+          switch (_pendingOp) {
+            case '+':
+              result = _firstOperand! + second;
+            case '-':
+              result = _firstOperand! - second;
+            case 'x':
+              result = _firstOperand! * second;
+            case '/':
+              result = second == 0 ? 0 : _firstOperand! / second;
+            default:
+              result = second;
+          }
+          _display = result % 1 == 0
+              ? result.toInt().toString()
+              : result.toStringAsFixed(8).replaceAll(RegExp(r'0+$'), '');
+          _firstOperand = null;
+          _pendingOp = null;
+          _shouldReplace = true;
+        }
+        return;
+      }
+      if (label == '+' || label == '-' || label == 'x' || label == '/') {
+        _firstOperand = double.tryParse(_display);
+        _pendingOp = label;
+        _shouldReplace = true;
+        return;
+      }
+      if (label == '.') {
+        if (_shouldReplace) {
+          _display = '0.';
+          _shouldReplace = false;
+          return;
+        }
+        if (!_display.contains('.')) _display += '.';
+        return;
+      }
+      // Digit
+      if (_shouldReplace || _display == '0') {
+        _display = label;
+        _shouldReplace = false;
+      } else if (_display.length < 10) {
+        _display += label;
+      }
+    });
+  }
+
+  bool _isOperator(String s) =>
+      s == '+' || s == '-' || s == 'x' || s == '/' || s == '=' || s == 'C';
+
+  @override
   Widget build(BuildContext context) {
+    final title = widget.content['title'] as String? ?? '';
     return Scaffold(
       appBar: AppBar(
-        title: Text(content['title'] ?? 'Quick Exit'),
+        title: Text(title.isEmpty ? '' : title),
         backgroundColor: Colors.grey[800],
         foregroundColor: Colors.white,
         leading: IconButton(
-          onPressed: onReturn ?? () => Navigator.pop(context),
+          onPressed: widget.onReturn ?? () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back),
-          tooltip: 'Return to Sisonke',
+          tooltip: 'Back',
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              // Close app completely
-              SystemNavigator.pop();
-            },
+            onPressed: SystemNavigator.pop,
             icon: const Icon(Icons.close),
-            tooltip: 'Close App',
+            tooltip: 'Close',
           ),
         ],
       ),
       backgroundColor: Colors.grey[100],
-      body: _buildContent(),
+      body: _buildContent(title),
     );
   }
 
-  Widget _buildContent() {
-    final title = content['title'] as String? ?? '';
-
-    if (title == 'Calculator') {
-      return _buildCalculatorContent();
-    } else if (title == 'My Notes') {
-      return _buildNotesContent();
-    }
-
+  Widget _buildContent(String title) {
+    if (title == 'Calculator') return _buildCalculator();
+    if (title == 'My Notes') return _buildNotes();
     return const SizedBox.expand();
   }
 
-  Widget _buildCalculatorContent() {
-    return const Center(
-      child: Card(
-        child: Padding(
-          padding: EdgeInsets.all(32.0),
+  // --- Functional calculator UI ---
+  Widget _buildCalculator() {
+    const rows = [
+      ['C', '/', 'x', '-'],
+      ['7', '8', '9', '+'],
+      ['4', '5', '6', '='],
+      ['1', '2', '3', '.'],
+      ['0'],
+    ];
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          color: Colors.grey[850],
           child: Text(
-            'Calculator\n(Tap to use)',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24),
+            _display,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 52,
+              fontWeight: FontWeight.w300,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-      ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: rows
+                  .map(
+                    (row) => Expanded(
+                      child: Row(
+                        children: row
+                            .map(
+                              (label) => Expanded(
+                                flex: label == '0' ? 4 : 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: ElevatedButton(
+                                    onPressed: () => _onCalcButton(label),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _isOperator(label)
+                                          ? Colors.orange
+                                          : Colors.grey[200],
+                                      foregroundColor: _isOperator(label)
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    child: Text(
+                                      label,
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildNotesContent() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ListView.builder(
-        itemCount: (content['notes'] as List).length,
-        itemBuilder: (context, index) {
-          final note = (content['notes'] as List)[index];
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    note['title'],
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+  // --- Editable notes UI ---
+  Widget _buildNotes() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _notes.length,
+      itemBuilder: (context, index) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _notes[index]['title'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+                    Text(
+                      _notes[index]['date'] ?? '',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _controllers[index],
+                  maxLines: null,
+                  decoration: const InputDecoration.collapsed(
+                    hintText: 'Write something…',
                   ),
-                  const SizedBox(height: 8),
-                  Text(note['content'], style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 8),
-                  Text(
-                    note['date'],
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
+                  style: const TextStyle(fontSize: 14),
+                  onChanged: (val) => _notes[index]['content'] = val,
+                ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

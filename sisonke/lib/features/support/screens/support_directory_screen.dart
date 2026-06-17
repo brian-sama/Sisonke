@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/features/emergency/providers/emergency_provider.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 
 class SupportDirectoryScreen extends ConsumerWidget {
   const SupportDirectoryScreen({super.key});
@@ -27,7 +28,12 @@ class SupportDirectoryScreen extends ConsumerWidget {
             onCounselor: () => context.push('/talk-to-counselor'),
             onEmergency: () => context.push('/emergency'),
           ),
+          const SizedBox(height: 16),
+
+          // ── Ubuntu Circles entry point ──────────────────────────────
+          _UbuntuCirclesBanner(onTap: () => context.push('/circles')),
           const SizedBox(height: 18),
+
           Text(
             'Talk to Someone',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -333,6 +339,75 @@ class _SupportEmpty extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(child: Text(text)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Ubuntu Circles banner ────────────────────────────────────────────────────
+class _UbuntuCirclesBanner extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _UbuntuCirclesBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: SisonkeColors.secondaryDim,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: SisonkeColors.lavender,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.groups_rounded,
+                  color: SisonkeColors.secondary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ubuntu Circles',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        color: SisonkeColors.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Anonymous healing spaces for shared journeys',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: SisonkeColors.secondary.withOpacity(0.75),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: SisonkeColors.secondary,
+              ),
+            ],
+          ),
         ),
       ),
     );

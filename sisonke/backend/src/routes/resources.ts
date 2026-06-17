@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
-import { resources, users } from '../db/schema';
+import { resources, users, resourceViews } from '../db/schema';
 import { eq, and, ilike, desc, asc } from 'drizzle-orm';
 import { CreateResourceSchema, UpdateResourceSchema, ResourceQuerySchema } from '../types';
 import { authMiddleware, optionalAuth, adminOnly, hasAnyRole } from '../middleware/auth';
@@ -212,6 +212,29 @@ router.get('/:id/download', optionalAuth, asyncHandler(async (req, res) => {
       downloadedAt: new Date().toISOString(),
     },
   });
+}));
+
+// POST /api/resources/:id/view — log a resource view with optional durationSeconds
+router.post('/:id/view', optionalAuth, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const durationSeconds = Number(req.body.durationSeconds ?? 0);
+
+  const [resource] = await db
+    .select({ id: resources.id })
+    .from(resources)
+    .where(eq(resources.id, id))
+    .limit(1);
+
+  if (!resource) {
+    return res.status(404).json({ success: false, error: 'Resource not found.' });
+  }
+
+  await db.insert(resourceViews).values({
+    resourceId: id,
+    durationSeconds: Math.max(0, Math.floor(durationSeconds)),
+  });
+
+  res.status(202).json({ success: true });
 }));
 
 // Get categories

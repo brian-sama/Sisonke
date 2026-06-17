@@ -14,6 +14,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _dailyReminder = false;
   bool _quickExitEnabled = true;
   bool _anonymousAnalytics = true;
+  String _trustedName = '';
+  String _trustedPhone = '';
 
   @override
   void initState() {
@@ -31,12 +33,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
           prefs.getBool(AppConstants.quickExitEnabledKey) ?? true;
       _anonymousAnalytics =
           prefs.getBool(AppConstants.dataCollectionKey) ?? true;
+      _trustedName = prefs.getString('trusted_contact_name') ?? '';
+      _trustedPhone = prefs.getString('trusted_contact_phone') ?? '';
     });
   }
 
   Future<void> _setBool(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+  }
+
+  Future<void> _showTrustedContactDialog(BuildContext context) async {
+    final nameController = TextEditingController(text: _trustedName);
+    final phoneController = TextEditingController(text: _trustedPhone);
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Trusted Contact'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                hintText: 'e.g. Auntie Grace',
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Phone number',
+                hintText: 'e.g. +263 77 123 4567',
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              final phone = phoneController.text.trim();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('trusted_contact_name', name);
+              await prefs.setString('trusted_contact_phone', phone);
+              if (!mounted) return;
+              setState(() {
+                _trustedName = name;
+                _trustedPhone = phone;
+              });
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              _showSaved(context, message: 'Trusted contact saved.');
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    nameController.dispose();
+    phoneController.dispose();
   }
 
   @override
@@ -64,6 +128,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() => _quickExitEnabled = value);
                 _setBool(AppConstants.quickExitEnabledKey, value);
               },
+            ),
+          ]),
+          _buildSettingsSection(context, 'Trusted Person', [
+            ListTile(
+              leading: const Icon(Icons.volunteer_activism_outlined),
+              title: Text(
+                _trustedName.isNotEmpty
+                    ? '$_trustedName · $_trustedPhone'
+                    : 'Add a trusted contact',
+              ),
+              subtitle: Text(
+                _trustedName.isNotEmpty
+                    ? 'Your trusted contact'
+                    : 'Someone who can check on you',
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => _showTrustedContactDialog(context),
             ),
           ]),
           _buildSettingsSection(context, 'General', [

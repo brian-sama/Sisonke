@@ -2,6 +2,8 @@ import { pgTable, uuid, varchar, text, boolean, timestamp, integer, jsonb, pgEnu
 
 // Enums
 export const ageGroupEnum = pgEnum('age_group', ['13-15', '16-17', '18-24', '25+']);
+export const circleThemeEnum = pgEnum('circle_theme', ['grief', 'anxiety', 'exam-stress', 'loneliness', 'anger', 'sobriety']);
+export const outreachSegmentEnum = pgEnum('outreach_segment', ['all', 'inactive', 'high-risk', 'age-group']);
 export const chatbotPersonaEnum = pgEnum('chatbot_persona', ['male', 'female']);
 export const riskLevelEnum = pgEnum('risk_level', ['low', 'medium', 'high']);
 
@@ -363,6 +365,62 @@ export const securityLogs = pgTable('security_logs', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// Ubuntu Circles — peer support groups by theme, fully anonymous messages
+export const circles = pgTable('circles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  theme: circleThemeEnum('theme').notNull(),
+  descriptionEn: text('description_en').notNull(),
+  descriptionSn: text('description_sn'),
+  descriptionNd: text('description_nd'),
+  maxMembers: integer('max_members').default(8).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const circleMembers = pgTable('circle_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  circleId: uuid('circle_id').references(() => circles.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  joinedAt: timestamp('joined_at').defaultNow(),
+});
+
+// Anonymous messages — NO user_id stored
+export const circleMessages = pgTable('circle_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  circleId: uuid('circle_id').references(() => circles.id, { onDelete: 'cascade' }).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Trusted contacts (one per user)
+export const trustedContacts = pgTable('trusted_contacts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  name: varchar('name', { length: 120 }).notNull(),
+  phone: varchar('phone', { length: 50 }).notNull(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Resource views for engagement analytics
+export const resourceViews = pgTable('resource_views', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  resourceId: uuid('resource_id').references(() => resources.id, { onDelete: 'cascade' }).notNull(),
+  durationSeconds: integer('duration_seconds').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Outreach campaigns
+export const outreachCampaigns = pgTable('outreach_campaigns', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  segment: outreachSegmentEnum('segment').notNull(),
+  ageGroup: varchar('age_group', { length: 20 }),
+  scheduledAt: timestamp('scheduled_at'),
+  sentAt: timestamp('sent_at'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -400,3 +458,15 @@ export type CmsContent = typeof cmsContent.$inferSelect;
 export type NewCmsContent = typeof cmsContent.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type Circle = typeof circles.$inferSelect;
+export type NewCircle = typeof circles.$inferInsert;
+export type CircleMember = typeof circleMembers.$inferSelect;
+export type NewCircleMember = typeof circleMembers.$inferInsert;
+export type CircleMessage = typeof circleMessages.$inferSelect;
+export type NewCircleMessage = typeof circleMessages.$inferInsert;
+export type TrustedContact = typeof trustedContacts.$inferSelect;
+export type NewTrustedContact = typeof trustedContacts.$inferInsert;
+export type ResourceView = typeof resourceViews.$inferSelect;
+export type NewResourceView = typeof resourceViews.$inferInsert;
+export type OutreachCampaign = typeof outreachCampaigns.$inferSelect;
+export type NewOutreachCampaign = typeof outreachCampaigns.$inferInsert;

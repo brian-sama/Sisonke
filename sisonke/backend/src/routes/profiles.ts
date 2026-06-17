@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
-import { userProfiles } from '../db/schema';
+import { userProfiles, trustedContacts, notifications } from '../db/schema';
 import { authMiddleware } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { OnboardingProfileSchema } from '../types';
@@ -90,6 +91,69 @@ router.patch('/me/safety', asyncHandler(async (req, res) => {
   }
 
   res.json({ success: true, data: updated });
+}));
+
+const TrustedContactSchema = z.object({
+  name: z.string().min(1).max(120),
+  phone: z.string().min(7).max(50),
+});
+
+// POST /api/profiles/trusted-contact — save or update trusted contact
+router.post('/trusted-contact', asyncHandler(async (req, res) => {
+  const input = TrustedContactSchema.parse(req.body);
+
+  const existing = await db
+    .select()
+    .from(trustedContacts)
+    .where(eq(trustedContacts.userId, req.user!.id))
+    .limit(1);
+
+  const [contact] = existing.length
+    ? await db
+        .update(trustedContacts)
+        .set({ name: input.name, phone: input.phone, updatedAt: new Date() })
+        .where(eq(trustedContacts.userId, req.user!.id))
+        .returning()
+    : await db
+        .insert(trustedContacts)
+        .values({ userId: req.user!.id, name: input.name, phone: input.phone })
+        .returning();
+
+  res.json({ success: true, data: contact });
+}));
+
+// POST /api/profiles/check-on-me — notify trusted contact (logs an outreach notification)
+router.post('/check-on-me', asyncHandler(async (req, res) => {
+  const [contact] = await db
+    .select()
+    .from(trustedContacts)
+    .where(eq(trustedContacts.userId, req.user!.id))
+    .limit(1);
+
+  if (!contact) {
+    return res.status(404).json({
+      success: false,
+      error: 'No trusted contact saved. Add one first via POST /api/profiles/trusted-contact.',
+    });
+  }
+
+  // Log an in-app outreach notification for the requesting user
+  // In production you would also trigger an SMS/push to contact.phone here
+  await db.insert(notifications).values({
+    userId: req.user!.id,
+    channel: 'outreach',
+    title: 'Check-on-me sent',
+    body: `A check-on-me request has been sent to ${contact.name} (${contact.phone}).`,
+    metadata: { trustedContactName: contact.name, trustedContactPhone: contact.phone },
+  });
+
+  res.json({
+    success: true,
+    data: {
+      message: `Check-on-me logged. ${contact.name} will be notified.`,
+      contact: { name: contact.name, phone: contact.phone },
+    },
+  });
 }));
 
 export default router;

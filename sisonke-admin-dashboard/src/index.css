@@ -1,14 +1,43 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Outfit:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-sans:    "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", var(--font-sans);
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* ── Brand palette ──────────────────────────────────────────── */
+  --color-primary:      #2E6F60;
+  --color-primary-dim:  #E8F2EF;
+  --color-primary-mid:  #D0E8E3;
+  --color-primary-dark: #1A3D36;
+
+  --color-secondary:    #7361A9;
+  --color-secondary-dim:#F0EDF8;
+
+  --color-accent:       #D68A7F;
+
+  /* ── Surfaces ───────────────────────────────────────────────── */
+  --color-cream:  #FFFBF2;
+  --color-muted:  #F5F0E8;
+
+  /* ── Text ───────────────────────────────────────────────────── */
+  --color-charcoal: #2F3433;
+
+  /* ── Semantic / risk (cross-platform exact match) ───────────── */
+  --color-risk-high:   #F43F5E;
+  --color-risk-medium: #F59E0B;
+  --color-risk-low:    #10B981;
 }
 
 @layer base {
   body {
-    @apply font-sans text-zinc-900 bg-[#FAFAFF];
+    @apply font-sans text-charcoal bg-cream;
   }
+
+  /* Thin scrollbar that matches the brand */
+  .custom-scrollbar::-webkit-scrollbar        { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--color-primary-mid); border-radius: 9999px; }
 }

@@ -25,6 +25,8 @@ import chatbotRoutes from './routes/chatbot';
 import counselorRoutes from './routes/counselor';
 import communityRoutes from './routes/community';
 import notificationRoutes from './routes/notifications';
+import circlesRoutes from './routes/circles';
+import outreachRoutes from './routes/outreach';
 
 validateEnv();
 
@@ -113,6 +115,8 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/counselor', counselorRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/circles', circlesRoutes);
+app.use('/api/admin/outreach', outreachRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Root endpoint
@@ -134,7 +138,9 @@ app.get('/', (req, res) => {
       chatbot: '/api/chatbot',
       counselor: '/api/counselor',
       community: '/api/community',
+      circles: '/api/circles',
       admin: '/api/admin',
+      outreach: '/api/admin/outreach',
     },
     documentation: 'https://github.com/sisonke/api-docs',
   });
