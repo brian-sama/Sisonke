@@ -173,7 +173,7 @@ router.get('/export/report', asyncHandler(async (req, res) => {
   `);
 
   const avgMinutes =
-    (avgResponseTime.rows ?? (avgResponseTime as any))[0]?.avg_response_minutes ?? null;
+    (avgResponseTime as any)[0]?.avg_response_minutes ?? null;
 
   res.json({
     success: true,
@@ -181,7 +181,7 @@ router.get('/export/report', asyncHandler(async (req, res) => {
       generatedAt: new Date().toISOString(),
       periodDays: 30,
       totalUsers: Number(totalUsers),
-      moodDistribution: moodDistribution.rows ?? moodDistribution,
+      moodDistribution: moodDistribution,
       crisisCount: Number(crisisCount),
       counselorAvgResponseMinutes: avgMinutes,
     },

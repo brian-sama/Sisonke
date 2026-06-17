@@ -14,21 +14,21 @@ class EFriendScreen extends StatefulWidget {
 }
 
 class _EFriendScreenState extends State<EFriendScreen> {
-  var _persona = ‘female’;
+  var _persona = 'female';
   String? _emotion;
   final _api = ApiService();
   final _messages = <_ChatMessage>[
     const _ChatMessage(
       fromUser: false,
       text:
-          ‘Take a slow, deep breath. I’m here to listen. Tell me what is on your mind today.’,
-      risk: ‘LOW’,
+          'Take a slow, deep breath. I\'m here to listen. Tell me what is on your mind today.',
+      risk: 'LOW',
     ),
   ];
   final _controller = TextEditingController();
   String? _sessionId;
   var _sending = false;
-  String _trustedContactName = ‘’;
+  String _trustedContactName = '';
 
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _trustedContactName = prefs.getString(‘trusted_contact_name’) ?? ‘’;
+      _trustedContactName = prefs.getString('trusted_contact_name') ?? '';
     });
   }
 
@@ -317,8 +317,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
         _sending = false;
       });
 
-      if (response[‘escalationRequired’] == true && mounted) {
-        context.push(‘/crisis-pathway’);
+      if (response['escalationRequired'] == true && mounted) {
+        context.push('/crisis-pathway');
       }
     } catch (_) {
       final risk = _riskFor(text);
@@ -327,17 +327,17 @@ class _EFriendScreenState extends State<EFriendScreen> {
         _messages.add(
           _ChatMessage(
             fromUser: false,
-            text: risk == ‘HIGH’
-                ? "I think you deserve warm human support right now. I’m opening a safe space for us to take this step by step."
-                : "I couldn’t reach my system, but please take a slow breath. Your peace is what matters. Let’s try again when you are ready.",
+            text: risk == 'HIGH'
+                ? "I think you deserve warm human support right now. I'm opening a safe space for us to take this step by step."
+                : "I couldn't reach my system, but please take a slow breath. Your peace is what matters. Let's try again when you are ready.",
             risk: risk,
           ),
         );
         _sending = false;
       });
-      if (risk == ‘HIGH’ && mounted) {
+      if (risk == 'HIGH' && mounted) {
         await Future.delayed(const Duration(milliseconds: 800));
-        if (mounted) context.push(‘/crisis-pathway’);
+        if (mounted) context.push('/crisis-pathway');
       }
     }
   }
@@ -568,7 +568,7 @@ class _RiskCheckBanner extends StatelessWidget {
             child: Text(
               highAttention
                   ? 'I will stand with you and suggest friendly human support if needed.'
-                  : 'I am here with you. Let’s explore some peaceful steps together.',
+                  : 'I am here with you. Let's explore some peaceful steps together.',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12.5,

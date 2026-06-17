@@ -10,9 +10,9 @@ class OfflineBanner extends StatelessWidget {
     return StreamBuilder<List<ConnectivityResult>>(
       stream: Connectivity().onConnectivityChanged,
       builder: (context, snapshot) {
-        final results = snapshot.data ?? [];
-        final isOffline = results.isNotEmpty &&
-            results.every((r) => r == ConnectivityResult.none);
+        final isOffline = snapshot.hasData &&
+            (snapshot.data!.isEmpty ||
+                snapshot.data!.every((r) => r == ConnectivityResult.none));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

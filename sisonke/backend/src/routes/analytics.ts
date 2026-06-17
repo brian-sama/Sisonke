@@ -41,7 +41,7 @@ router.get('/cohort-moods', authMiddleware, adminOnly, asyncHandler(async (req, 
     ORDER BY up.age_group, day_of_week_num, mc.mood
   `);
 
-  res.json({ success: true, data: rows.rows ?? rows });
+  res.json({ success: true, data: rows });
 }));
 
 // GET /api/analytics/resource-engagement — per-resource view counts and avg read time (admin)
@@ -60,7 +60,7 @@ router.get('/resource-engagement', authMiddleware, adminOnly, asyncHandler(async
     LIMIT 100
   `);
 
-  res.json({ success: true, data: rows.rows ?? rows });
+  res.json({ success: true, data: rows });
 }));
 
 // GET /api/analytics/geo-risk — count high-risk events grouped by location (admin)
@@ -78,7 +78,7 @@ router.get('/geo-risk', authMiddleware, adminOnly, asyncHandler(async (req, res)
     ORDER BY high_risk_count DESC
   `);
 
-  res.json({ success: true, data: rows.rows ?? rows });
+  res.json({ success: true, data: rows });
 }));
 
 export default router;

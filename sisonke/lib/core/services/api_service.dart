@@ -873,6 +873,34 @@ class ApiService {
     }
   }
 
+  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.get(path, queryParameters: queryParameters);
+      if (response.data is Map && response.data['success'] != null) {
+        if (response.data['success'] == true) return response.data['data'];
+        throw ApiException(response.data['error'] ?? 'Request failed');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<dynamic> post(String path, Map<String, dynamic> data) async {
+    await ensureGuestSession();
+    try {
+      final response = await _dio.post(path, data: data);
+      if (response.data is Map && response.data['success'] != null) {
+        if (response.data['success'] == true) return response.data['data'];
+        throw ApiException(response.data['error'] ?? 'Request failed');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   // Private methods
   Future<void> _refreshToken() async {
     try {
