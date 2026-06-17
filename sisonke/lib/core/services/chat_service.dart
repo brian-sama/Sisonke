@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:sisonke/core/constants/app_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 

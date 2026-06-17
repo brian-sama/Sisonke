@@ -92,9 +92,9 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha:0.7),
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  border: Border.all(color: Colors.white.withValues(alpha:0.4)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +112,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                       'Select the nature token that closest resembles your emotional environment:',
                       style: TextStyle(
                         fontSize: 13,
-                        color: const Color(0xFF2F3433).withOpacity(0.65),
+                        color: const Color(0xFF2F3433).withValues(alpha:0.65),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -137,13 +137,13 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                             duration: const Duration(milliseconds: 250),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF2E6F60).withOpacity(0.18)
-                                  : Colors.white.withOpacity(0.6),
+                                  ? const Color(0xFF2E6F60).withValues(alpha:0.18)
+                                  : Colors.white.withValues(alpha:0.6),
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
                                 color: isSelected
                                     ? const Color(0xFF2E6F60)
-                                    : Colors.white.withOpacity(0.5),
+                                    : Colors.white.withValues(alpha:0.5),
                                 width: isSelected ? 2.5 : 1,
                               ),
                               boxShadow: isSelected
@@ -151,7 +151,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                                       BoxShadow(
                                         color: const Color(
                                           0xFF2E6F60,
-                                        ).withOpacity(0.15),
+                                        ).withValues(alpha:0.15),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       ),
@@ -184,7 +184,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                                   style: TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF2F3433).withOpacity(0.55),
+                                    color: const Color(0xFF2F3433).withValues(alpha:0.55),
                                     fontStyle: FontStyle.italic,
                                   ),
                                 ),
@@ -201,9 +201,9 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha:0.7),
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  border: Border.all(color: Colors.white.withValues(alpha:0.4)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,7 +225,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2E6F60).withOpacity(0.12),
+                            color: const Color(0xFF2E6F60).withValues(alpha:0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -245,9 +245,9 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                         activeTrackColor: const Color(0xFF2E6F60),
                         inactiveTrackColor: const Color(
                           0xFF2E6F60,
-                        ).withOpacity(0.15),
+                        ).withValues(alpha:0.15),
                         thumbColor: const Color(0xFF2E6F60),
-                        overlayColor: const Color(0xFF2E6F60).withOpacity(0.12),
+                        overlayColor: const Color(0xFF2E6F60).withValues(alpha:0.12),
                         valueIndicatorColor: const Color(0xFF2E6F60),
                       ),
                       child: Slider(
@@ -267,9 +267,9 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha:0.7),
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  border: Border.all(color: Colors.white.withValues(alpha:0.4)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -288,11 +288,11 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                       maxLines: 4,
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
-                        fillColor: Colors.white.withOpacity(0.85),
+                        fillColor: Colors.white.withValues(alpha:0.85),
                         hintText:
                             'Take your time, write as little or as much as you need...',
                         hintStyle: TextStyle(
-                          color: const Color(0xFF2F3433).withOpacity(0.4),
+                          color: const Color(0xFF2F3433).withValues(alpha:0.4),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),

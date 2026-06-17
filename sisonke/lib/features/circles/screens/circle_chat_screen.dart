@@ -124,7 +124,7 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: SisonkeColors.secondary.withOpacity(0.85),
+                      color: SisonkeColors.secondary.withValues(alpha:0.85),
                     ),
                   ),
                 ],
@@ -144,7 +144,7 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                                 _error!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: const Color(0xFF2F3433).withOpacity(0.6),
+                                  color: const Color(0xFF2F3433).withValues(alpha:0.6),
                                 ),
                               ),
                             ),
@@ -183,7 +183,7 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                         onSubmitted: (_) => _sendMessage(),
                         decoration: InputDecoration(
                           hintText: 'Share with the circle...',
-                          fillColor: Colors.white.withOpacity(0.85),
+                          fillColor: Colors.white.withValues(alpha:0.85),
                           prefixIcon: const Icon(
                             Icons.groups_rounded,
                             color: SisonkeColors.secondary,
@@ -268,17 +268,17 @@ class _AnonymousBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.82),
+                color: Colors.white.withValues(alpha:0.82),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                   bottomLeft: Radius.circular(4),
                 ),
-                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                border: Border.all(color: Colors.white.withValues(alpha:0.5)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha:0.03),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -300,7 +300,7 @@ class _AnonymousBubble extends StatelessWidget {
                       timeLabel,
                       style: TextStyle(
                         fontSize: 10,
-                        color: const Color(0xFF2F3433).withOpacity(0.45),
+                        color: const Color(0xFF2F3433).withValues(alpha:0.45),
                       ),
                     ),
                   ],
@@ -354,7 +354,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: const Color(0xFF2F3433).withOpacity(0.55),
+                color: const Color(0xFF2F3433).withValues(alpha:0.55),
               ),
             ),
           ],

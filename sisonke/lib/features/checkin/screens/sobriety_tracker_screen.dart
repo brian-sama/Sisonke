@@ -65,7 +65,7 @@ class SobrietyTrackerScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppConstants.spacingLarge),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha:0.1),
       ),
       child: Column(
         children: [

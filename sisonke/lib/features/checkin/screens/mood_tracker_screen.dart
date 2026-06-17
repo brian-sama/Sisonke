@@ -113,12 +113,12 @@ class _InsightsPanel extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha:0.8),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withOpacity(0.55)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.55)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -133,7 +133,7 @@ class _InsightsPanel extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
-              color: const Color(0xFF2F3433).withOpacity(0.5),
+              color: const Color(0xFF2F3433).withValues(alpha:0.5),
             ),
           ),
           const SizedBox(height: 10),
@@ -176,9 +176,9 @@ class _StatChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withValues(alpha:0.12),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.25)),
+          border: Border.all(color: color.withValues(alpha:0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +188,7 @@ class _StatChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: color.withOpacity(0.75),
+                color: color.withValues(alpha:0.75),
               ),
             ),
             const SizedBox(height: 2),
@@ -257,9 +257,9 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha:0.6),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withOpacity(0.4)),
+                          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
                         ),
                         child: const Icon(Icons.spa_outlined, size: 64, color: Color(0xFF2E6F60)),
                       ),
@@ -278,7 +278,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
-                          color: const Color(0xFF2F3433).withOpacity(0.6),
+                          color: const Color(0xFF2F3433).withValues(alpha:0.6),
                         ),
                       ),
                       const SizedBox(height: 28),
@@ -307,12 +307,12 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.72),
+                      color: Colors.white.withValues(alpha:0.72),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.5)),
+                      border: Border.all(color: Colors.white.withValues(alpha:0.5)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha:0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -325,7 +325,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha:0.8),
                               shape: BoxShape.circle,
                             ),
                             child: Text(
@@ -352,14 +352,14 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                                     Icon(
                                       Icons.calendar_month_outlined,
                                       size: 13,
-                                      color: const Color(0xFF2F3433).withOpacity(0.5),
+                                      color: const Color(0xFF2F3433).withValues(alpha:0.5),
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       DateFormat('MMM dd • hh:mm a').format(entry.timestamp),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: const Color(0xFF2F3433).withOpacity(0.6),
+                                        color: const Color(0xFF2F3433).withValues(alpha:0.6),
                                       ),
                                     ),
                                   ],
@@ -370,7 +370,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                                     padding: const EdgeInsets.all(12),
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.4),
+                                      color: Colors.white.withValues(alpha:0.4),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Text(
@@ -378,7 +378,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontStyle: FontStyle.italic,
-                                        color: const Color(0xFF2F3433).withOpacity(0.8),
+                                        color: const Color(0xFF2F3433).withValues(alpha:0.8),
                                       ),
                                     ),
                                   ),
@@ -392,7 +392,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2E6F60).withOpacity(0.1),
+                                  color: const Color(0xFF2E6F60).withValues(alpha:0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(

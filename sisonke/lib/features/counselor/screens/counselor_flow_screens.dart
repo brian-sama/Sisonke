@@ -98,7 +98,7 @@ class _CounselorRequestScreenState extends State<CounselorRequestScreen> {
                 if (widget.initialMethod == null) ...[
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _contactMethod,
+                    initialValue: _contactMethod,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.contact_support_rounded),
                       labelText: 'Preferred contact method',

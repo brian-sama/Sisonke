@@ -60,7 +60,7 @@ class CirclesScreen extends StatelessWidget {
               color: SisonkeColors.secondaryDim,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: SisonkeColors.secondary.withOpacity(0.18),
+                color: SisonkeColors.secondary.withValues(alpha:0.18),
               ),
             ),
             child: Row(
@@ -93,7 +93,7 @@ class CirclesScreen extends StatelessWidget {
                       Text(
                         'for shared journeys',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: SisonkeColors.secondary.withOpacity(0.8),
+                          color: SisonkeColors.secondary.withValues(alpha:0.8),
                         ),
                       ),
                     ],
@@ -149,7 +149,7 @@ class CirclesScreen extends StatelessWidget {
                     'All messages are anonymous. Groups have a maximum of 8 members.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: SisonkeColors.primary.withOpacity(0.85),
+                      color: SisonkeColors.primary.withValues(alpha:0.85),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -201,7 +201,7 @@ class _CircleCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha:0.6),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(circle.icon, size: 22, color: const Color(0xFF14213D)),
@@ -223,7 +223,7 @@ class _CircleCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF14213D).withOpacity(0.55),
+                  color: const Color(0xFF14213D).withValues(alpha:0.55),
                 ),
               ),
             ],

@@ -304,7 +304,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
     }
     if (!mounted) return;
     Navigator.push(
-      context,
+      this.context,
       MaterialPageRoute(builder: (context) => JournalEntryScreen(mode: mode)),
     );
   }
