@@ -49,8 +49,8 @@ export const errorHandler = (
 };
 
 export const notFound = (req: Request, res: Response, next: NextFunction) => {
-  const error = new Error(`Not found - ${req.originalUrl}`);
-  res.status(404);
+  const error: AppError = new Error(`API route not found: ${req.originalUrl}`);
+  error.statusCode = 404;
   next(error);
 };
 

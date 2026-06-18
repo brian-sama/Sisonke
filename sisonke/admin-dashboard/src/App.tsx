@@ -98,6 +98,7 @@ const apiFetch = async (endpoint: string, options: any = {}) => {
   if (response.status === 401) {
     localStorage.removeItem('auth_token');
     window.location.href = '/';
+    return;
   }
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || 'Something went wrong');
