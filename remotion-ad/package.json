@@ -1,0 +1,24 @@
+{
+  "name": "sisonke-remotion-ad",
+  "version": "1.0.0",
+  "description": "Sisonke wellness app video advertisement",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render",
+    "render:portrait": "remotion render SisonkePortrait out/sisonke-ad-portrait.mp4 --props='{}'",
+    "render:landscape": "remotion render SisonkeLandscape out/sisonke-ad-landscape.mp4 --props='{}'",
+    "render:all": "npm run render:portrait && npm run render:landscape"
+  },
+  "dependencies": {
+    "remotion": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}
