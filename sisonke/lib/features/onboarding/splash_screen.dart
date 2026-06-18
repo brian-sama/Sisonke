@@ -20,9 +20,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToHome() async {
-    await Future.delayed(const Duration(seconds: 3));
+    final results = await Future.wait([
+      _determineDestination(),
+      Future.delayed(const Duration(milliseconds: 800)),
+    ]);
     if (!mounted) return;
+    context.go(results[0] as String);
+  }
 
+  Future<String> _determineDestination() async {
     final prefs = await SharedPreferences.getInstance();
     final apiService = ApiService();
     final securityService = SecurityService();
@@ -32,17 +38,10 @@ class _SplashScreenState extends State<SplashScreen> {
     final pinEnabled = prefs.getBool(AppConstants.pinEnabledKey) ?? false;
     final hasPin = await securityService.hasPIN();
 
-    if (!mounted) return;
-
     if (hasCompletedOnboarding || isAuthenticated) {
-      if (pinEnabled || hasPin) {
-        context.go('/app-lock');
-      } else {
-        context.go('/home');
-      }
-    } else {
-      context.go('/onboarding');
+      return (pinEnabled || hasPin) ? '/app-lock' : '/home';
     }
+    return '/onboarding';
   }
 
   @override

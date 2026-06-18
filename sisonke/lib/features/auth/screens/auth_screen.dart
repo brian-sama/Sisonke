@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/core/exceptions/api_exception.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
@@ -16,6 +18,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   var _loading = false;
+  var _obscurePassword = true;
   String? _error;
 
   @override
@@ -51,10 +54,17 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: _password,
-            obscureText: true,
-            decoration: const InputDecoration(
+            obscureText: _obscurePassword,
+            decoration: InputDecoration(
               labelText: 'Password',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
           ),
           if (_error != null) ...[
@@ -78,7 +88,13 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           const SizedBox(height: 10),
           TextButton(
-            onPressed: _loading ? null : () => context.go('/home'),
+            onPressed: _loading
+                ? null
+                : () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('onboarding_completed', true);
+                    if (mounted) context.go('/home');
+                  },
             child: const Text('Continue as guest'),
           ),
         ],
@@ -102,7 +118,7 @@ class _AuthScreenState extends State<AuthScreen> {
       context.go('/home');
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _error = e is ApiException ? e.message : e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }

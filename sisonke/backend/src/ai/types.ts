@@ -6,8 +6,7 @@ export type ConversationState =
   | 'SUPPORT_OR_LISTEN'
   | 'GROUNDING'
   | 'WIND_DOWN'
-  | 'ESCALATE'
-  | 'HANDOFF';
+  | 'ESCALATE';
 
 export type PersonaMode =
   | 'gentle_listener'

@@ -38,8 +38,8 @@ const SisonkeState = Annotation.Root({
   handoffSummary: Annotation<string | undefined>(),
 });
 
-function routeAfterSafety(state: SisonkeGraphState) {
-  return state.riskLevel === 'high' ? 'escalate' : 'emotion';
+function routeAfterEmotion(state: SisonkeGraphState) {
+  return state.riskLevel === 'high' ? 'escalate' : 'stage';
 }
 
 function routeAfterStage(state: SisonkeGraphState) {
@@ -56,11 +56,11 @@ export const sisonkeGraph = new StateGraph(SisonkeState)
   .addNode('ruleFallback', ruleFallbackNode)
   .addNode('escalate', counselorEscalationNode)
   .addEdge(START, 'safety')
-  .addConditionalEdges('safety', routeAfterSafety, {
+  .addEdge('safety', 'emotion')
+  .addConditionalEdges('emotion', routeAfterEmotion, {
     escalate: 'escalate',
-    emotion: 'emotion',
+    stage: 'stage',
   })
-  .addEdge('emotion', 'stage')
   .addConditionalEdges('stage', routeAfterStage, {
     done: END,
     rag: 'rag',

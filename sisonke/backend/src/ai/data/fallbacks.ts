@@ -14,8 +14,10 @@ export const greetings = {
   ],
   warm_local: [
     'Sawubona. How is your heart today?',
+    'Sanibonani. I am here. What has been on your mind?',
     "Mhoroi. I'm here. What's been feeling heavy lately?",
     'Hey friend. How are we doing today?',
+    'Eita. Good to have you here. What do you need today?',
   ],
   return_user: [
     "Hey again. I'm here. How have things been since we last spoke?",

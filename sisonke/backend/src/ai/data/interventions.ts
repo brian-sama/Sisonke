@@ -9,7 +9,7 @@ export type Intervention = {
 export const interventions: Intervention[] = [
   {
     id: 'grounding-54321',
-    triggerTags: ['anxiety', 'panic', 'overwhelm', 'kufungisisa'],
+    triggerTags: ['anxiety', 'panic', 'overwhelm', 'kufungisisa', 'panic attack'],
     exerciseName: '5-4-3-2-1 Grounding',
     instructionBlocks: [
       'Look around and name 5 things you can see.',
@@ -22,7 +22,7 @@ export const interventions: Intervention[] = [
   },
   {
     id: 'box-breathing',
-    triggerTags: ['stress', 'heart racing', 'exhaustion', 'panic'],
+    triggerTags: ['stress', 'heart racing', 'panic', 'tense', 'anxious'],
     exerciseName: 'Box Breathing',
     instructionBlocks: [
       'Breathe in slowly for 4 seconds.',
@@ -33,8 +33,28 @@ export const interventions: Intervention[] = [
     presentationStyle: 'step_by_step',
   },
   {
+    id: 'rest-anchor',
+    triggerTags: ['tired', 'exhausted', 'ndakaneta', 'ngikhathele', 'burnout', 'depleted', 'drained'],
+    exerciseName: 'Rest Anchor',
+    instructionBlocks: [
+      'You do not need to solve anything right now.',
+      'Place one hand on your chest and feel your breath — slow and quiet. That is enough.',
+    ],
+    presentationStyle: 'single_step',
+  },
+  {
+    id: 'grief-anchor',
+    triggerTags: ['grief', 'loss', 'died', 'passed away', 'bereavement', 'ndinochema', 'ndakasuruvara', 'sad', 'lonely'],
+    exerciseName: 'Grief Anchor',
+    instructionBlocks: [
+      'You are allowed to feel everything you are feeling right now.',
+      'Say the name of the person or thing you lost — out loud or quietly — and let yourself acknowledge what they meant to you.',
+    ],
+    presentationStyle: 'single_step',
+  },
+  {
     id: 'friendship-bench-one-problem',
-    triggerTags: ['overwhelmed', 'stuck', 'stress', 'problem'],
+    triggerTags: ['overwhelmed', 'stuck', 'stress', 'problem', 'too much'],
     exerciseName: 'One Manageable Problem',
     instructionBlocks: [
       'Let us choose just one small part of this problem for now.',

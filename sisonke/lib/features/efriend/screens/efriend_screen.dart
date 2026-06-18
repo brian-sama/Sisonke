@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,7 +15,6 @@ class EFriendScreen extends StatefulWidget {
 
 class _EFriendScreenState extends State<EFriendScreen> {
   var _persona = 'female';
-  String? _emotion;
   final _api = ApiService();
   final _messages = <_ChatMessage>[
     const _ChatMessage(
@@ -26,6 +25,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
     ),
   ];
   final _controller = TextEditingController();
+  final _scrollController = ScrollController();
   String? _sessionId;
   var _sending = false;
   String _trustedContactName = '';
@@ -34,6 +34,25 @@ class _EFriendScreenState extends State<EFriendScreen> {
   void initState() {
     super.initState();
     _loadTrustedContact();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> _loadTrustedContact() async {
@@ -45,12 +64,12 @@ class _EFriendScreenState extends State<EFriendScreen> {
   }
 
   Gradient get _ambientBackground {
-    if (_emotion == 'Sad' || _emotion == 'Lonely' || _emotion == 'Confused') {
-      return SisonkeColors.morningMist;
-    }
-    if (_emotion == 'Anxious' || _emotion == 'Angry') {
-      return SisonkeColors.pastelSunset;
-    }
+    final lastBotRisk = _messages.lastWhere(
+      (m) => !m.fromUser,
+      orElse: () => const _ChatMessage(fromUser: false, text: '', risk: 'LOW'),
+    ).risk;
+    if (lastBotRisk == 'HIGH') return SisonkeColors.pastelSunset;
+    if (lastBotRisk == 'MEDIUM') return SisonkeColors.morningMist;
     return SisonkeColors.forestBreeze;
   }
 
@@ -144,7 +163,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: Text(
-                              'â€œType anything below to speak. I am your safe, private space.â€',
+                              "Type anything below to speak. I am your safe, private space.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
@@ -162,6 +181,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
             else
               Expanded(
                 child: ListView.separated(
+                  controller: _scrollController,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -289,21 +309,17 @@ class _EFriendScreenState extends State<EFriendScreen> {
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    final apiMessage = text;
     setState(() {
       _sending = true;
-      _messages.add(
-        _ChatMessage(
-          fromUser: true,
-          text: _emotion == null ? text : 'I feel $_emotion. $text',
-          risk: 'CHECKING',
-        ),
-      );
+      _messages.add(_ChatMessage(fromUser: true, text: text, risk: 'CHECKING'));
       _controller.clear();
     });
+    _scrollToBottom();
 
     try {
       final response = await _api.sendChatbotMessage(
-        message: _emotion == null ? text : 'I feel $_emotion. $text',
+        message: apiMessage,
         persona: _persona,
         sessionId: _sessionId,
       );
@@ -316,6 +332,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
         _messages.add(_ChatMessage(fromUser: false, text: reply, risk: risk));
         _sending = false;
       });
+      _scrollToBottom();
 
       if (response['escalationRequired'] == true && mounted) {
         context.push('/crisis-pathway');
@@ -335,6 +352,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
         );
         _sending = false;
       });
+      _scrollToBottom();
       if (risk == 'HIGH' && mounted) {
         await Future.delayed(const Duration(milliseconds: 800));
         if (mounted) context.push('/crisis-pathway');
@@ -342,32 +360,22 @@ class _EFriendScreenState extends State<EFriendScreen> {
     }
   }
 
-  void _selectEmotion(String emotion) {
-    setState(() {
-      if (_emotion == emotion) {
-        _emotion = null;
-        return;
-      }
-      _emotion = emotion;
-      _controller.text = _promptForEmotion(emotion);
-      _controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _controller.text.length),
-      );
-    });
-  }
-
   String _riskFor(String value) {
     final text = value.toLowerCase();
-    if ([
-      'suicide',
-      'kill myself',
-      'hurt myself',
-      'abuse',
-      'violence',
-      'unsafe',
-    ].any(text.contains)) {
-      return 'HIGH';
-    }
+    const highTerms = [
+      // English
+      'suicide', 'kill myself', 'end my life', 'want to die', 'no reason to live',
+      'hurt myself', 'harm myself', 'going to end it', 'nothing to live for',
+      'don\'t want to wake up', 'want to sleep forever',
+      'rape', 'sexual abuse', 'being abused',
+      // Shona crisis
+      'kuzviuraya', 'ndinoda kufa', 'ndakasuwa', 'ndinovimba kuuraya',
+      // Ndebele crisis
+      'ngifuna ukufa', 'angisafuni ukuphila', 'ngiyabhubha', 'uyangishaya', 'bangishaya',
+      // Substance abuse (Zimbabwe-specific)
+      'bronco syrup', 'ngoma syrup', 'codeine syrup',
+    ];
+    if (highTerms.any(text.contains)) return 'HIGH';
     return 'LOW';
   }
 
@@ -421,20 +429,22 @@ class _EFriendScreenState extends State<EFriendScreen> {
                     elevation: 0,
                   ),
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     Navigator.pop(sheetContext);
                     try {
                       await _api.post('/api/profiles/check-on-me', {});
-                    } catch (_) {
-                      // Fire-and-forget — still show confirmation
-                    }
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Your trusted contact has been notified.',
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Your trusted contact has been notified.'),
                         ),
-                      ),
-                    );
+                      );
+                    } catch (_) {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not send check-in. Please try again when you are connected.'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'Send check-in',
@@ -449,137 +459,6 @@ class _EFriendScreenState extends State<EFriendScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-class _EmotionChip extends StatelessWidget {
-  final String emotion;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _EmotionChip({
-    required this.emotion,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final companionColor = selected
-        ? const Color(0xFF2E6F60)
-        : const Color(0xFF2F3433).withOpacity(0.7);
-
-    return ChoiceChip(
-      label: Text(
-        emotion,
-        style: TextStyle(
-          color: selected ? Colors.white : const Color(0xFF2F3433),
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: selected,
-      selectedColor: const Color(0xFF2E6F60),
-      backgroundColor: Colors.white.withOpacity(0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      avatar: Icon(
-        _iconFor(emotion),
-        size: 18,
-        color: selected ? Colors.white : companionColor,
-      ),
-      onSelected: (_) => onSelected(),
-    );
-  }
-
-  IconData _iconFor(String value) {
-    switch (value) {
-      case 'Sad':
-        return Icons.sentiment_dissatisfied_rounded;
-      case 'Anxious':
-        return Icons.air_rounded;
-      case 'Angry':
-        return Icons.local_fire_department_rounded;
-      case 'Confused':
-        return Icons.help_outline_rounded;
-      case 'Lonely':
-        return Icons.person_outline_rounded;
-      case 'Happy':
-        return Icons.sentiment_very_satisfied_rounded;
-      default:
-        return Icons.sentiment_neutral_rounded;
-    }
-  }
-}
-
-String _promptForEmotion(String value) {
-  switch (value) {
-    case 'Anxious':
-      return 'My body feels tense because ';
-    case 'Angry':
-      return 'I need help cooling down because ';
-    case 'Lonely':
-      return 'I feel alone and I need ';
-    case 'Confused':
-      return 'I am not sure what to do about ';
-    case 'Sad':
-      return 'I have been feeling low because ';
-    case 'Happy':
-      return 'I want to remember this good thing: ';
-    default:
-      return '';
-  }
-}
-
-class _RiskCheckBanner extends StatelessWidget {
-  final String emotion;
-
-  const _RiskCheckBanner({required this.emotion});
-
-  @override
-  Widget build(BuildContext context) {
-    final highAttention =
-        emotion == 'Angry' || emotion == 'Sad' || emotion == 'Lonely';
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: highAttention
-            ? const Color(0xFFFFEEF0).withOpacity(0.9)
-            : const Color(0xFFE7FAFA).withOpacity(0.9),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: highAttention
-              ? const Color(0xFFFFCCD2)
-              : const Color(0xFFCBEFF0),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            highAttention
-                ? Icons.health_and_safety_rounded
-                : Icons.check_circle_rounded,
-            color: highAttention
-                ? const Color(0xFFD68A7F)
-                : const Color(0xFF2E6F60),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              highAttention
-                  ? 'I will stand with you and suggest friendly human support if needed.'
-                  : 'I am here with you. Let's explore some peaceful steps together.',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 12.5,
-                color: highAttention
-                    ? const Color(0xFF8C4C42)
-                    : const Color(0xFF1B4F43),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

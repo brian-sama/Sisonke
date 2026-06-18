@@ -9,6 +9,8 @@ allprojects {
             force("androidx.browser:browser:1.8.0")
             force("androidx.core:core:1.15.0")
             force("androidx.core:core-ktx:1.15.0")
+            force("androidx.glance:glance:1.1.1")
+            force("androidx.glance:glance-appwidget:1.1.1")
         }
     }
 }
@@ -41,25 +43,35 @@ subprojects {
 
 
 subprojects {
-    val setNamespace = {
+    val setupAndroidProject = {
         if (project.extensions.findByName("android") != null) {
             val android = project.extensions.getByName("android")
             try {
+                // Set namespace if missing
                 val getNamespace = android.javaClass.getMethod("getNamespace")
                 if (getNamespace.invoke(android) == null) {
                     val setNamespaceMethod = android.javaClass.getMethod("setNamespace", String::class.java)
                     setNamespaceMethod.invoke(android, "com.example.${project.name.replace("-", "_")}")
                 }
+                
+                // Force compileSdk to 36 for all plugins
+                val setCompileSdkVersion = android.javaClass.getMethod("setCompileSdkVersion", Int::class.javaPrimitiveType ?: Int::class.java)
+                setCompileSdkVersion.invoke(android, 36)
             } catch (e: Exception) {
+                // Fallback for different Gradle versions
+                try {
+                    val setCompileSdk = android.javaClass.getMethod("setCompileSdk", Int::class.javaPrimitiveType ?: Int::class.java)
+                    setCompileSdk.invoke(android, 36)
+                } catch (e2: Exception) {}
             }
         }
     }
 
     if (project.state.executed) {
-        setNamespace()
+        setupAndroidProject()
     } else {
         project.afterEvaluate {
-            setNamespace()
+            setupAndroidProject()
         }
     }
 }

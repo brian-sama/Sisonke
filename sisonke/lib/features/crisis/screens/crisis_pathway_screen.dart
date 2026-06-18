@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,24 +12,18 @@ class CrisisPathwayScreen extends StatefulWidget {
 
 class _CrisisPathwayScreenState extends State<CrisisPathwayScreen> {
   int _activeStep = 0;
-  Timer? _autoAdvanceTimer;
 
   @override
   void dispose() {
-    _autoAdvanceTimer?.cancel();
     super.dispose();
   }
 
   void _advanceTo(int step) {
-    _autoAdvanceTimer?.cancel();
     setState(() => _activeStep = step);
   }
 
   void _startBreathing() {
     context.push('/breathing');
-    _autoAdvanceTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted) _advanceTo(1);
-    });
   }
 
   Future<void> _callEmergency() async {

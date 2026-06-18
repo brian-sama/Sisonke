@@ -7,7 +7,7 @@ export async function stageNode(state: SisonkeGraphState): Promise<Partial<Sison
   }
 
   const turnsElapsed = state.turnsElapsed || 0;
-  if (turnsElapsed === 0 && /^(hi|hey|hello|mhoroi|sawubona|hie)\b/i.test(state.message.trim())) {
+  if (turnsElapsed === 0 && /^(hi|hey|hello|mhoroi|mhoro|sawubona|sanibona|hie|howzit|eita|sharp\s*sharp|yo\b|sup\b)/i.test(state.message.trim())) {
     return {
       conversationState: 'INIT',
       response: deterministicGreeting(turnsElapsed),

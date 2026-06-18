@@ -13,9 +13,9 @@ export const localExpressions: LocalExpressionMatch[] = [
     phrase: 'angisafuni',
     language: 'Ndebele',
     literal: "I don't want anymore",
-    emotionalWeight: 'Giving up, hitting a wall, deep frustration or hopelessness.',
-    targetMode: 'grounding_presence',
-    suggestedResponseStyle: 'grounding_presence',
+    emotionalWeight: 'Giving up, hitting a wall, deep exhaustion or hopelessness. Needs presence, not advice.',
+    targetMode: 'gentle_listener',
+    suggestedResponseStyle: 'validate_exhaustion',
   },
   {
     phrase: 'zvinorema',
@@ -64,6 +64,30 @@ export const localExpressions: LocalExpressionMatch[] = [
     emotionalWeight: 'A culturally meaningful way to express fear, distress, or family trauma.',
     targetMode: 'warm_validation',
     suggestedResponseStyle: 'respect_worldview_then_ground',
+  },
+  {
+    phrase: 'eish',
+    language: 'Zimbabwean slang',
+    literal: 'Expression of frustration, surprise, or resignation',
+    emotionalWeight: 'Mild to moderate frustration or resignation. Often signals accumulated stress.',
+    targetMode: 'warm_validation',
+    suggestedResponseStyle: 'acknowledge_frustration',
+  },
+  {
+    phrase: 'ndinochema',
+    language: 'Shona',
+    literal: 'I am crying',
+    emotionalWeight: 'Active grief or sadness, possibly bereavement.',
+    targetMode: 'gentle_listener',
+    suggestedResponseStyle: 'validate_grief',
+  },
+  {
+    phrase: 'ndakasuruvara',
+    language: 'Shona',
+    literal: 'I am sad / I am grieving',
+    emotionalWeight: 'Deep sadness or grief, potentially bereavement.',
+    targetMode: 'gentle_listener',
+    suggestedResponseStyle: 'validate_grief',
   },
 ];
 

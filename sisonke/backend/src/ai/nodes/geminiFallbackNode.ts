@@ -14,6 +14,13 @@ export async function geminiFallbackNode(state: SisonkeGraphState): Promise<Part
     riskLevel: state.riskLevel || 'low',
     approvedContext: state.approvedContext,
     localReply: state.response,
+    detectedPrimaryEmotion: state.detectedPrimaryEmotion,
+    detectedIntent: state.detectedIntent,
+    personaMode: state.personaMode,
+    culturalContextNote: state.culturalContextNote,
+    interventionText: state.interventionText,
+    preferredName: state.preferredName,
+    conversationState: state.conversationState,
   });
 
   if (!geminiReply) return {};

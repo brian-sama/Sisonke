@@ -3,10 +3,18 @@ import { SisonkeGraphState } from '../types';
 
 export async function safetyNode(state: SisonkeGraphState): Promise<Partial<SisonkeGraphState>> {
   const detection = detectRisk(state.message);
+  // Always run fresh detection — never let the caller downgrade a safe check.
+  // Caller-supplied 'high' is honoured (e.g. counselor override) but cannot suppress a detected high.
+  const riskLevel = state.riskLevel === 'high' || detection.level === 'high'
+    ? 'high'
+    : detection.level === 'medium' || state.riskLevel === 'medium'
+      ? 'medium'
+      : 'low';
+
   return {
-    riskLevel: state.riskLevel || detection.level,
-    escalationRequired: detection.level === 'high',
+    riskLevel,
+    escalationRequired: riskLevel === 'high',
     safetySource: 'rules',
-    conversationState: detection.level === 'high' ? 'ESCALATE' : state.conversationState,
+    conversationState: riskLevel === 'high' ? 'ESCALATE' : state.conversationState,
   };
 }

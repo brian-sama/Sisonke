@@ -7,7 +7,8 @@ const unsafePatterns = [
   /\byou should kill\b/i,
   /\bhurt yourself\b/i,
   /\bit'?s your fault\b/i,
-  /\beverything will be okay\b/i,
+  /\bit('?s| is| will)? (all )?going to be (okay|fine|alright)\b/i,
+  /\bit will all be (okay|fine|alright)\b/i,
 ];
 
 function sentenceCount(text: string) {

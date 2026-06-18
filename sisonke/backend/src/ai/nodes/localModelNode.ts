@@ -5,7 +5,7 @@ import { SisonkeGraphState } from '../types';
 import { validateModelOutput } from '../validation';
 
 const defaultBaseUrl = 'http://127.0.0.1:11434';
-const defaultModel = 'qwen2.5:1.5b';
+const defaultModel = 'llama3.2:3b';
 
 async function isOllamaReachable(baseUrl: string) {
   const timeoutMs = Number(process.env.OLLAMA_HEALTH_TIMEOUT_MS || 1500);
@@ -43,9 +43,9 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
   const llm = new ChatOllama({
     model: process.env.OLLAMA_CHAT_MODEL || defaultModel,
     baseUrl,
-    temperature: 0.35,
-    numPredict: 120,
-    numCtx: 1400,
+    temperature: 0.4,
+    numPredict: 180,
+    numCtx: 4096,
   });
 
   const personaMode = state.personaMode || 'warm_validation';
