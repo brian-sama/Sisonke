@@ -1,0 +1,20 @@
+{
+  "name": "sisonke_health",
+  "version": "1.0.0",
+  "description": "A Django-based AI health chatbot powered by Claude (Anthropic), connected to WhatsApp via the Meta Cloud API.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently --names \"django,tunnel\" --prefix-colors \"cyan,yellow\" --kill-others-on-fail \"python manage.py runserver\" \"ngrok http --url=cherisher-provable-nautical.ngrok-free.dev 8000\"",
+    "django": "python manage.py runserver",
+    "tunnel": "ngrok http --url=cherisher-provable-nautical.ngrok-free.dev 8000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "localtunnel": "^2.0.2"
+  }
+}

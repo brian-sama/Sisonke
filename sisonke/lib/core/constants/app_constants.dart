@@ -10,7 +10,7 @@ class AppConstants {
   }
 
   static String get devApiBaseUrl {
-    return 'http://localhost:3001/api';
+    return 'https://sisonke.mmpzmne.co.zw/api';
   }
 
   static const String tokenKey = 'auth_token';

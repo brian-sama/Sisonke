@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    restart: always
+    ports:
+      - "8007:8007"
+    env_file:
+      - .env.production
+    volumes:
+      - db_data:/app/db.sqlite3
+
+volumes:
+  db_data:
