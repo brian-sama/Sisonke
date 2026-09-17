@@ -40,6 +40,8 @@ router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)
         .select({
         id: schema_1.users.id,
         email: schema_1.users.email,
+        counselorStatus: schema_1.users.counselorStatus,
+        isOnCall: schema_1.users.isOnCall,
     })
         .from(schema_1.users);
     // Filter users who have counselor or admin roles
@@ -59,7 +61,6 @@ router.post('/requests', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)
     const workloadFor = (id) => activeCases.filter((item) => item.counselorId === id && activeStatuses.includes(item.status)).length;
     const availableCounselors = counselors
         .filter((counselor) => {
-        // Safely handle missing columns
         const status = counselor.counselorStatus || 'offline';
         const onCall = counselor.isOnCall || false;
         return status === 'online' || onCall;

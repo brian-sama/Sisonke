@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { eq, desc } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import { db } from '../db';
 import { notifications } from '../db/schema';
 import { authMiddleware } from '../middleware/auth';
@@ -25,7 +25,10 @@ router.post('/:id/read', asyncHandler(async (req, res) => {
   await db
     .update(notifications)
     .set({ readAt: new Date() })
-    .where(eq(notifications.id, req.params.id));
+    .where(and(
+      eq(notifications.id, req.params.id),
+      eq(notifications.userId, req.user!.id),
+    ));
 
   res.json({ success: true });
 }));

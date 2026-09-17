@@ -176,6 +176,24 @@ router.get('/:id/download', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler
         },
     });
 }));
+// POST /api/resources/:id/view — log a resource view with optional durationSeconds
+router.post('/:id/view', auth_1.optionalAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const { id } = req.params;
+    const durationSeconds = Number(req.body.durationSeconds ?? 0);
+    const [resource] = await db_1.db
+        .select({ id: schema_1.resources.id })
+        .from(schema_1.resources)
+        .where((0, drizzle_orm_1.eq)(schema_1.resources.id, id))
+        .limit(1);
+    if (!resource) {
+        return res.status(404).json({ success: false, error: 'Resource not found.' });
+    }
+    await db_1.db.insert(schema_1.resourceViews).values({
+        resourceId: id,
+        durationSeconds: Math.max(0, Math.floor(durationSeconds)),
+    });
+    res.status(202).json({ success: true });
+}));
 // Get categories
 router.get('/categories/list', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const categories = [

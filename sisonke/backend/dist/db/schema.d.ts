@@ -1,4 +1,6 @@
 export declare const ageGroupEnum: import("drizzle-orm/pg-core").PgEnum<["13-15", "16-17", "18-24", "25+"]>;
+export declare const circleThemeEnum: import("drizzle-orm/pg-core").PgEnum<["grief", "anxiety", "exam-stress", "loneliness", "anger", "sobriety"]>;
+export declare const outreachSegmentEnum: import("drizzle-orm/pg-core").PgEnum<["all", "inactive", "high-risk", "age-group"]>;
 export declare const chatbotPersonaEnum: import("drizzle-orm/pg-core").PgEnum<["male", "female"]>;
 export declare const riskLevelEnum: import("drizzle-orm/pg-core").PgEnum<["low", "medium", "high"]>;
 export declare const roleNameEnum: import("drizzle-orm/pg-core").PgEnum<["USER", "COUNSELOR", "MODERATOR", "CONTENT_ADMIN", "ADMIN", "SYSTEM_ADMIN", "SUPER_ADMIN"]>;
@@ -2975,6 +2977,444 @@ export declare const securityLogs: import("drizzle-orm/pg-core").PgTableWithColu
     };
     dialect: "pg";
 }>;
+export declare const circles: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "circles";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "circles";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        theme: import("drizzle-orm/pg-core").PgColumn<{
+            name: "theme";
+            tableName: "circles";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "grief" | "anxiety" | "exam-stress" | "loneliness" | "anger" | "sobriety";
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: ["grief", "anxiety", "exam-stress", "loneliness", "anger", "sobriety"];
+            baseColumn: never;
+        }, {}, {}>;
+        descriptionEn: import("drizzle-orm/pg-core").PgColumn<{
+            name: "description_en";
+            tableName: "circles";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        descriptionSn: import("drizzle-orm/pg-core").PgColumn<{
+            name: "description_sn";
+            tableName: "circles";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        descriptionNd: import("drizzle-orm/pg-core").PgColumn<{
+            name: "description_nd";
+            tableName: "circles";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        maxMembers: import("drizzle-orm/pg-core").PgColumn<{
+            name: "max_members";
+            tableName: "circles";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "circles";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const circleMembers: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "circle_members";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "circle_members";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        circleId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "circle_id";
+            tableName: "circle_members";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "circle_members";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        joinedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "joined_at";
+            tableName: "circle_members";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const circleMessages: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "circle_messages";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "circle_messages";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        circleId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "circle_id";
+            tableName: "circle_messages";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        content: import("drizzle-orm/pg-core").PgColumn<{
+            name: "content";
+            tableName: "circle_messages";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "circle_messages";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const trustedContacts: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "trusted_contacts";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "trusted_contacts";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "trusted_contacts";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        name: import("drizzle-orm/pg-core").PgColumn<{
+            name: "name";
+            tableName: "trusted_contacts";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        phone: import("drizzle-orm/pg-core").PgColumn<{
+            name: "phone";
+            tableName: "trusted_contacts";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "trusted_contacts";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const resourceViews: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "resource_views";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "resource_views";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        resourceId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "resource_id";
+            tableName: "resource_views";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        durationSeconds: import("drizzle-orm/pg-core").PgColumn<{
+            name: "duration_seconds";
+            tableName: "resource_views";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "resource_views";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const outreachCampaigns: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "outreach_campaigns";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "outreach_campaigns";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        title: import("drizzle-orm/pg-core").PgColumn<{
+            name: "title";
+            tableName: "outreach_campaigns";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        message: import("drizzle-orm/pg-core").PgColumn<{
+            name: "message";
+            tableName: "outreach_campaigns";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        segment: import("drizzle-orm/pg-core").PgColumn<{
+            name: "segment";
+            tableName: "outreach_campaigns";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "all" | "inactive" | "high-risk" | "age-group";
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: ["all", "inactive", "high-risk", "age-group"];
+            baseColumn: never;
+        }, {}, {}>;
+        ageGroup: import("drizzle-orm/pg-core").PgColumn<{
+            name: "age_group";
+            tableName: "outreach_campaigns";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        scheduledAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_at";
+            tableName: "outreach_campaigns";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        sentAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "sent_at";
+            tableName: "outreach_campaigns";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        createdBy: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_by";
+            tableName: "outreach_campaigns";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "outreach_campaigns";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Role = typeof roles.$inferSelect;
@@ -3011,4 +3451,16 @@ export type CmsContent = typeof cmsContent.$inferSelect;
 export type NewCmsContent = typeof cmsContent.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type Circle = typeof circles.$inferSelect;
+export type NewCircle = typeof circles.$inferInsert;
+export type CircleMember = typeof circleMembers.$inferSelect;
+export type NewCircleMember = typeof circleMembers.$inferInsert;
+export type CircleMessage = typeof circleMessages.$inferSelect;
+export type NewCircleMessage = typeof circleMessages.$inferInsert;
+export type TrustedContact = typeof trustedContacts.$inferSelect;
+export type NewTrustedContact = typeof trustedContacts.$inferInsert;
+export type ResourceView = typeof resourceViews.$inferSelect;
+export type NewResourceView = typeof resourceViews.$inferInsert;
+export type OutreachCampaign = typeof outreachCampaigns.$inferSelect;
+export type NewOutreachCampaign = typeof outreachCampaigns.$inferInsert;
 //# sourceMappingURL=schema.d.ts.map

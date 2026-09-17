@@ -5,10 +5,9 @@
 ### Main Navigation Tabs
 ```
 /home           → Home Dashboard
-/resources      → Resources Hub
-/check-in       → Daily Check-In / Mood
-/support        → Support Directory
-/settings       → Settings & Privacy
+/e-friend       → Talk to SisonkeFriend
+/check-in       → Check-in: mood, journal, recovery
+/support        → Support: community, bookmarks, counselor
 ```
 
 ### Feature Routes
@@ -32,9 +31,14 @@
 /qa                    → Browse Questions
 /qa/ask                → Ask Question
 
+# Support
+/support/community     → Community Feed
+/support/bookmarks     → Saved Items
+/support/counselor     → Counselor Support
+
 # Utility
 /notifications         → Notifications
-/bookmarks             → Saved Items
+/resources             → Resources Hub
 /settings/privacy      → Privacy Center
 ```
 

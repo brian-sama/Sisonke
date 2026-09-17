@@ -42,10 +42,9 @@ class BottomNavigationShell extends StatelessWidget {
                     color: Theme.of(context).navigationBarTheme.backgroundColor,
                     border: Border(
                       top: BorderSide(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .outlineVariant
-                            .withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outlineVariant.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -64,6 +63,11 @@ class BottomNavigationShell extends StatelessWidget {
                       },
                       destinations: const [
                         NavigationDestination(
+                          icon: Icon(Icons.home_outlined),
+                          selectedIcon: Icon(Icons.home_rounded),
+                          label: 'Home',
+                        ),
+                        NavigationDestination(
                           icon: Icon(Icons.chat_bubble_outline_rounded),
                           selectedIcon: Icon(Icons.chat_bubble_rounded),
                           label: 'Talk',
@@ -71,12 +75,12 @@ class BottomNavigationShell extends StatelessWidget {
                         NavigationDestination(
                           icon: Icon(Icons.spa_outlined),
                           selectedIcon: Icon(Icons.spa_rounded),
-                          label: 'Feel',
+                          label: 'Check-in',
                         ),
                         NavigationDestination(
                           icon: Icon(Icons.diversity_3_outlined),
                           selectedIcon: Icon(Icons.diversity_3_rounded),
-                          label: 'Reach',
+                          label: 'Support',
                         ),
                       ],
                     ),

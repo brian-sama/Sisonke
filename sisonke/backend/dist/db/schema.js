@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.auditLogs = exports.users = exports.userRoles = exports.roles = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.roleNameEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.ageGroupEnum = void 0;
+exports.outreachCampaigns = exports.resourceViews = exports.trustedContacts = exports.circleMessages = exports.circleMembers = exports.circles = exports.securityLogs = exports.notifications = exports.cmsContent = exports.communityPosts = exports.counselorNotes = exports.counselingMessages = exports.counselorCases = exports.chatbotMessages = exports.chatbotSessions = exports.journalEntries = exports.moodCheckins = exports.analyticsEvents = exports.emergencyContacts = exports.reports = exports.bookmarks = exports.answers = exports.questions = exports.resources = exports.userProfiles = exports.auditLogs = exports.users = exports.userRoles = exports.roles = exports.analyticsEventEnum = exports.contentStatusEnum = exports.reportStatusEnum = exports.questionCategoryEnum = exports.resourceCategoryEnum = exports.cmsContentTypeEnum = exports.communityPostStatusEnum = exports.counselorCaseStatusEnum = exports.roleNameEnum = exports.riskLevelEnum = exports.chatbotPersonaEnum = exports.outreachSegmentEnum = exports.circleThemeEnum = exports.ageGroupEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Enums
 exports.ageGroupEnum = (0, pg_core_1.pgEnum)('age_group', ['13-15', '16-17', '18-24', '25+']);
+exports.circleThemeEnum = (0, pg_core_1.pgEnum)('circle_theme', ['grief', 'anxiety', 'exam-stress', 'loneliness', 'anger', 'sobriety']);
+exports.outreachSegmentEnum = (0, pg_core_1.pgEnum)('outreach_segment', ['all', 'inactive', 'high-risk', 'age-group']);
 exports.chatbotPersonaEnum = (0, pg_core_1.pgEnum)('chatbot_persona', ['male', 'female']);
 exports.riskLevelEnum = (0, pg_core_1.pgEnum)('risk_level', ['low', 'medium', 'high']);
 // Role enum for the new roles table
@@ -338,6 +340,56 @@ exports.securityLogs = (0, pg_core_1.pgTable)('security_logs', {
     ipAddress: (0, pg_core_1.varchar)('ip_address', { length: 80 }),
     userAgent: (0, pg_core_1.text)('user_agent'),
     metadata: (0, pg_core_1.jsonb)('metadata'),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+// Ubuntu Circles — peer support groups by theme, fully anonymous messages
+exports.circles = (0, pg_core_1.pgTable)('circles', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    theme: (0, exports.circleThemeEnum)('theme').notNull(),
+    descriptionEn: (0, pg_core_1.text)('description_en').notNull(),
+    descriptionSn: (0, pg_core_1.text)('description_sn'),
+    descriptionNd: (0, pg_core_1.text)('description_nd'),
+    maxMembers: (0, pg_core_1.integer)('max_members').default(8).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+exports.circleMembers = (0, pg_core_1.pgTable)('circle_members', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    circleId: (0, pg_core_1.uuid)('circle_id').references(() => exports.circles.id, { onDelete: 'cascade' }).notNull(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    joinedAt: (0, pg_core_1.timestamp)('joined_at').defaultNow(),
+});
+// Anonymous messages — NO user_id stored
+exports.circleMessages = (0, pg_core_1.pgTable)('circle_messages', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    circleId: (0, pg_core_1.uuid)('circle_id').references(() => exports.circles.id, { onDelete: 'cascade' }).notNull(),
+    content: (0, pg_core_1.text)('content').notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+// Trusted contacts (one per user)
+exports.trustedContacts = (0, pg_core_1.pgTable)('trusted_contacts', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull().unique(),
+    name: (0, pg_core_1.varchar)('name', { length: 120 }).notNull(),
+    phone: (0, pg_core_1.varchar)('phone', { length: 50 }).notNull(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at').defaultNow(),
+});
+// Resource views for engagement analytics
+exports.resourceViews = (0, pg_core_1.pgTable)('resource_views', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    resourceId: (0, pg_core_1.uuid)('resource_id').references(() => exports.resources.id, { onDelete: 'cascade' }).notNull(),
+    durationSeconds: (0, pg_core_1.integer)('duration_seconds').default(0),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
+// Outreach campaigns
+exports.outreachCampaigns = (0, pg_core_1.pgTable)('outreach_campaigns', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    title: (0, pg_core_1.varchar)('title', { length: 255 }).notNull(),
+    message: (0, pg_core_1.text)('message').notNull(),
+    segment: (0, exports.outreachSegmentEnum)('segment').notNull(),
+    ageGroup: (0, pg_core_1.varchar)('age_group', { length: 20 }),
+    scheduledAt: (0, pg_core_1.timestamp)('scheduled_at'),
+    sentAt: (0, pg_core_1.timestamp)('sent_at'),
+    createdBy: (0, pg_core_1.uuid)('created_by').references(() => exports.users.id),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
 });
 //# sourceMappingURL=schema.js.map

@@ -8,7 +8,6 @@ const express_1 = __importDefault(require("express"));
 const http_1 = require("http");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
-const path_1 = __importDefault(require("path"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const env_1 = require("./env");
@@ -29,6 +28,8 @@ const chatbot_1 = __importDefault(require("./routes/chatbot"));
 const counselor_1 = __importDefault(require("./routes/counselor"));
 const community_1 = __importDefault(require("./routes/community"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
+const circles_1 = __importDefault(require("./routes/circles"));
+const outreach_1 = __importDefault(require("./routes/outreach"));
 (0, env_1.validateEnv)();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
@@ -83,8 +84,6 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
-// Host static files from the uploads directory
-app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 // Request logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -105,6 +104,8 @@ app.use('/api/chatbot', chatbot_1.default);
 app.use('/api/counselor', counselor_1.default);
 app.use('/api/community', community_1.default);
 app.use('/api/notifications', notifications_1.default);
+app.use('/api/circles', circles_1.default);
+app.use('/api/admin/outreach', outreach_1.default);
 app.use('/api/admin', admin_1.default);
 // Root endpoint
 app.get('/', (req, res) => {
@@ -125,7 +126,9 @@ app.get('/', (req, res) => {
             chatbot: '/api/chatbot',
             counselor: '/api/counselor',
             community: '/api/community',
+            circles: '/api/circles',
             admin: '/api/admin',
+            outreach: '/api/admin/outreach',
         },
         documentation: 'https://github.com/sisonke/api-docs',
     });

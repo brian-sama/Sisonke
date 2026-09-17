@@ -15,11 +15,27 @@ router.use(auth_1.optionalAuth);
 router.post('/message', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const input = types_1.ChatbotMessageSchema.parse(req.body);
     const riskLevel = (0, riskService_1.detectRiskLevel)(input.message);
+    let sessionOwnerFilter;
+    if (req.user?.id) {
+        sessionOwnerFilter = (0, drizzle_orm_1.eq)(schema_1.chatbotSessions.userId, req.user.id);
+    }
+    else {
+        const deviceId = input.deviceId;
+        if (input.sessionId && !deviceId) {
+            return res.status(400).json({
+                success: false,
+                error: 'deviceId is required to continue a guest chat session.',
+            });
+        }
+        sessionOwnerFilter = deviceId
+            ? (0, drizzle_orm_1.and)((0, drizzle_orm_1.isNull)(schema_1.chatbotSessions.userId), (0, drizzle_orm_1.eq)(schema_1.chatbotSessions.deviceId, deviceId))
+            : undefined;
+    }
     const [session] = input.sessionId
         ? await db_1.db
             .update(schema_1.chatbotSessions)
             .set({ riskLevel, updatedAt: new Date() })
-            .where((0, drizzle_orm_1.eq)(schema_1.chatbotSessions.id, input.sessionId))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.chatbotSessions.id, input.sessionId), sessionOwnerFilter))
             .returning()
         : await db_1.db.insert(schema_1.chatbotSessions).values({
             userId: req.user?.id,

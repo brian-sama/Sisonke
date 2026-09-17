@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/qa_model.dart';
 import '../services/qa_service.dart';
-import '../../../core/services/api_service.dart';
 import '../../../core/providers/app_providers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Providers
 final qaServiceProvider = Provider<QAService>((ref) {
@@ -83,8 +81,8 @@ class QuestionListNotifier extends StateNotifier<QuestionListState> {
         offset: refresh ? 0 : state.currentOffset,
       );
 
-      final newQuestions = refresh 
-          ? response.questions 
+      final newQuestions = refresh
+          ? response.questions
           : [...state.questions, ...response.questions];
 
       state = state.copyWith(
@@ -93,7 +91,9 @@ class QuestionListNotifier extends StateNotifier<QuestionListState> {
         isLoadingMore: false,
         error: null,
         hasMore: response.hasMore,
-        currentOffset: refresh ? response.questions.length : state.currentOffset + response.questions.length,
+        currentOffset: refresh
+            ? response.questions.length
+            : state.currentOffset + response.questions.length,
       );
     } catch (e) {
       state = state.copyWith(
@@ -123,10 +123,7 @@ class QuestionListNotifier extends StateNotifier<QuestionListState> {
         currentOffset: state.currentOffset + response.questions.length,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoadingMore: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoadingMore: false, error: e.toString());
     }
   }
 
@@ -163,11 +160,7 @@ class QuestionState {
   final bool isLoading;
   final String? error;
 
-  const QuestionState({
-    this.question,
-    this.isLoading = false,
-    this.error,
-  });
+  const QuestionState({this.question, this.isLoading = false, this.error});
 
   QuestionState copyWith({
     QuestionWithAnswers? question,
@@ -195,15 +188,9 @@ class QuestionNotifier extends StateNotifier<QuestionState> {
 
     try {
       final question = await _qaService.getQuestion(id);
-      state = state.copyWith(
-        question: question,
-        isLoading: false,
-      );
+      state = state.copyWith(question: question, isLoading: false);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -296,10 +283,7 @@ class SubmitQuestionNotifier extends StateNotifier<SubmitQuestionState> {
         submittedQuestion: submittedQuestion,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -350,15 +334,9 @@ class CategoriesNotifier extends StateNotifier<CategoriesState> {
 
     try {
       final categories = await _qaService.getQuestionCategories();
-      state = state.copyWith(
-        categories: categories,
-        isLoading: false,
-      );
+      state = state.copyWith(categories: categories, isLoading: false);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -368,28 +346,36 @@ class CategoriesNotifier extends StateNotifier<CategoriesState> {
 }
 
 // Provider declarations
-final questionListProvider = StateNotifierProvider<QuestionListNotifier, QuestionListState>((ref) {
-  final qaService = ref.watch(qaServiceProvider);
-  return QuestionListNotifier(qaService);
-});
+final questionListProvider =
+    StateNotifierProvider<QuestionListNotifier, QuestionListState>((ref) {
+      final qaService = ref.watch(qaServiceProvider);
+      return QuestionListNotifier(qaService);
+    });
 
-final questionProvider = StateNotifierProvider.family<QuestionNotifier, QuestionState, String>((ref, questionId) {
-  final qaService = ref.watch(qaServiceProvider);
-  return QuestionNotifier(qaService);
-});
+final questionProvider =
+    StateNotifierProvider.family<QuestionNotifier, QuestionState, String>((
+      ref,
+      questionId,
+    ) {
+      final qaService = ref.watch(qaServiceProvider);
+      return QuestionNotifier(qaService);
+    });
 
-final submitQuestionProvider = StateNotifierProvider<SubmitQuestionNotifier, SubmitQuestionState>((ref) {
-  final qaService = ref.watch(qaServiceProvider);
-  return SubmitQuestionNotifier(qaService);
-});
+final submitQuestionProvider =
+    StateNotifierProvider<SubmitQuestionNotifier, SubmitQuestionState>((ref) {
+      final qaService = ref.watch(qaServiceProvider);
+      return SubmitQuestionNotifier(qaService);
+    });
 
-final qaCategoriesProvider = StateNotifierProvider<CategoriesNotifier, CategoriesState>((ref) {
-  final qaService = ref.watch(qaServiceProvider);
-  return CategoriesNotifier(qaService);
-});
+final qaCategoriesProvider =
+    StateNotifierProvider<CategoriesNotifier, CategoriesState>((ref) {
+      final qaService = ref.watch(qaServiceProvider);
+      return CategoriesNotifier(qaService);
+    });
 
 // Search provider
-final searchQuestionsProvider = StateNotifierProvider<QuestionListNotifier, QuestionListState>((ref) {
-  final qaService = ref.watch(qaServiceProvider);
-  return QuestionListNotifier(qaService);
-});
+final searchQuestionsProvider =
+    StateNotifierProvider<QuestionListNotifier, QuestionListState>((ref) {
+      final qaService = ref.watch(qaServiceProvider);
+      return QuestionListNotifier(qaService);
+    });

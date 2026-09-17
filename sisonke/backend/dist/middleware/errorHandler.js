@@ -34,8 +34,8 @@ const errorHandler = (err, req, res, next) => {
 };
 exports.errorHandler = errorHandler;
 const notFound = (req, res, next) => {
-    const error = new Error(`Not found - ${req.originalUrl}`);
-    res.status(404);
+    const error = new Error(`API route not found: ${req.originalUrl}`);
+    error.statusCode = 404;
     next(error);
 };
 exports.notFound = notFound;

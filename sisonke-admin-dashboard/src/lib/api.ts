@@ -27,7 +27,7 @@ export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
 export async function loginUser(
   email: string,
   password: string,
-): Promise<{ token: string; user: { email: string; roles: string[] } }> {
+): Promise<{ token: string; user: { email: string; roles: string[]; mustChangePassword?: boolean } }> {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

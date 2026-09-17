@@ -22,7 +22,7 @@ router.post('/:id/read', (0, errorHandler_1.asyncHandler)(async (req, res) => {
     await db_1.db
         .update(schema_1.notifications)
         .set({ readAt: new Date() })
-        .where((0, drizzle_orm_1.eq)(schema_1.notifications.id, req.params.id));
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.notifications.id, req.params.id), (0, drizzle_orm_1.eq)(schema_1.notifications.userId, req.user.id)));
     res.json({ success: true });
 }));
 const PushTokenSchema = zod_1.z.object({

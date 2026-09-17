@@ -3,6 +3,9 @@ import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { AuthService } from './authService';
 import { getAllowedOrigins } from '../env';
+import { and, eq, or } from 'drizzle-orm';
+import { db } from '../db';
+import { counselorCases } from '../db/schema';
 
 /**
  * SocketService handles real-time bidirectional communication
@@ -74,8 +77,28 @@ export class SocketService {
         });
       }
 
+      const canAccessCase = async (caseId: string) => {
+        if (isAdmin) return true;
+        const [caseRecord] = await db
+          .select({ id: counselorCases.id })
+          .from(counselorCases)
+          .where(and(
+            eq(counselorCases.id, caseId),
+            or(
+              eq(counselorCases.userId, user.id),
+              eq(counselorCases.counselorId, user.id),
+            ),
+          ))
+          .limit(1);
+        return Boolean(caseRecord);
+      };
+
       // Join a specific case room
-      socket.on('join_case', (caseId: string) => {
+      socket.on('join_case', async (caseId: string) => {
+        if (!(await canAccessCase(caseId))) {
+          socket.emit('case:error', { caseId, error: 'Case access denied' });
+          return;
+        }
         socket.join(`case:${caseId}`);
         console.log(`User ${user.id} joined case room: ${caseId}`);
       });
@@ -86,7 +109,11 @@ export class SocketService {
       });
 
       // Send a message to a case
-      socket.on('send_message', (data: { caseId: string; content: string }) => {
+      socket.on('send_message', async (data: { caseId: string; content: string }) => {
+        if (!data?.caseId || !data.content?.trim() || !(await canAccessCase(data.caseId))) {
+          socket.emit('case:error', { caseId: data?.caseId, error: 'Case access denied' });
+          return;
+        }
         // Broadcast to everyone in the case room EXCEPT the sender
         socket.to(`case:${data.caseId}`).emit('new_message', {
           caseId: data.caseId,

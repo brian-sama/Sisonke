@@ -61,14 +61,16 @@ class SupportDirectoryScreen extends ConsumerWidget {
                 title: 'Leave message',
                 subtitle: 'Counselor replies later',
                 color: const Color(0xFFFFF6D8),
-                onTap: () => context.push('/counselor-request?method=leave_message'),
+                onTap: () =>
+                    context.push('/counselor-request?method=leave_message'),
               ),
               _SupportAction(
                 icon: Icons.mic_rounded,
                 title: 'Send voice note',
                 subtitle: 'Voice recording',
                 color: const Color(0xFFF0EDFF),
-                onTap: () => context.push('/counselor-request?method=voice_note'),
+                onTap: () =>
+                    context.push('/counselor-request?method=voice_note'),
               ),
               _SupportAction(
                 icon: Icons.call_rounded,
@@ -186,7 +188,7 @@ class _SupportHeader extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onCounselor,
                   icon: const Icon(Icons.support_agent_rounded),
-                  label: const Text('Talk'),
+                  label: const Text('Counselor'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -287,7 +289,10 @@ class _ContactGroup extends StatelessWidget {
             for (final contact in contacts)
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
-                title: Text(contact.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(
+                  contact.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 subtitle: Text(contact.phoneNumber),
                 trailing: IconButton(
                   icon: const Icon(Icons.call_rounded, color: Colors.green),
@@ -302,8 +307,10 @@ class _ContactGroup extends StatelessWidget {
                       child: Text(
                         contact.description,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            ),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
                       ),
                     ),
                   ),

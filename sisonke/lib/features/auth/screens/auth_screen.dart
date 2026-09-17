@@ -59,9 +59,11 @@ class _AuthScreenState extends State<AuthScreen> {
               labelText: 'Password',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined),
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
                 onPressed: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
               ),
@@ -88,18 +90,31 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           const SizedBox(height: 10),
           TextButton(
-            onPressed: _loading
-                ? null
-                : () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('onboarding_completed', true);
-                    if (mounted) context.go('/home');
-                  },
+            onPressed: _loading ? null : _continueAsGuest,
             child: const Text('Continue as guest'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _continueAsGuest() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await _api.ensureGuestSession();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_completed', true);
+      if (mounted) context.go('/home');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = e is ApiException ? e.message : e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _login() async {

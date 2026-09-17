@@ -80,8 +80,8 @@ services:
 
   admin:
     build:
-      context: .
-      dockerfile: Dockerfile.admin
+      context: ..
+      dockerfile: sisonke/Dockerfile.admin
       args:
         VITE_API_BASE_URL: /api
     restart: unless-stopped

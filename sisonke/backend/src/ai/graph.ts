@@ -5,6 +5,7 @@ import { emotionNode } from './nodes/emotionNode';
 import { stageNode } from './nodes/stageNode';
 import { ragNode } from './nodes/ragNode';
 import { localModelNode } from './nodes/localModelNode';
+import { anthropicFallbackNode } from './nodes/anthropicFallbackNode';
 import { geminiFallbackNode } from './nodes/geminiFallbackNode';
 import { counselorEscalationNode } from './nodes/counselorEscalationNode';
 import { ruleFallbackNode } from './nodes/ruleFallbackNode';
@@ -52,6 +53,7 @@ export const sisonkeGraph = new StateGraph(SisonkeState)
   .addNode('stage', stageNode)
   .addNode('rag', ragNode)
   .addNode('localModel', localModelNode)
+  .addNode('anthropicFallback', anthropicFallbackNode)
   .addNode('geminiFallback', geminiFallbackNode)
   .addNode('ruleFallback', ruleFallbackNode)
   .addNode('escalate', counselorEscalationNode)
@@ -66,7 +68,8 @@ export const sisonkeGraph = new StateGraph(SisonkeState)
     rag: 'rag',
   })
   .addEdge('rag', 'localModel')
-  .addEdge('localModel', 'geminiFallback')
+  .addEdge('localModel', 'anthropicFallback')
+  .addEdge('anthropicFallback', 'geminiFallback')
   .addEdge('geminiFallback', 'ruleFallback')
   .addEdge('ruleFallback', END)
   .addEdge('escalate', END)

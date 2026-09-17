@@ -34,7 +34,6 @@ export const DASHBOARD_ROLES = [
   'content-manager',
   'safety-reviewer',
   'analyst',
-  'user',
 ];
 
 export const SYSTEM_ADMIN_ROLES = ['admin', 'system-admin', 'super-admin'];

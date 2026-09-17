@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { eq, desc, count } from 'drizzle-orm';
+import { and, eq, desc, count } from 'drizzle-orm';
 import { db } from '../db';
 import { circles, circleMembers, circleMessages } from '../db/schema';
 import { authMiddleware, adminOnly } from '../middleware/auth';
@@ -101,6 +101,18 @@ router.get('/:id/messages', authMiddleware, asyncHandler(async (req, res) => {
   const [circle] = await db.select().from(circles).where(eq(circles.id, id)).limit(1);
   if (!circle) {
     return res.status(404).json({ success: false, error: 'Circle not found.' });
+  }
+
+  const membership = await db
+    .select({ id: circleMembers.id })
+    .from(circleMembers)
+    .where(and(
+      eq(circleMembers.circleId, id),
+      eq(circleMembers.userId, req.user!.id),
+    ))
+    .limit(1);
+  if (!membership.length) {
+    return res.status(403).json({ success: false, error: 'You must join this circle to view its messages.' });
   }
 
   const messages = await db

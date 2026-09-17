@@ -3,18 +3,20 @@ import 'package:sisonke/shared/models/journal.dart';
 import 'package:sisonke/core/services/local_database_service.dart';
 import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/features/journal/services/journal_encryption_service.dart';
-import 'package:sisonke/features/mood_tracker/providers/mood_provider.dart';
 import 'package:uuid/uuid.dart';
 
-final journalEncryptionServiceProvider = Provider<JournalEncryptionService>((ref) {
+final journalEncryptionServiceProvider = Provider<JournalEncryptionService>((
+  ref,
+) {
   return JournalEncryptionService();
 });
 
-final journalEntriesProvider = StateNotifierProvider<JournalNotifier, List<JournalEntry>>((ref) {
-  final dbService = ref.watch(localDatabaseServiceProvider);
-  final encryptionService = ref.watch(journalEncryptionServiceProvider);
-  return JournalNotifier(dbService, encryptionService);
-});
+final journalEntriesProvider =
+    StateNotifierProvider<JournalNotifier, List<JournalEntry>>((ref) {
+      final dbService = ref.watch(localDatabaseServiceProvider);
+      final encryptionService = ref.watch(journalEncryptionServiceProvider);
+      return JournalNotifier(dbService, encryptionService);
+    });
 
 class JournalNotifier extends StateNotifier<List<JournalEntry>> {
   final LocalDatabaseService _dbService;
@@ -37,7 +39,7 @@ class JournalNotifier extends StateNotifier<List<JournalEntry>> {
     bool isLocked = false,
   }) async {
     final encryptedContent = await _encryptionService.encrypt(content);
-    
+
     final entry = JournalEntry(
       id: const Uuid().v4(),
       title: title,
@@ -47,7 +49,7 @@ class JournalNotifier extends StateNotifier<List<JournalEntry>> {
       tags: tags,
       isLocked: isLocked,
     );
-    
+
     await _dbService.saveJournal(entry);
     await loadJournals();
   }

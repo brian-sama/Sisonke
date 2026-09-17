@@ -23,6 +23,7 @@ export type KnowledgeCard = {
 export declare const zimbabweEmergencyContacts: ZimbabweContact[];
 export declare const safetyRules: SafetyRule[];
 export declare const zimbabweKnowledgeCards: KnowledgeCard[];
+export declare const guidanceCards: KnowledgeCard[];
 export declare const goldFaqCards: KnowledgeCard[];
 export declare const allZimbabweRagCards: KnowledgeCard[];
 //# sourceMappingURL=zimbabweRagKnowledge.d.ts.map

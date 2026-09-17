@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
@@ -14,11 +15,18 @@ if (!fs.existsSync(uploadDir)) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      cb(new Error('Authenticated user required'), uploadDir);
+      return;
+    }
+    const userUploadDir = path.join(uploadDir, userId);
+    fs.mkdirSync(userUploadDir, { recursive: true });
+    cb(null, userUploadDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, `vn_${Date.now()}_${Math.floor(Math.random() * 1000)}${ext}`);
+    cb(null, `vn_${randomUUID()}${ext}`);
   },
 });
 
@@ -44,8 +52,7 @@ router.post('/', authMiddleware as any, upload.single('file'), (req: any, res) =
     return res.status(400).json({ success: false, error: 'No audio file provided' });
   }
 
-  // Construct standard host URL to retrieve this static file
-  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  const fileUrl = `${req.protocol}://${req.get('host')}/api/upload/${req.file.filename}`;
   
   res.status(201).json({
     success: true,
@@ -56,6 +63,15 @@ router.post('/', authMiddleware as any, upload.single('file'), (req: any, res) =
       size: req.file.size,
     }
   });
+});
+
+router.get('/:filename', authMiddleware as any, (req: any, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(uploadDir, req.user.id, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ success: false, error: 'File not found' });
+  }
+  res.sendFile(filename, { root: path.dirname(filePath) });
 });
 
 export default router;

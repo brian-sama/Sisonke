@@ -41,9 +41,9 @@ flutter pub get
 ```
 
 ### 3. Configure Neon Connection
-The app includes your Neon connection string in `lib/app/core/constants/config.dart`:
+Set the backend database connection through an untracked environment file. Never commit database credentials or API keys:
 ```dart
-postgresql://neondb_owner:npg_biOvRP0AM8Bo@ep-raspy-leaf-amjp2hzf-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://<user>:<password>@<host>/<database>?sslmode=require
 ```
 
 ### 4. Run the App

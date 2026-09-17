@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/router/bottom_navigation_shell.dart';
+import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/features/onboarding/splash_screen.dart';
 import 'package:sisonke/features/onboarding/onboarding_screen.dart';
 // Note: TopicSelectionScreen, AuthScreen, etc. should be moved to their features.
@@ -16,6 +19,7 @@ import 'package:sisonke/features/emergency/screens/grounding_exercise_screen.dar
 import 'package:sisonke/features/emergency/screens/breathing_exercise_screen.dart';
 import 'package:sisonke/features/checkin/screens/check_in_screen.dart';
 import 'package:sisonke/features/checkin/screens/mood_tracker_screen.dart';
+import 'package:sisonke/features/checkin/screens/mood_checkin_screen.dart';
 import 'package:sisonke/features/checkin/screens/journal_screen.dart';
 import 'package:sisonke/features/checkin/screens/journal_entry_screen.dart';
 import 'package:sisonke/features/checkin/screens/sobriety_tracker_screen.dart';
@@ -44,8 +48,39 @@ import 'package:sisonke/features/settings/screens/notifications_screen.dart';
 import 'package:sisonke/features/emergency/screens/quick_exit_screen.dart';
 import 'package:sisonke/features/settings/screens/app_lock_screen.dart';
 
+Future<String?> _authRedirect(BuildContext context, GoRouterState state) async {
+  const publicPaths = {
+    '/',
+    '/onboarding',
+    '/topic-selection',
+    '/auth',
+    '/app-lock',
+    '/language',
+  };
+
+  if (publicPaths.contains(state.uri.path)) return null;
+
+  final prefs = await SharedPreferences.getInstance();
+  final hasCompletedOnboarding = prefs.getBool('onboarding_completed') ?? false;
+  final isAuthenticated = await ApiService().isAuthenticated;
+
+  if (!hasCompletedOnboarding && !isAuthenticated) return '/onboarding';
+  return null;
+}
+
+Future<String?> _counselorRedirect(
+  BuildContext context,
+  GoRouterState state,
+) async {
+  final user = await ApiService().getCurrentUser();
+  if (user == null) return '/auth';
+  if (!ApiService().userHasRole(user, 'counselor')) return '/home';
+  return null;
+}
+
 final GoRouter router = GoRouter(
   initialLocation: '/',
+  redirect: _authRedirect,
   routes: [
     /// ==================== Onboarding & Auth ====================
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
@@ -61,6 +96,7 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/counselor-mode',
       builder: (context, state) => const CounselorMobileWorkspaceScreen(),
+      redirect: _counselorRedirect,
     ),
     GoRoute(
       path: '/language',
@@ -84,7 +120,25 @@ final GoRouter router = GoRouter(
         );
       },
       branches: [
-        /// ========== Tab 0: Talk (SisonkeFriend AI) ==========
+        /// ========== Tab 0: Home (dashboard) ==========
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'resources/:resourceId',
+                  builder: (context, state) => ResourceDetailScreen(
+                    resourceId: state.pathParameters['resourceId']!,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        /// ========== Tab 1: Talk (SisonkeFriend AI) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -94,7 +148,7 @@ final GoRouter router = GoRouter(
           ],
         ),
 
-        /// ========== Tab 1: Feel (mood · journal · tools) ==========
+        /// ========== Tab 2: Feel (mood · journal · tools) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -113,12 +167,16 @@ final GoRouter router = GoRouter(
                   path: 'recovery',
                   builder: (context, state) => const SobrietyTrackerScreen(),
                 ),
+                GoRoute(
+                  path: 'reflection',
+                  builder: (context, state) => const MoodCheckinScreen(),
+                ),
               ],
             ),
           ],
         ),
 
-        /// ========== Tab 2: Reach (community · counselors · resources) ==========
+        /// ========== Tab 3: Reach (community · counselors · resources) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -144,24 +202,31 @@ final GoRouter router = GoRouter(
       ],
     ),
 
-    /// ========== Home screen (accessible from profile menu) ==========
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => const HomeScreen(),
-      routes: [
-        GoRoute(
-          path: 'resources/:resourceId',
-          builder: (context, state) => ResourceDetailScreen(
-            resourceId: state.pathParameters['resourceId']!,
-          ),
-        ),
-      ],
-    ),
-
-    /// ========== Community (direct deep-link) ==========
+    /// ========== Legacy navigation aliases ==========
     GoRoute(
       path: '/community',
-      builder: (context, state) => const CommunityFeedScreen(),
+      redirect: (context, state) => '/support/community',
+    ),
+    GoRoute(
+      path: '/bookmarks',
+      redirect: (context, state) => '/support/bookmarks',
+    ),
+    GoRoute(
+      path: '/mood-tracker',
+      redirect: (context, state) => '/check-in/mood',
+    ),
+    GoRoute(
+      path: '/private-journal',
+      redirect: (context, state) => '/check-in/journal',
+    ),
+    GoRoute(
+      path: '/support/directory',
+      redirect: (context, state) => '/support',
+    ),
+    GoRoute(
+      path: '/resources/:resourceId',
+      redirect: (context, state) =>
+          '/home/resources/${state.pathParameters['resourceId']}',
     ),
 
     /// ==================== Feature Screens ====================
@@ -216,10 +281,6 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const NotificationsScreen(),
     ),
     GoRoute(
-      path: '/bookmarks',
-      builder: (context, state) => const BookmarksScreen(),
-    ),
-    GoRoute(
       path: '/resources',
       builder: (context, state) => const ResourcesScreen(),
       routes: [
@@ -240,14 +301,6 @@ final GoRouter router = GoRouter(
           builder: (context, state) => const PrivacyCenterScreen(),
         ),
       ],
-    ),
-    GoRoute(
-      path: '/mood-tracker',
-      builder: (context, state) => const MoodTrackerScreen(),
-    ),
-    GoRoute(
-      path: '/private-journal',
-      builder: (context, state) => const JournalScreen(),
     ),
     GoRoute(
       path: '/journal-entry',

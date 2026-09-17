@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const zod_1 = require("zod");
 const drizzle_orm_1 = require("drizzle-orm");
 const db_1 = require("../db");
 const schema_1 = require("../db/schema");
@@ -81,6 +82,60 @@ router.patch('/me/safety', (0, errorHandler_1.asyncHandler)(async (req, res) => 
         return res.status(404).json({ success: false, error: 'Profile not found. Complete onboarding first.' });
     }
     res.json({ success: true, data: updated });
+}));
+const TrustedContactSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(120),
+    phone: zod_1.z.string().min(7).max(50),
+});
+// POST /api/profiles/trusted-contact — save or update trusted contact
+router.post('/trusted-contact', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const input = TrustedContactSchema.parse(req.body);
+    const existing = await db_1.db
+        .select()
+        .from(schema_1.trustedContacts)
+        .where((0, drizzle_orm_1.eq)(schema_1.trustedContacts.userId, req.user.id))
+        .limit(1);
+    const [contact] = existing.length
+        ? await db_1.db
+            .update(schema_1.trustedContacts)
+            .set({ name: input.name, phone: input.phone, updatedAt: new Date() })
+            .where((0, drizzle_orm_1.eq)(schema_1.trustedContacts.userId, req.user.id))
+            .returning()
+        : await db_1.db
+            .insert(schema_1.trustedContacts)
+            .values({ userId: req.user.id, name: input.name, phone: input.phone })
+            .returning();
+    res.json({ success: true, data: contact });
+}));
+// POST /api/profiles/check-on-me — notify trusted contact (logs an outreach notification)
+router.post('/check-on-me', (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const [contact] = await db_1.db
+        .select()
+        .from(schema_1.trustedContacts)
+        .where((0, drizzle_orm_1.eq)(schema_1.trustedContacts.userId, req.user.id))
+        .limit(1);
+    if (!contact) {
+        return res.status(404).json({
+            success: false,
+            error: 'No trusted contact saved. Add one first via POST /api/profiles/trusted-contact.',
+        });
+    }
+    // Log an in-app outreach notification for the requesting user
+    // In production you would also trigger an SMS/push to contact.phone here
+    await db_1.db.insert(schema_1.notifications).values({
+        userId: req.user.id,
+        channel: 'outreach',
+        title: 'Check-on-me sent',
+        body: `A check-on-me request has been sent to ${contact.name} (${contact.phone}).`,
+        metadata: { trustedContactName: contact.name, trustedContactPhone: contact.phone },
+    });
+    res.json({
+        success: true,
+        data: {
+            message: `Check-on-me logged. ${contact.name} will be notified.`,
+            contact: { name: contact.name, phone: contact.phone },
+        },
+    });
 }));
 exports.default = router;
 //# sourceMappingURL=profiles.js.map

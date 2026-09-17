@@ -37,10 +37,11 @@ This document outlines the complete structure of the Sisonke wellness app and ne
 
 #### 4. **Navigation & Routing** (`lib/app/router/`)
 - `router.dart` - Complete Go Router setup with:
-  - Bottom navigation shell with 5 tabs
+  - Bottom navigation shell with Home, Talk, Check-in, and Support tabs
   - All 25+ screen routes
   - Nested routing for detail screens
-  - Proper path structure
+  - Canonical shell paths with legacy aliases
+  - Onboarding and counselor workspace route guards
 - `bottom_navigation_shell.dart` - Custom bottom nav widget
 
 #### 5. **Screens** (`lib/features/`)
@@ -73,11 +74,10 @@ This document outlines the complete structure of the Sisonke wellness app and ne
 
 #### Navigation Tabs
 ```
-📱 Home                  - Dashboard with quick actions
-📚 Resources             - Educational content hub
-😊 Check-In              - Mood & wellness tracking
-🤝 Support               - Find help & Q&A
-⚙️ Settings              - Preferences
+🏠 Home                  - Dashboard with quick actions
+💬 Talk                  - SisonkeFriend conversation
+😊 Check-in              - Mood, journal, and recovery
+🤝 Support               - Community and counselor support
 ```
 
 #### Quick Access (Available Everywhere)

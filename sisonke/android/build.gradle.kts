@@ -35,8 +35,16 @@ subprojects {
             compilerOptions {
                 languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
                 apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             }
         }
+    }
+}
+
+subprojects {
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_17.toString()
     }
 }
 
@@ -64,6 +72,21 @@ subprojects {
                     setCompileSdk.invoke(android, 36)
                 } catch (e2: Exception) {}
             }
+
+            try {
+                val compileOptions = android.javaClass.getMethod("getCompileOptions").invoke(android)
+                compileOptions.javaClass
+                    .getMethod("setSourceCompatibility", JavaVersion::class.java)
+                    .invoke(compileOptions, JavaVersion.VERSION_17)
+                compileOptions.javaClass
+                    .getMethod("setTargetCompatibility", JavaVersion::class.java)
+                    .invoke(compileOptions, JavaVersion.VERSION_17)
+            } catch (e: Exception) {}
+        }
+
+        tasks.withType<JavaCompile>().configureEach {
+            sourceCompatibility = JavaVersion.VERSION_17.toString()
+            targetCompatibility = JavaVersion.VERSION_17.toString()
         }
     }
 

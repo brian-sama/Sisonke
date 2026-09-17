@@ -963,7 +963,7 @@ class ApiService {
   // Q&A Methods
   Future<Map<String, dynamic>> markAnswerHelpful(String answerId) async {
     try {
-      final response = await _dio.post('/qa/answers/$answerId/helpful');
+      final response = await _dio.post('/questions/answers/$answerId/helpful');
       return response.data;
     } on DioException catch (e) {
       throw _handleDioError(e);
@@ -977,7 +977,7 @@ class ApiService {
   }) async {
     try {
       final response = await _dio.post(
-        '/qa/questions/$questionId/report',
+        '/questions/$questionId/report',
         data: {'reason': reason, 'description': description},
       );
       return response.data;

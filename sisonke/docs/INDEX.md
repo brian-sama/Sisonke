@@ -77,10 +77,10 @@ sisonke/
 - `qa_provider.dart` - Questions & Answers
 
 ### ✅ Navigation (30+ Routes)
-- 5 bottom navigation tabs
+- 4 bottom navigation tabs: Home, Talk, Check-in, Support
 - 25+ screens pre-wired
 - Emergency button everywhere
-- Deep linking ready
+- Legacy route aliases redirect to canonical shell paths
 
 ### ✅ Screens (25+)
 All placeholder-ready for Phase 2:

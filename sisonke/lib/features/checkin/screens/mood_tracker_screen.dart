@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sisonke/shared/models/mood.dart';
-import 'package:sisonke/features/mood_tracker/providers/mood_provider.dart';
+import 'package:sisonke/features/checkin/providers/mood_provider.dart';
 import 'package:sisonke/features/checkin/screens/mood_checkin_screen.dart';
 import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
@@ -283,10 +284,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                       ),
                       const SizedBox(height: 28),
                       SisonkeButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const MoodCheckinScreen()),
-                        ),
+                        onPressed: () => context.push('/check-in/reflection'),
                         label: 'Check-in Now',
                         icon: Icons.favorite_outline_rounded,
                       ),
@@ -420,10 +418,7 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const MoodCheckinScreen()),
-        ),
+        onPressed: () => context.push('/check-in/reflection'),
         backgroundColor: const Color(0xFF2E6F60),
         foregroundColor: Colors.white,
         elevation: 6,

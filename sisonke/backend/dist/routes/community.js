@@ -64,5 +64,60 @@ router.post('/reports', auth_1.authMiddleware, (0, errorHandler_1.asyncHandler)(
     socketService_1.SocketService.broadcastDashboardUpdate({ type: 'report', action: 'created' });
     res.status(201).json({ success: true, data: report });
 }));
+// GET /api/community/pending — posts awaiting moderation (admin only)
+router.get('/pending', auth_1.authMiddleware, auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const rows = await db_1.db
+        .select()
+        .from(schema_1.communityPosts)
+        .where((0, drizzle_orm_1.eq)(schema_1.communityPosts.status, 'pending'))
+        .orderBy((0, drizzle_orm_1.desc)(schema_1.communityPosts.createdAt))
+        .limit(100);
+    res.json({ success: true, data: rows });
+}));
+// POST /api/community/:id/approve — approve a pending post (admin only)
+router.post('/:id/approve', auth_1.authMiddleware, auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const { id } = req.params;
+    const [post] = await db_1.db
+        .select()
+        .from(schema_1.communityPosts)
+        .where((0, drizzle_orm_1.eq)(schema_1.communityPosts.id, id))
+        .limit(1);
+    if (!post) {
+        return res.status(404).json({ success: false, error: 'Post not found.' });
+    }
+    const [updated] = await db_1.db
+        .update(schema_1.communityPosts)
+        .set({ status: 'approved', reviewedAt: new Date(), reviewedBy: req.user.id })
+        .where((0, drizzle_orm_1.eq)(schema_1.communityPosts.id, id))
+        .returning();
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'approved' });
+    res.json({ success: true, data: updated });
+}));
+// POST /api/community/:id/reject — reject and soft-remove a post (admin only)
+router.post('/:id/reject', auth_1.authMiddleware, auth_1.adminOnly, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+    const { id } = req.params;
+    const moderationReason = String(req.body.reason || 'Rejected by moderator').trim();
+    const [post] = await db_1.db
+        .select()
+        .from(schema_1.communityPosts)
+        .where((0, drizzle_orm_1.eq)(schema_1.communityPosts.id, id))
+        .limit(1);
+    if (!post) {
+        return res.status(404).json({ success: false, error: 'Post not found.' });
+    }
+    const [updated] = await db_1.db
+        .update(schema_1.communityPosts)
+        .set({
+        status: 'removed',
+        moderationReason,
+        reviewedAt: new Date(),
+        reviewedBy: req.user.id,
+        removedAt: new Date(),
+    })
+        .where((0, drizzle_orm_1.eq)(schema_1.communityPosts.id, id))
+        .returning();
+    socketService_1.SocketService.broadcastDashboardUpdate({ type: 'community_post', action: 'rejected' });
+    res.json({ success: true, data: updated });
+}));
 exports.default = router;
 //# sourceMappingURL=community.js.map

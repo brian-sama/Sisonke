@@ -27,7 +27,6 @@ exports.DASHBOARD_ROLES = [
     'content-manager',
     'safety-reviewer',
     'analyst',
-    'user',
 ];
 exports.SYSTEM_ADMIN_ROLES = ['admin', 'system-admin', 'super-admin'];
 const hasRole = (user, role) => {

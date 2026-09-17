@@ -57,6 +57,6 @@ export type SisonkeGraphState = SisonkeGraphInput & {
   fallbackReason?: string;
   escalationRequired?: boolean;
   safetySource?: 'rules' | 'model' | 'fallback';
-  aiProvider?: 'ollama' | 'gemini' | 'rules';
+  aiProvider?: 'ollama' | 'anthropic' | 'gemini' | 'rules';
   handoffSummary?: string;
 };

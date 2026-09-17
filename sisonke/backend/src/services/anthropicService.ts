@@ -1,14 +1,34 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateGeminiFallback = generateGeminiFallback;
-const sisonkeFriendPrompt_1 = require("../ai/prompts/sisonkeFriendPrompt");
-function buildPrompt(input) {
-    const personaMode = input.personaMode || 'warm_validation';
-    const historyText = (input.history || [])
-        .slice(-5)
-        .map((h) => `${h.sender === 'user' ? 'User' : 'Sisonke Friend'}: ${h.content}`)
-        .join('\n') || 'None.';
-    return `You are Sisonke Friend — a compassionate peer companion inside the Sisonke wellness app, built for young Zimbabweans.
+import { PersonaMode, ConversationState, ChatHistoryItem } from '../ai/types';
+import { personaPrompts } from '../ai/prompts/sisonkeFriendPrompt';
+import { RiskLevel } from './riskService';
+
+type AnthropicResponse = {
+  completion?: string;
+  model?: string;
+  id?: string;
+  prompt?: string;
+};
+
+function buildPrompt(input: {
+  message: string;
+  history?: ChatHistoryItem[];
+  riskLevel: RiskLevel;
+  approvedContext?: string;
+  detectedPrimaryEmotion?: string;
+  detectedIntent?: string;
+  personaMode?: PersonaMode;
+  culturalContextNote?: string;
+  interventionText?: string;
+  preferredName?: string;
+  conversationState?: ConversationState;
+}): string {
+  const personaMode = input.personaMode || 'warm_validation';
+  const historyText = (input.history || [])
+    .slice(-5)
+    .map((h) => `${h.sender === 'user' ? 'User' : 'Sisonke Friend'}: ${h.content}`)
+    .join('\n') || 'None.';
+
+  return `You are Sisonke Friend — a compassionate peer companion inside the Sisonke wellness app, built for young Zimbabweans.
 
 ━━━ WHO YOU ARE ━━━
 You are not a therapist or counsellor. You are a trusted, warm friend who gets it — someone who grew up understanding the pressures of Zimbabwe: the economic hustle, family expectations, load shedding nights, watching friends leave for South Africa or the UK, the weight of being the one who "has to make it" for your family.
@@ -51,7 +71,6 @@ Pressures common to this user's context:
 - Watching peers emigrate while staying behind, or the grief and complexity of leaving
 - Stigma around mental health — admitting struggle can feel like weakness
 - Electricity and water outages as background stress
-- Extended family obligations and community expectations
 
 ━━━ APPROVED RESOURCES ━━━
 ${input.approvedContext || 'None.'}
@@ -60,7 +79,7 @@ Approved Coping Intervention (use only if directly relevant):
 ${input.interventionText || 'None.'}
 
 ━━━ YOUR PERSONA FOR THIS RESPONSE ━━━
-${sisonkeFriendPrompt_1.personaPrompts[personaMode]}
+${personaPrompts[input.personaMode || 'warm_validation']}
 
 ━━━ FIRM BOUNDARIES ━━━
 - Never diagnose, label, or suggest clinical conditions.
@@ -79,38 +98,53 @@ ${input.message}
 
 Write the next Sisonke Friend response. Keep it short, warm, and human. No more than 3 sentences unless the persona rules say otherwise.`;
 }
-async function generateGeminiFallback(input) {
-    if (input.riskLevel === 'high')
-        return undefined;
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey)
-        return undefined;
-    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-    const baseUrl = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
-    const prompt = buildPrompt(input);
-    try {
-        const response = await fetch(`${baseUrl}/models/${model}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.4,
-                    maxOutputTokens: 200,
-                },
-            }),
-            signal: AbortSignal.timeout(Number(process.env.GEMINI_TIMEOUT_MS || 15000)),
-        });
-        if (!response.ok)
-            return undefined;
-        const data = (await response.json());
-        return (data.candidates?.[0]?.content?.parts
-            ?.map((part) => part.text || '')
-            .join('')
-            .trim() || undefined);
-    }
-    catch {
-        return undefined;
-    }
+
+export async function generateAnthropicFallback(input: {
+  message: string;
+  history?: ChatHistoryItem[];
+  persona: 'male' | 'female';
+  riskLevel: RiskLevel;
+  approvedContext?: string;
+  detectedPrimaryEmotion?: string;
+  detectedIntent?: string;
+  personaMode?: PersonaMode;
+  culturalContextNote?: string;
+  interventionText?: string;
+  preferredName?: string;
+  conversationState?: ConversationState;
+}) {
+  if (input.riskLevel === 'high') return undefined;
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return undefined;
+
+  const model = process.env.ANTHROPIC_MODEL || 'claude-3.5-mini';
+  const baseUrl = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1';
+  const timeoutMs = Number(process.env.ANTHROPIC_TIMEOUT_MS || 15000);
+  const prompt = `${buildPrompt(input)}\n\nAssistant:`;
+
+  try {
+    const response = await fetch(`${baseUrl}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        max_tokens_to_sample: 200,
+        temperature: 0.4,
+        stop_sequences: ['\n\nHuman:'],
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    if (!response.ok) return undefined;
+
+    const data = (await response.json()) as AnthropicResponse;
+    return data.completion?.trim() || undefined;
+  } catch {
+    return undefined;
+  }
 }
-//# sourceMappingURL=geminiService.js.map

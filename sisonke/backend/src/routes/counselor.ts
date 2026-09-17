@@ -44,6 +44,8 @@ router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
     .select({
       id: users.id,
       email: users.email,
+      counselorStatus: users.counselorStatus,
+      isOnCall: users.isOnCall,
     })
     .from(users);
   // Filter users who have counselor or admin roles
@@ -65,9 +67,8 @@ router.post('/requests', authMiddleware, asyncHandler(async (req, res) => {
   
   const availableCounselors = counselors
     .filter((counselor) => {
-      // Safely handle missing columns
-      const status = (counselor as any).counselorStatus || 'offline';
-      const onCall = (counselor as any).isOnCall || false;
+      const status = counselor.counselorStatus || 'offline';
+      const onCall = counselor.isOnCall || false;
       return status === 'online' || onCall;
     })
     .sort((a, b) => workloadFor(a.id) - workloadFor(b.id));

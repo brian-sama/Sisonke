@@ -7,6 +7,10 @@ exports.SocketService = void 0;
 const socket_io_1 = require("socket.io");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const authService_1 = require("./authService");
+const env_1 = require("../env");
+const drizzle_orm_1 = require("drizzle-orm");
+const db_1 = require("../db");
+const schema_1 = require("../db/schema");
 /**
  * SocketService handles real-time bidirectional communication
  * between counselors and users for live support sessions.
@@ -16,16 +20,19 @@ class SocketService {
     static init(server) {
         this.io = new socket_io_1.Server(server, {
             cors: {
-                origin: '*', // Adjust for production
-                methods: ['GET', 'POST']
+                origin: (0, env_1.getAllowedOrigins)(),
+                methods: ['GET', 'POST'],
+                credentials: true,
             }
         });
         this.io.use(async (socket, next) => {
             const token = socket.handshake.auth.token;
             if (!token)
                 return next(new Error('Authentication error'));
+            if (!process.env.JWT_SECRET)
+                return next(new Error('Server misconfiguration'));
             try {
-                const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'dev_secret');
+                const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
                 // Fetch user roles dynamically from DB to support the new multi-role junction table architecture
                 const userRolesList = await authService_1.AuthService.getUserRoles(decoded.userId);
                 const rolesList = userRolesList.map(r => r.name);
@@ -67,8 +74,22 @@ class SocketService {
                     counselorId: user.id
                 });
             }
+            const canAccessCase = async (caseId) => {
+                if (isAdmin)
+                    return true;
+                const [caseRecord] = await db_1.db
+                    .select({ id: schema_1.counselorCases.id })
+                    .from(schema_1.counselorCases)
+                    .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.counselorCases.id, caseId), (0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema_1.counselorCases.userId, user.id), (0, drizzle_orm_1.eq)(schema_1.counselorCases.counselorId, user.id))))
+                    .limit(1);
+                return Boolean(caseRecord);
+            };
             // Join a specific case room
-            socket.on('join_case', (caseId) => {
+            socket.on('join_case', async (caseId) => {
+                if (!(await canAccessCase(caseId))) {
+                    socket.emit('case:error', { caseId, error: 'Case access denied' });
+                    return;
+                }
                 socket.join(`case:${caseId}`);
                 console.log(`User ${user.id} joined case room: ${caseId}`);
             });
@@ -77,7 +98,11 @@ class SocketService {
                 socket.leave(`case:${caseId}`);
             });
             // Send a message to a case
-            socket.on('send_message', (data) => {
+            socket.on('send_message', async (data) => {
+                if (!data?.caseId || !data.content?.trim() || !(await canAccessCase(data.caseId))) {
+                    socket.emit('case:error', { caseId: data?.caseId, error: 'Case access denied' });
+                    return;
+                }
                 // Broadcast to everyone in the case room EXCEPT the sender
                 socket.to(`case:${data.caseId}`).emit('new_message', {
                     caseId: data.caseId,

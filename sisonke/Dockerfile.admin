@@ -2,11 +2,11 @@ FROM node:20-alpine AS build
 WORKDIR /app
 ARG VITE_API_BASE_URL=/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-COPY admin-dashboard/package*.json ./
+COPY sisonke-admin-dashboard/package*.json ./
 RUN npm ci
-COPY admin-dashboard ./
+COPY sisonke-admin-dashboard ./
 RUN npm run build
 
 FROM caddy:2-alpine
 COPY --from=build /app/dist /usr/share/caddy
-COPY admin-dashboard/Caddyfile /etc/caddy/Caddyfile
+COPY sisonke-admin-dashboard/Caddyfile /etc/caddy/Caddyfile

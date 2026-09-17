@@ -64,10 +64,13 @@ class _EFriendScreenState extends State<EFriendScreen> {
   }
 
   Gradient get _ambientBackground {
-    final lastBotRisk = _messages.lastWhere(
-      (m) => !m.fromUser,
-      orElse: () => const _ChatMessage(fromUser: false, text: '', risk: 'LOW'),
-    ).risk;
+    final lastBotRisk = _messages
+        .lastWhere(
+          (m) => !m.fromUser,
+          orElse: () =>
+              const _ChatMessage(fromUser: false, text: '', risk: 'LOW'),
+        )
+        .risk;
     if (lastBotRisk == 'HIGH') return SisonkeColors.pastelSunset;
     if (lastBotRisk == 'MEDIUM') return SisonkeColors.morningMist;
     return SisonkeColors.forestBreeze;
@@ -136,7 +139,10 @@ class _EFriendScreenState extends State<EFriendScreen> {
                         ButtonSegment(
                           value: 'male',
                           icon: Icon(Icons.air_outlined, size: 14),
-                          label: Text('Brother', style: TextStyle(fontSize: 11)),
+                          label: Text(
+                            'Brother',
+                            style: TextStyle(fontSize: 11),
+                          ),
                         ),
                       ],
                       selected: {_persona},
@@ -240,7 +246,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
                             color: Colors.white.withOpacity(0.5),
                           ),
                         ),
-                        onPressed: () => context.push('/private-journal'),
+                        onPressed: () => context.push('/check-in/journal'),
                         icon: const Icon(
                           Icons.edit_note_rounded,
                           color: Color(0xFF7361A9),
@@ -257,8 +263,6 @@ class _EFriendScreenState extends State<EFriendScreen> {
                   ],
                 ),
               ),
-
-
 
             SafeArea(
               top: false,
@@ -364,14 +368,22 @@ class _EFriendScreenState extends State<EFriendScreen> {
     final text = value.toLowerCase();
     const highTerms = [
       // English
-      'suicide', 'kill myself', 'end my life', 'want to die', 'no reason to live',
+      'suicide',
+      'kill myself',
+      'end my life',
+      'want to die',
+      'no reason to live',
       'hurt myself', 'harm myself', 'going to end it', 'nothing to live for',
       'don\'t want to wake up', 'want to sleep forever',
       'rape', 'sexual abuse', 'being abused',
       // Shona crisis
       'kuzviuraya', 'ndinoda kufa', 'ndakasuwa', 'ndinovimba kuuraya',
       // Ndebele crisis
-      'ngifuna ukufa', 'angisafuni ukuphila', 'ngiyabhubha', 'uyangishaya', 'bangishaya',
+      'ngifuna ukufa',
+      'angisafuni ukuphila',
+      'ngiyabhubha',
+      'uyangishaya',
+      'bangishaya',
       // Substance abuse (Zimbabwe-specific)
       'bronco syrup', 'ngoma syrup', 'codeine syrup',
     ];
@@ -435,23 +447,24 @@ class _EFriendScreenState extends State<EFriendScreen> {
                       await _api.post('/api/profiles/check-on-me', {});
                       messenger.showSnackBar(
                         const SnackBar(
-                          content: Text('Your trusted contact has been notified.'),
+                          content: Text(
+                            'Your trusted contact has been notified.',
+                          ),
                         ),
                       );
                     } catch (_) {
                       messenger.showSnackBar(
                         const SnackBar(
-                          content: Text('Could not send check-in. Please try again when you are connected.'),
+                          content: Text(
+                            'Could not send check-in. Please try again when you are connected.',
+                          ),
                         ),
                       );
                     }
                   },
                   child: const Text(
                     'Send check-in',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
               ),
@@ -493,8 +506,10 @@ class _ChatBubble extends StatelessWidget {
           color: isUser
               ? const Color(0xFF2E6F60).withOpacity(0.85)
               : (message.risk == 'HIGH'
-                  ? const Color(0xFFFFF3E8).withOpacity(0.95) // warm amber safety tint
-                  : Colors.white.withOpacity(0.82)),
+                    ? const Color(0xFFFFF3E8).withOpacity(
+                        0.95,
+                      ) // warm amber safety tint
+                    : Colors.white.withOpacity(0.82)),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(24),
             topRight: const Radius.circular(24),
@@ -510,7 +525,9 @@ class _ChatBubble extends StatelessWidget {
           ],
           border: Border.all(
             color: message.risk == 'HIGH'
-                ? const Color(0xFFD68A7F).withOpacity(0.45) // warm terracotta, not red alarm
+                ? const Color(0xFFD68A7F).withOpacity(
+                    0.45,
+                  ) // warm terracotta, not red alarm
                 : Colors.white.withOpacity(0.3),
             width: 1,
           ),

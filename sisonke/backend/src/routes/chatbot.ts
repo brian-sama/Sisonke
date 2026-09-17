@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { analyticsEvents, chatbotMessages, chatbotSessions, counselorCases } from '../db/schema';
 import { optionalAuth } from '../middleware/auth';
@@ -16,12 +16,30 @@ router.use(optionalAuth);
 router.post('/message', asyncHandler(async (req, res) => {
   const input = ChatbotMessageSchema.parse(req.body);
   const riskLevel = detectRiskLevel(input.message);
+  let sessionOwnerFilter;
+  if (req.user?.id) {
+    sessionOwnerFilter = eq(chatbotSessions.userId, req.user.id);
+  } else {
+    const deviceId = input.deviceId;
+    if (input.sessionId && !deviceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'deviceId is required to continue a guest chat session.',
+      });
+    }
+    sessionOwnerFilter = deviceId
+      ? and(isNull(chatbotSessions.userId), eq(chatbotSessions.deviceId, deviceId))
+      : undefined;
+  }
 
   const [session] = input.sessionId
     ? await db
       .update(chatbotSessions)
       .set({ riskLevel, updatedAt: new Date() })
-      .where(eq(chatbotSessions.id, input.sessionId))
+      .where(and(
+        eq(chatbotSessions.id, input.sessionId),
+        sessionOwnerFilter!,
+      ))
       .returning()
     : await db.insert(chatbotSessions).values({
       userId: req.user?.id,
