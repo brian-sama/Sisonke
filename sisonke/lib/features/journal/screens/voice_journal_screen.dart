@@ -1,20 +1,22 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/features/journal/providers/journal_provider.dart';
 
-class VoiceJournalScreen extends StatefulWidget {
+class VoiceJournalScreen extends ConsumerStatefulWidget {
   const VoiceJournalScreen({super.key});
 
   @override
-  State<VoiceJournalScreen> createState() => _VoiceJournalScreenState();
+  ConsumerState<VoiceJournalScreen> createState() => _VoiceJournalScreenState();
 }
 
-class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
+class _VoiceJournalScreenState extends ConsumerState<VoiceJournalScreen> {
   static const _prefsKey = 'voice_journal_entries';
 
   final AudioRecorder _recorder = AudioRecorder();
@@ -45,6 +47,17 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
     final updated = [path, ..._savedPaths];
     await prefs.setStringList(_prefsKey, updated);
     setState(() => _savedPaths = updated);
+
+    // Save as structured journal entry to unify with Journal database
+    final now = DateTime.now();
+    final formattedDate = DateFormat('MMM dd, yyyy  hh:mm a').format(now);
+    try {
+      await ref.read(journalEntriesProvider.notifier).addEntry(
+        title: 'Voice Reflection ($formattedDate)',
+        content: 'Voice note recorded at $formattedDate\nAudio storage: $path',
+        tags: ['voice', 'audio-note'],
+      );
+    } catch (_) {}
   }
 
   Future<void> _toggleRecording() async {
@@ -55,7 +68,7 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
         await _saveEntry(path);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Voice entry saved.')),
+            const SnackBar(content: Text('Voice entry saved to your private journal.')),
           );
         }
       }
@@ -133,7 +146,7 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _isRecording
-                            ? SisonkeColors.riskHigh.withOpacity(0.15)
+                            ? SisonkeColors.riskHigh.withValues(alpha: 0.15)
                             : SisonkeColors.primaryDim,
                         border: Border.all(
                           color: _isRecording
@@ -146,7 +159,7 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
                             color: (_isRecording
                                     ? SisonkeColors.riskHigh
                                     : SisonkeColors.primary)
-                                .withOpacity(0.18),
+                                .withValues(alpha: 0.18),
                             blurRadius: _isRecording ? 24 : 12,
                             spreadRadius: _isRecording ? 4 : 0,
                           ),
@@ -163,13 +176,13 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _isRecording ? 'Tap to stop' : 'Tap to record',
+                    _isRecording ? 'Tap to stop recording' : 'Tap to record voice entry',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: _isRecording
                           ? SisonkeColors.riskHigh
-                          : const Color(0xFF2F3433).withOpacity(0.65),
+                          : const Color(0xFF2F3433).withValues(alpha: 0.65),
                     ),
                   ),
                   if (_isRecording) ...[
@@ -204,7 +217,7 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
             // ── Saved recordings ───────────────────────────────────────
             if (_savedPaths.isNotEmpty) ...[
               Text(
-                'Saved recordings',
+                'Saved voice recordings',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
@@ -219,10 +232,10 @@ class _VoiceJournalScreenState extends State<VoiceJournalScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
-                    'Your voice entries will appear here.',
+                    'Your voice entries will appear here and sync to your journal.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: const Color(0xFF2F3433).withOpacity(0.5),
+                      color: const Color(0xFF2F3433).withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -248,12 +261,12 @@ class _RecordingTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.75),
+        color: Colors.white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.5)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -263,7 +276,7 @@ class _RecordingTile extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: SisonkeColors.primaryDim,
               shape: BoxShape.circle,
             ),
@@ -286,7 +299,7 @@ class _RecordingTile extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, size: 20),
-            color: const Color(0xFF2F3433).withOpacity(0.4),
+            color: const Color(0xFF2F3433).withValues(alpha: 0.4),
             onPressed: onDelete,
             tooltip: 'Delete recording',
           ),

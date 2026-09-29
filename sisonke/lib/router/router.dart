@@ -250,11 +250,11 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/safety-plan',
-      builder: (context, state) => const SafetyPlanScreen(),
+      redirect: (context, state) => '/emergency/safety-plan',
     ),
     GoRoute(
       path: '/grounding',
-      builder: (context, state) => const GroundingExerciseScreen(),
+      redirect: (context, state) => '/emergency/grounding',
     ),
 
     /// ==================== Q&A Routes ====================
