@@ -17,6 +17,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
 
+  React.useEffect(() => {
+    document.title = `${title} | Sisonke Platform`;
+  }, [title]);
+
   return (
     <div className="min-h-screen bg-white">
       <SkipLink targetId="main-content" />

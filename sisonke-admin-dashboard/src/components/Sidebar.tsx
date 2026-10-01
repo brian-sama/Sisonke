@@ -108,13 +108,12 @@ export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         onClick={onClose}
         aria-hidden="true"
       />
-      <motion.aside
-        initial={false}
-        animate={{ x: isOpen ? 0 : -300 }}
+      <aside
         aria-label="Main Navigation"
         className={cn(
-          'fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-zinc-100 z-50 lg:translate-x-0 transition-transform shadow-2xl lg:shadow-none',
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          'fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-zinc-100 z-50 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none',
+          'lg:translate-x-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="p-8 pb-4 flex items-center justify-between">
@@ -189,7 +188,7 @@ export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
           </div>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 };
