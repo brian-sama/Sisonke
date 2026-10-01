@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/core/services/security_service.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/theme/night_mode_provider.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 
-class ProfileSafetyScreen extends StatefulWidget {
+class ProfileSafetyScreen extends ConsumerStatefulWidget {
   const ProfileSafetyScreen({super.key});
 
   @override
-  State<ProfileSafetyScreen> createState() => _ProfileSafetyScreenState();
+  ConsumerState<ProfileSafetyScreen> createState() => _ProfileSafetyScreenState();
 }
 
-class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
+class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
   final _api = ApiService();
   final _securityService = SecurityService();
   
@@ -118,6 +120,72 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
               ),
             )
           else ...[
+            // Appearance & Dark Mode
+            Card(
+              elevation: isDark ? 0 : 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.palette_rounded,
+                          color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Appearance & Theme',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Switch between Light and Dark mode',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        DropdownButton<ThemeMode>(
+                          value: ref.watch(themeModeProvider),
+                          onChanged: (mode) {
+                            if (mode != null) {
+                              ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                            }
+                          },
+                          dropdownColor: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+                          underline: const SizedBox.shrink(),
+                          items: const [
+                            DropdownMenuItem(
+                              value: ThemeMode.system,
+                              child: Text('System'),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.light,
+                              child: Text('Light'),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.dark,
+                              child: Text('Dark'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             _SettingsTile(
               icon: Icons.pin_rounded,
               title: 'PIN lock',

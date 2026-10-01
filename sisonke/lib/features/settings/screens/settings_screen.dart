@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_constants.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _dailyReminder = false;
   bool _quickExitEnabled = true;
   bool _anonymousAnalytics = true;
@@ -82,6 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               final name = nameController.text.trim();
               final phone = phoneController.text.trim();
+              final messenger = ScaffoldMessenger.of(context);
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('trusted_contact_name', name);
               await prefs.setString('trusted_contact_phone', phone);
@@ -91,7 +93,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _trustedPhone = phone;
               });
               if (dialogContext.mounted) Navigator.pop(dialogContext);
-              _showSaved(context, message: 'Trusted contact saved.');
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Trusted contact saved.'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
             child: const Text('Save'),
           ),
@@ -124,83 +132,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Keep the private exit button available on sensitive screens.',
               ),
               value: _quickExitEnabled,
-              onChanged: (value) {
+              onChanged: (value) async {
                 setState(() => _quickExitEnabled = value);
-                _setBool(AppConstants.quickExitEnabledKey, value);
+                await _setBool(AppConstants.quickExitEnabledKey, value);
+                if (context.mounted) {
+                  _showSaved(
+                    context,
+                    message: value ? 'Quick exit enabled.' : 'Quick exit disabled.',
+                  );
+                }
               },
             ),
-          ]),
-          _buildSettingsSection(context, 'Trusted Person', [
-            ListTile(
-              leading: const Icon(Icons.volunteer_activism_outlined),
-              title: Text(
-                _trustedName.isNotEmpty
-                    ? '$_trustedName · $_trustedPhone'
-                    : 'Add a trusted contact',
-              ),
-              subtitle: Text(
-                _trustedName.isNotEmpty
-                    ? 'Your trusted contact'
-                    : 'Someone who can check on you',
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () => _showTrustedContactDialog(context),
-            ),
-          ]),
-          _buildSettingsSection(context, 'General', [
-            _buildSettingsItem(
-              context,
-              'App Language',
-              Icons.translate_rounded,
-              () => context.push('/language'),
-            ),
-          ]),
-          _buildSettingsSection(context, 'Notifications', [
             SwitchListTile(
-              secondary: const Icon(Icons.notifications_rounded),
-              title: const Text('Daily reminder'),
-              subtitle: const Text('Get a gentle check-in reminder.'),
-              value: _dailyReminder,
-              onChanged: (value) {
-                setState(() => _dailyReminder = value);
-                _setBool(AppConstants.enableNotificationsKey, value);
-                _showSaved(context);
-              },
-            ),
-          ]),
-          _buildSettingsSection(context, 'Data', [
-            SwitchListTile(
-              secondary: const Icon(Icons.query_stats_rounded),
-              title: const Text('Anonymous analytics'),
+              secondary: const Icon(Icons.analytics_outlined),
+              title: const Text('Anonymous Product Analytics'),
               subtitle: const Text(
-                'Help improve Sisonke with aggregate, non-private usage signals.',
+                'Help us improve crisis support without ever logging personal chats or journals.',
               ),
               value: _anonymousAnalytics,
-              onChanged: (value) {
+              onChanged: (value) async {
                 setState(() => _anonymousAnalytics = value);
-                _setBool(AppConstants.dataCollectionKey, value);
-                _showSaved(context);
+                await _setBool(AppConstants.dataCollectionKey, value);
+                if (context.mounted) {
+                  _showSaved(
+                    context,
+                    message: value ? 'Anonymous telemetry allowed.' : 'Telemetry opted out.',
+                  );
+                }
               },
             ),
-            _buildSettingsItem(
-              context,
-              'Sync public content',
-              Icons.sync_rounded,
-              () => _showSaved(
-                context,
-                message:
-                    'Sisonke will sync public content when you are online.',
+          ]),
+          _buildSettingsSection(context, 'Trusted Contacts & Notifications', [
+            ListTile(
+              leading: const Icon(Icons.volunteer_activism_rounded),
+              title: const Text('Trusted contact for check-ins'),
+              subtitle: Text(
+                _trustedName.isNotEmpty
+                    ? '$_trustedName ($_trustedPhone)'
+                    : 'Add someone you trust for quick check-in alerts',
               ),
+              trailing: const Icon(Icons.edit_rounded),
+              onTap: () => _showTrustedContactDialog(context),
             ),
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Gentle Daily Reminder'),
+              subtitle: const Text('Receive a quiet morning or evening wellness check-in.'),
+              value: _dailyReminder,
+              onChanged: (value) async {
+                setState(() => _dailyReminder = value);
+                await _setBool(AppConstants.enableNotificationsKey, value);
+                if (context.mounted) {
+                  _showSaved(
+                    context,
+                    message: value ? 'Daily check-in reminders enabled.' : 'Daily reminders disabled.',
+                  );
+                }
+              },
+            ),
+          ]),
+          _buildSettingsSection(context, 'Data & Controls', [
             _buildSettingsItem(
               context,
-              'Delete personal data',
+              'Delete personal records',
               Icons.delete_outline_rounded,
               () => _showInfo(
                 context,
                 title: 'Delete personal data',
                 body:
-                    'A production account should support verified deletion of profile, counselor cases, device tokens, and private records. Journal and mood entries stored only on this device can be removed from the device.',
+                    'A production account supports verified deletion of profile, counselor cases, device tokens, and private records. Journal and mood entries stored locally on this device can be cleared any time.',
               ),
             ),
             _buildSettingsItem(
@@ -211,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context,
                 title: 'Export support report',
                 body:
-                    'Authorized exports should include case status, counselor notes visible to authorized staff, and safety timeline metadata without exposing private journal content.',
+                    'Authorized exports include case status, counselor notes visible to authorized staff, and safety timeline metadata without exposing private journal content.',
               ),
             ),
           ]),

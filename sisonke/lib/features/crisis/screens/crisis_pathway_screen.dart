@@ -35,9 +35,20 @@ class _CrisisPathwayScreenState extends State<CrisisPathwayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: SisonkeColors.pastelSunset),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF10131C), Color(0xFF261820)],
+                )
+              : SisonkeColors.pastelSunset,
+        ),
         child: SafeArea(
           child: Column(
             children: [
@@ -57,19 +68,19 @@ class _CrisisPathwayScreenState extends State<CrisisPathwayScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
-                          color: SisonkeColors.charcoal,
+                          color: theme.colorScheme.onSurface,
                           onPressed: () => context.pop(),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'You are not alone',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: SisonkeColors.charcoal,
+                        color: theme.colorScheme.onSurface,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -79,7 +90,7 @@ class _CrisisPathwayScreenState extends State<CrisisPathwayScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        color: SisonkeColors.charcoal.withOpacity(0.65),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
                       ),
                     ),
                   ],
@@ -204,24 +215,31 @@ class _StepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
         color: _isActive
-            ? Colors.white.withOpacity(0.92)
-            : Colors.white.withOpacity(0.55),
+            ? (isDark
+                ? theme.colorScheme.surfaceContainerHigh
+                : Colors.white.withOpacity(0.92))
+            : (isDark
+                ? theme.colorScheme.surfaceContainer
+                : Colors.white.withOpacity(0.55)),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: _isActive
-              ? SisonkeColors.primary.withOpacity(0.3)
-              : Colors.white.withOpacity(0.4),
+              ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary.withOpacity(0.3))
+              : (isDark ? theme.colorScheme.outlineVariant : Colors.white.withOpacity(0.4)),
           width: 1.5,
         ),
         boxShadow: _isActive
             ? [
                 BoxShadow(
-                  color: SisonkeColors.primary.withOpacity(0.12),
+                  color: (isDark ? theme.colorScheme.primary : SisonkeColors.primary).withOpacity(0.12),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -248,8 +266,8 @@ class _StepCard extends StatelessWidget {
                       color: _isCompleted
                           ? SisonkeColors.success
                           : _isActive
-                              ? SisonkeColors.primary
-                              : SisonkeColors.primaryDim,
+                              ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary)
+                              : (isDark ? theme.colorScheme.surfaceContainerHighest : SisonkeColors.primaryDim),
                     ),
                     child: Center(
                       child: _isCompleted
@@ -264,8 +282,8 @@ class _StepCard extends StatelessWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: _isActive
-                                    ? Colors.white
-                                    : SisonkeColors.primary,
+                                    ? (isDark ? const Color(0xFF10131C) : Colors.white)
+                                    : (isDark ? theme.colorScheme.primary : SisonkeColors.primary),
                               ),
                             ),
                     ),
@@ -278,15 +296,15 @@ class _StepCard extends StatelessWidget {
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: _isActive
-                            ? SisonkeColors.charcoal
-                            : SisonkeColors.charcoal.withOpacity(0.55),
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
                   ),
                   if (!_isActive)
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: SisonkeColors.charcoal.withOpacity(0.35),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
                     ),
                 ],
               ),
@@ -302,7 +320,7 @@ class _StepCard extends StatelessWidget {
                       description,
                       style: TextStyle(
                         fontSize: 14.5,
-                        color: SisonkeColors.charcoal.withOpacity(0.75),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
                         height: 1.45,
                       ),
                     ),

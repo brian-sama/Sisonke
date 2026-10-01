@@ -91,6 +91,9 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Choose Topics'),
       body: SafeArea(
@@ -100,21 +103,21 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Personalize Your Space',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E6F60),
+                  color: isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60),
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Select the topics that interest you most. This will personalize your resources and companion suggestions.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -147,15 +150,19 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isSelected ? color.withOpacity(0.08) : Colors.white,
+                          color: isSelected
+                              ? (isDark ? color.withValues(alpha: 0.25) : color.withValues(alpha: 0.08))
+                              : (isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white),
                           border: Border.all(
-                            color: isSelected ? color : Colors.grey.withOpacity(0.2),
+                            color: isSelected
+                                ? color
+                                : (isDark ? theme.colorScheme.outlineVariant : Colors.grey.withValues(alpha: 0.2)),
                             width: isSelected ? 2.5 : 1,
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -165,8 +172,8 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CircleAvatar(
-                              backgroundColor: color.withOpacity(isSelected ? 0.2 : 0.1),
-                              child: Icon(topic['icon'] as IconData, color: color),
+                              backgroundColor: color.withValues(alpha: isSelected ? 0.3 : 0.15),
+                              child: Icon(topic['icon'] as IconData, color: isDark ? (isSelected ? Colors.white : color) : color),
                             ),
                             const Spacer(),
                             Text(
@@ -174,7 +181,9 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? color : Colors.black87,
+                                color: isSelected
+                                    ? (isDark ? Colors.white : color)
+                                    : theme.colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -184,7 +193,9 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isSelected ? color.withOpacity(0.8) : Colors.grey,
+                                color: isSelected
+                                    ? (isDark ? Colors.white70 : color.withValues(alpha: 0.8))
+                                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -198,7 +209,8 @@ class _TopicSelectionScreenState extends State<TopicSelectionScreen> {
               FilledButton(
                 onPressed: _selectedTopics.isEmpty ? null : _saveSelectedTopics,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E6F60),
+                  backgroundColor: isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60),
+                  foregroundColor: isDark ? const Color(0xFF10131C) : Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),

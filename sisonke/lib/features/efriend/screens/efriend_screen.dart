@@ -63,7 +63,8 @@ class _EFriendScreenState extends State<EFriendScreen> {
     });
   }
 
-  Gradient get _ambientBackground {
+  Gradient _ambientBackground(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final lastBotRisk = _messages
         .lastWhere(
           (m) => !m.fromUser,
@@ -71,6 +72,22 @@ class _EFriendScreenState extends State<EFriendScreen> {
               const _ChatMessage(fromUser: false, text: '', risk: 'LOW'),
         )
         .risk;
+
+    if (isDark) {
+      if (lastBotRisk == 'HIGH') {
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF381F26), Color(0xFF1F1722)],
+        );
+      }
+      return const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF10131C), Color(0xFF161B26)],
+      );
+    }
+
     if (lastBotRisk == 'HIGH') return SisonkeColors.pastelSunset;
     if (lastBotRisk == 'MEDIUM') return SisonkeColors.morningMist;
     return SisonkeColors.forestBreeze;
@@ -105,7 +122,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
       ),
       body: AnimatedContainer(
         duration: const Duration(seconds: 1),
-        decoration: BoxDecoration(gradient: _ambientBackground),
+        decoration: BoxDecoration(gradient: _ambientBackground(context)),
         child: Column(
           children: [
             // Compact persona toggle — only visible before conversation starts
@@ -119,7 +136,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
                       'Talk with your',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF2F3433).withOpacity(0.55),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -174,7 +191,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontStyle: FontStyle.italic,
-                                color: const Color(0xFF2F3433).withOpacity(0.6),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
                               ),
                             ),
                           ),
@@ -212,23 +229,29 @@ class _EFriendScreenState extends State<EFriendScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white54,
+                          backgroundColor: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.surfaceContainerHigh
+                              : Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                           side: BorderSide(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context).colorScheme.outlineVariant
+                                : const Color(0xFFCCD5D1),
                           ),
                         ),
                         onPressed: () => context.push('/breathing'),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.self_improvement_rounded,
-                          color: Color(0xFF2E6F60),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.primary
+                              : const Color(0xFF2E6F60),
                         ),
-                        label: const Text(
+                        label: Text(
                           'Breathe',
                           style: TextStyle(
-                            color: Color(0xFF2F3433),
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -238,23 +261,29 @@ class _EFriendScreenState extends State<EFriendScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white54,
+                          backgroundColor: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.surfaceContainerHigh
+                              : Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                           side: BorderSide(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context).colorScheme.outlineVariant
+                                : const Color(0xFFCCD5D1),
                           ),
                         ),
                         onPressed: () => context.push('/check-in/journal'),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.edit_note_rounded,
-                          color: Color(0xFF7361A9),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.secondary
+                              : const Color(0xFF7361A9),
                         ),
-                        label: const Text(
+                        label: Text(
                           'Journal',
                           style: TextStyle(
-                            color: Color(0xFF2F3433),
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -275,21 +304,42 @@ class _EFriendScreenState extends State<EFriendScreen> {
                         controller: _controller,
                         minLines: 1,
                         maxLines: 4,
-                        style: const TextStyle(
-                          color: SisonkeColors.charcoal,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Share your thoughts...',
-                          fillColor: Colors.white.withValues(alpha: 0.95),
-                          prefixIcon: const Icon(
+                          hintStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: 15,
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.surfaceContainerHighest
+                              : Colors.white,
+                          prefixIcon: Icon(
                             Icons.favorite_outline_rounded,
-                            color: Color(0xFF2E6F60),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context).colorScheme.primary
+                                : const Color(0xFF2E6F60),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Theme.of(context).colorScheme.outlineVariant
+                                  : const Color(0xFFE2EBE7),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Theme.of(context).colorScheme.outlineVariant
+                                  : const Color(0xFFCCD5D1),
+                            ),
                           ),
                         ),
                       ),
@@ -297,8 +347,12 @@ class _EFriendScreenState extends State<EFriendScreen> {
                     const SizedBox(width: 8),
                     IconButton.filled(
                       style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E6F60),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF2E6F60),
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF10131C)
+                            : Colors.white,
                         padding: const EdgeInsets.all(14),
                       ),
                       onPressed: _sending ? null : _send,
@@ -501,6 +555,8 @@ class _ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.fromUser;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -509,12 +565,14 @@ class _ChatBubble extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isUser
-              ? const Color(0xFF2E6F60).withOpacity(0.85)
+              ? const Color(0xFF2E6F60)
               : (message.risk == 'HIGH'
-                    ? const Color(0xFFFFF3E8).withOpacity(
-                        0.95,
-                      ) // warm amber safety tint
-                    : Colors.white.withOpacity(0.82)),
+                    ? (isDark
+                        ? const Color(0xFF3E232B)
+                        : const Color(0xFFFFF3E8))
+                    : (isDark
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : Colors.white)),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(24),
             topRight: const Radius.circular(24),
@@ -523,17 +581,17 @@ class _ChatBubble extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
           border: Border.all(
             color: message.risk == 'HIGH'
-                ? const Color(0xFFD68A7F).withOpacity(
-                    0.45,
-                  ) // warm terracotta, not red alarm
-                : Colors.white.withOpacity(0.3),
+                ? const Color(0xFFD68A7F).withValues(alpha: 0.6)
+                : (isDark
+                    ? theme.colorScheme.outlineVariant
+                    : const Color(0xFFE2EBE7)),
             width: 1,
           ),
         ),
@@ -547,8 +605,10 @@ class _ChatBubble extends StatelessWidget {
               message.text,
               style: TextStyle(
                 fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: isUser ? Colors.white : const Color(0xFF2F3433),
+                fontWeight: FontWeight.w600,
+                color: isUser
+                    ? Colors.white
+                    : (isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D)),
               ),
             ),
             if (message.risk == 'HIGH' && !isUser) ...[
@@ -567,7 +627,7 @@ class _ChatBubble extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFFD68A7F).withOpacity(0.85),
+                      color: const Color(0xFFD68A7F).withValues(alpha: 0.85),
                     ),
                   ),
                 ],
@@ -629,9 +689,12 @@ class _BreathingCompanionState extends State<_BreathingCompanion>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final companionColor = widget.persona == 'female'
-        ? const Color(0xFFEBCBD0) // blush
-        : const Color(0xFFD8EEF8); // sky
+        ? (isDark ? const Color(0xFF7A4A55) : const Color(0xFFEBCBD0)) // blush
+        : (isDark ? const Color(0xFF385A6C) : const Color(0xFFD8EEF8)); // sky
 
     return AnimatedBuilder(
       animation: Listenable.merge([_pulseController, _floatController]),
@@ -691,10 +754,10 @@ class _BreathingCompanionState extends State<_BreathingCompanion>
                 widget.persona == 'female'
                     ? 'Your Sister Companion'
                     : 'Your Brother Companion',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2F3433),
+                  color: isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -735,19 +798,28 @@ class _TypingBubbleState extends State<_TypingBubble>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.8),
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : Colors.white,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
             bottomRight: Radius.circular(24),
             bottomLeft: Radius.circular(4),
           ),
-          border: Border.all(color: Colors.white.withOpacity(0.3)),
+          border: Border.all(
+            color: isDark
+                ? theme.colorScheme.outlineVariant
+                : const Color(0xFFE2EBE7),
+          ),
         ),
         child: AnimatedBuilder(
           animation: _controller,
@@ -765,9 +837,10 @@ class _TypingBubbleState extends State<_TypingBubble>
                   height: size,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(
-                      0xFF2E6F60,
-                    ).withOpacity(0.3 + (value * 0.7)),
+                    color: (isDark
+                            ? theme.colorScheme.primary
+                            : const Color(0xFF2E6F60))
+                        .withOpacity(0.3 + (value * 0.7)),
                   ),
                 );
               }),

@@ -99,24 +99,39 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: SisonkeAppBar(title: widget.theme),
       body: Container(
-        decoration: const BoxDecoration(gradient: SisonkeColors.morningMist),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF10131C), Color(0xFF171B28)],
+                )
+              : SisonkeColors.morningMist,
+        ),
         child: Column(
           children: [
             // ── Anonymity notice ─────────────────────────────────────────
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: SisonkeColors.secondaryDim,
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : SisonkeColors.secondaryDim,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.visibility_off_outlined,
                     size: 14,
-                    color: SisonkeColors.secondary,
+                    color: isDark
+                        ? theme.colorScheme.secondary
+                        : SisonkeColors.secondary,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -124,7 +139,9 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: SisonkeColors.secondary.withValues(alpha:0.85),
+                      color: isDark
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.85)
+                          : SisonkeColors.secondary.withValues(alpha: 0.85),
                     ),
                   ),
                 ],
@@ -181,21 +198,37 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                         maxLines: 4,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _sendMessage(),
-                        style: const TextStyle(
-                          color: SisonkeColors.charcoal,
+                        style: TextStyle(
+                          color: isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D),
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Share with the circle...',
-                          fillColor: Colors.white.withValues(alpha: 0.95),
-                          prefixIcon: const Icon(
+                          hintStyle: TextStyle(
+                            color: (isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D)).withValues(alpha: 0.55),
+                            fontSize: 15,
+                          ),
+                          fillColor: isDark
+                              ? theme.colorScheme.surfaceContainerHighest
+                              : Colors.white,
+                          prefixIcon: Icon(
                             Icons.groups_rounded,
-                            color: SisonkeColors.secondary,
+                            color: isDark
+                                ? theme.colorScheme.secondary
+                                : SisonkeColors.secondary,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(
+                              color: isDark ? theme.colorScheme.outlineVariant : const Color(0xFFCCD5D1),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide(
+                              color: isDark ? theme.colorScheme.outlineVariant : const Color(0xFFCCD5D1),
+                            ),
                           ),
                           filled: true,
                         ),
@@ -204,8 +237,12 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                     const SizedBox(width: 8),
                     IconButton.filled(
                       style: IconButton.styleFrom(
-                        backgroundColor: SisonkeColors.secondary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: isDark
+                            ? theme.colorScheme.secondary
+                            : SisonkeColors.secondary,
+                        foregroundColor: isDark
+                            ? const Color(0xFF10131C)
+                            : Colors.white,
                         minimumSize: const Size(48, 48),
                       ),
                       onPressed: _sending ? null : _sendMessage,
@@ -251,21 +288,28 @@ class _AnonymousBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: SisonkeColors.lavender,
+              color: isDark
+                  ? theme.colorScheme.secondary.withValues(alpha: 0.2)
+                  : SisonkeColors.lavender,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person_rounded,
               size: 16,
-              color: SisonkeColors.secondary,
+              color: isDark
+                  ? theme.colorScheme.secondary
+                  : SisonkeColors.secondary,
             ),
           ),
           const SizedBox(width: 8),
@@ -273,17 +317,23 @@ class _AnonymousBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha:0.82),
+                color: isDark
+                    ? theme.colorScheme.surfaceContainerHigh
+                    : Colors.white,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                   bottomLeft: Radius.circular(4),
                 ),
-                border: Border.all(color: Colors.white.withValues(alpha:0.5)),
+                border: Border.all(
+                  color: isDark
+                      ? theme.colorScheme.outlineVariant
+                      : const Color(0xFFE2EBE7),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha:0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -294,9 +344,12 @@ class _AnonymousBubble extends StatelessWidget {
                 children: [
                   Text(
                     text,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF2F3433),
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? theme.colorScheme.onSurface
+                          : const Color(0xFF14213D),
                     ),
                   ),
                   if (timeLabel.isNotEmpty) ...[
@@ -305,7 +358,9 @@ class _AnonymousBubble extends StatelessWidget {
                       timeLabel,
                       style: TextStyle(
                         fontSize: 10,
-                        color: const Color(0xFF2F3433).withValues(alpha:0.45),
+                        color: isDark
+                            ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
+                            : const Color(0xFF14213D).withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -325,6 +380,9 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -334,23 +392,27 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: SisonkeColors.lavender,
+                color: isDark
+                    ? theme.colorScheme.secondary.withValues(alpha: 0.2)
+                    : SisonkeColors.lavender,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.forum_outlined,
                 size: 40,
-                color: SisonkeColors.secondary,
+                color: isDark
+                    ? theme.colorScheme.secondary
+                    : SisonkeColors.secondary,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Be the first to share in this circle.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2F3433),
+                color: isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D),
               ),
             ),
             const SizedBox(height: 8),
@@ -359,7 +421,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: const Color(0xFF2F3433).withValues(alpha:0.55),
+                color: (isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D)).withValues(alpha: 0.6),
               ),
             ),
           ],

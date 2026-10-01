@@ -10,23 +10,27 @@ class AppTheme {
   static const Color ink = SisonkeColors.charcoal; // 0xFF2F3433
   static const Color darkSurface = Color(0xFF10131C);
   static const Color darkSurfaceHigh = Color(0xFF1A1D29);
+  static const Color darkSurfaceHighest = Color(0xFF25293A);
   static const Color darkInk = Color(0xFFEDEBFF);
 
   static ThemeData lightTheme = ThemeData(
-    colorScheme:
-        ColorScheme.fromSeed(
-          seedColor: primary,
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: primary,
-          secondary: secondary,
-          tertiary: tertiary,
-          surface: Colors.white,
-          surfaceContainerHighest: SisonkeColors.mint,
-          onSurface: ink,
-          onSurfaceVariant: ink.withValues(alpha: 0.75),
-          error: const Color(0xFFBA1A1A),
-        ),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: primary,
+      secondary: secondary,
+      tertiary: tertiary,
+      surface: Colors.white,
+      surfaceContainer: const Color(0xFFF9F7F2),
+      surfaceContainerHigh: const Color(0xFFF2ECE1),
+      surfaceContainerHighest: SisonkeColors.mint,
+      onSurface: ink,
+      onSurfaceVariant: ink.withValues(alpha: 0.75),
+      outline: const Color(0xFFCCD5D1),
+      outlineVariant: const Color(0xFFE2EBE7),
+      error: const Color(0xFFBA1A1A),
+    ),
     scaffoldBackgroundColor: calmSurface,
     textTheme: GoogleFonts.nunitoSansTextTheme().apply(
       bodyColor: ink,
@@ -109,20 +113,23 @@ class AppTheme {
   );
 
   static ThemeData darkTheme = ThemeData(
-    colorScheme:
-        ColorScheme.fromSeed(
-          seedColor: primary,
-          brightness: Brightness.dark,
-        ).copyWith(
-          primary: const Color(0xFF6DD5F2),
-          secondary: const Color(0xFFC6BFFF),
-          tertiary: const Color(0xFFFFB1C8),
-          surface: darkSurfaceHigh,
-          surfaceContainerHighest: const Color(0xFF25293A),
-          onSurface: darkInk,
-          onSurfaceVariant: darkInk.withValues(alpha: 0.75),
-          error: const Color(0xFFFFB4AB),
-        ),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: const Color(0xFF6DD5F2),
+      secondary: const Color(0xFFC6BFFF),
+      tertiary: const Color(0xFFFFB1C8),
+      surface: darkSurfaceHigh,
+      surfaceContainer: const Color(0xFF161925),
+      surfaceContainerHigh: darkSurfaceHigh,
+      surfaceContainerHighest: darkSurfaceHighest,
+      onSurface: darkInk,
+      onSurfaceVariant: darkInk.withValues(alpha: 0.75),
+      outline: const Color(0xFF7A8197),
+      outlineVariant: const Color(0xFF2E3346),
+      error: const Color(0xFFFFB4AB),
+    ),
     scaffoldBackgroundColor: darkSurface,
     textTheme: GoogleFonts.nunitoSansTextTheme(
       ThemeData.dark().textTheme,
@@ -172,7 +179,7 @@ class AppTheme {
       ),
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: darkSurfaceHigh,
+      backgroundColor: darkSurface,
       foregroundColor: darkInk,
       elevation: 0,
       centerTitle: true,
@@ -193,7 +200,7 @@ class AppTheme {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),
-        borderSide: const BorderSide(color: Color(0xFF25293A)),
+        borderSide: const BorderSide(color: Color(0xFF2E3346)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),

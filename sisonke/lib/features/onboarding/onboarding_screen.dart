@@ -7,7 +7,7 @@ import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 
 /// Streamlined 3-step onboarding:
-/// 1. Nickname  2. Companion style  3. Consent + launch
+/// 1. Nickname  2. Companion style  3. Consent + launch (lands on /home)
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -37,10 +37,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: SisonkeColors.cream,
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : SisonkeColors.cream,
       body: SafeArea(
         child: Stack(
           children: [
@@ -87,8 +89,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 8,
                             decoration: BoxDecoration(
                               color: _currentPage == i
-                                  ? SisonkeColors.primary
-                                  : SisonkeColors.primaryMid,
+                                  ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary)
+                                  : (isDark ? theme.colorScheme.outlineVariant : SisonkeColors.primaryMid),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           );
@@ -136,7 +138,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _error = null);
 
     if (_currentPage == 0) {
-      // Nickname is optional — default to 'Friend' if empty
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -191,7 +192,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await prefs.setString('user_nickname', nickname);
       await prefs.setString('user_persona', _persona);
 
-      if (mounted) context.go('/e-friend');
+      // Navigate to Home as the landing page
+      if (mounted) context.go('/home');
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -212,28 +214,33 @@ class _NicknamePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryTextColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final secondaryTextColor = isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.65) : SisonkeColors.charcoal.withValues(alpha: 0.6);
+
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(28, 60, 28, 160),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Sisonke',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,
-              color: SisonkeColors.primary,
+              color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
               letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 28),
-          const Text(
+          Text(
             'What should we call you?',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: SisonkeColors.charcoal,
+              color: primaryTextColor,
               height: 1.2,
             ),
           ),
@@ -242,7 +249,7 @@ class _NicknamePage extends StatelessWidget {
             'A nickname is fine. You can change this any time in settings.',
             style: TextStyle(
               fontSize: 15,
-              color: SisonkeColors.charcoal.withOpacity(0.6),
+              color: secondaryTextColor,
               height: 1.5,
             ),
           ),
@@ -251,19 +258,37 @@ class _NicknamePage extends StatelessWidget {
             controller: controller,
             autofocus: true,
             textCapitalization: TextCapitalization.words,
+            style: TextStyle(
+              color: primaryTextColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: InputDecoration(
               hintText: 'Tino, Sibo, Friend…',
-              prefixIcon: const Icon(Icons.person_outline_rounded),
+              hintStyle: TextStyle(
+                color: secondaryTextColor,
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: Icon(
+                Icons.person_outline_rounded,
+                color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
+              ),
               filled: true,
-              fillColor: SisonkeColors.muted,
+              fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : SisonkeColors.muted,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide.none,
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: isDark ? theme.colorScheme.outlineVariant : Colors.transparent,
+                ),
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(
-                  color: SisonkeColors.primary,
+                borderSide: BorderSide(
+                  color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
                   width: 2,
                 ),
               ),
@@ -271,7 +296,7 @@ class _NicknamePage extends StatelessWidget {
           ),
           if (error != null) ...[
             const SizedBox(height: 12),
-            Text(error!, style: const TextStyle(color: SisonkeColors.danger)),
+            Text(error!, style: TextStyle(color: theme.colorScheme.error)),
           ],
         ],
       ),
@@ -292,6 +317,11 @@ class _CompanionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryTextColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final secondaryTextColor = isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.65) : SisonkeColors.charcoal.withValues(alpha: 0.6);
+
     const companions = [
       _Companion(
         id: 'female',
@@ -315,22 +345,22 @@ class _CompanionPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Sisonke',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,
-              color: SisonkeColors.primary,
+              color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
               letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 28),
-          const Text(
+          Text(
             'Who would you like to talk to?',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: SisonkeColors.charcoal,
+              color: primaryTextColor,
               height: 1.2,
             ),
           ),
@@ -339,13 +369,18 @@ class _CompanionPage extends StatelessWidget {
             'You can switch companions any time during a conversation.',
             style: TextStyle(
               fontSize: 15,
-              color: SisonkeColors.charcoal.withOpacity(0.6),
+              color: secondaryTextColor,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 36),
           ...companions.map((c) {
             final isSelected = persona == c.id;
+            final cardColor = isDark
+                ? (isSelected
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : theme.colorScheme.surfaceContainerHigh)
+                : c.color;
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: InkWell(
@@ -355,18 +390,18 @@ class _CompanionPage extends StatelessWidget {
                   duration: const Duration(milliseconds: 220),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: c.color,
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isSelected
-                          ? SisonkeColors.primary
-                          : Colors.transparent,
-                      width: 2.5,
+                          ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary)
+                          : (isDark ? theme.colorScheme.outlineVariant : Colors.transparent),
+                      width: 2,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: SisonkeColors.primary.withOpacity(0.18),
+                              color: (isDark ? theme.colorScheme.primary : SisonkeColors.primary).withValues(alpha: 0.18),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -377,11 +412,15 @@ class _CompanionPage extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(14),
-                        decoration: const BoxDecoration(
-                          color: Colors.white30,
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.colorScheme.surfaceContainer : Colors.white30,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(c.icon, size: 26, color: SisonkeColors.charcoal),
+                        child: Icon(
+                          c.icon,
+                          size: 26,
+                          color: isDark ? theme.colorScheme.primary : SisonkeColors.charcoal,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -390,10 +429,10 @@ class _CompanionPage extends StatelessWidget {
                           children: [
                             Text(
                               c.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
-                                color: SisonkeColors.charcoal,
+                                color: primaryTextColor,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -402,7 +441,9 @@ class _CompanionPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
-                                color: SisonkeColors.charcoal.withOpacity(0.75),
+                                color: isDark
+                                    ? theme.colorScheme.onSurface.withValues(alpha: 0.75)
+                                    : SisonkeColors.charcoal.withValues(alpha: 0.75),
                                 height: 1.4,
                               ),
                             ),
@@ -410,11 +451,11 @@ class _CompanionPage extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
                           child: Icon(
                             Icons.check_circle_rounded,
-                            color: SisonkeColors.primary,
+                            color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
                             size: 26,
                           ),
                         ),
@@ -461,27 +502,32 @@ class _ConsentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryTextColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final secondaryTextColor = isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.65) : SisonkeColors.charcoal.withValues(alpha: 0.6);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 60, 28, 160),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Sisonke',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,
-              color: SisonkeColors.primary,
+              color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
               letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 28),
-          const Text(
+          Text(
             'Your space, your privacy.',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: SisonkeColors.charcoal,
+              color: primaryTextColor,
               height: 1.2,
             ),
           ),
@@ -490,7 +536,7 @@ class _ConsentPage extends StatelessWidget {
             'A few things to know before we begin:',
             style: TextStyle(
               fontSize: 15,
-              color: SisonkeColors.charcoal.withOpacity(0.6),
+              color: secondaryTextColor,
             ),
           ),
           const SizedBox(height: 28),
@@ -518,12 +564,16 @@ class _ConsentPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: accepted ? SisonkeColors.primaryDim : SisonkeColors.muted,
+                color: isDark
+                    ? (accepted
+                        ? theme.colorScheme.primary.withValues(alpha: 0.20)
+                        : theme.colorScheme.surfaceContainerHighest)
+                    : (accepted ? SisonkeColors.primaryDim : SisonkeColors.muted),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: accepted
-                      ? SisonkeColors.primary
-                      : SisonkeColors.primaryMid,
+                      ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary)
+                      : (isDark ? theme.colorScheme.outlineVariant : SisonkeColors.primaryMid),
                   width: accepted ? 2 : 1,
                 ),
               ),
@@ -534,17 +584,17 @@ class _ConsentPage extends StatelessWidget {
                         ? Icons.check_circle_rounded
                         : Icons.circle_outlined,
                     color: accepted
-                        ? SisonkeColors.primary
-                        : SisonkeColors.charcoal.withOpacity(0.4),
+                        ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary)
+                        : (isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.4) : SisonkeColors.charcoal.withValues(alpha: 0.4)),
                     size: 22,
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'I understand and agree',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: SisonkeColors.charcoal,
+                        color: primaryTextColor,
                       ),
                     ),
                   ),
@@ -554,7 +604,7 @@ class _ConsentPage extends StatelessWidget {
           ),
           if (error != null) ...[
             const SizedBox(height: 12),
-            Text(error!, style: const TextStyle(color: SisonkeColors.danger)),
+            Text(error!, style: TextStyle(color: theme.colorScheme.error)),
           ],
         ],
       ),
@@ -570,16 +620,25 @@ class _ConsentPoint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: SisonkeColors.primaryDim,
+            color: isDark
+                ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                : SisonkeColors.primaryDim,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 18, color: SisonkeColors.primary),
+          child: Icon(
+            icon,
+            size: 18,
+            color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -589,7 +648,9 @@ class _ConsentPoint extends StatelessWidget {
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: SisonkeColors.charcoal.withOpacity(0.8),
+                color: isDark
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.85)
+                    : SisonkeColors.charcoal.withValues(alpha: 0.8),
                 height: 1.5,
               ),
             ),
@@ -600,8 +661,6 @@ class _ConsentPoint extends StatelessWidget {
   }
 }
 
-// Kept for backward compat (router.dart references OnboardingPage type nowhere, but
-// the language_selection_screen and topic_selection_screen may reference it)
 class OnboardingPage {
   final String title;
   final String description;

@@ -182,12 +182,25 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         actions: [
           IconButton(
             onPressed: _saveEntry,
-            icon: const Icon(Icons.check_rounded, color: Color(0xFF2E6F60)),
+            icon: Icon(
+              Icons.check_rounded,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.primary
+                  : const Color(0xFF2E6F60),
+            ),
           ),
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: SisonkeColors.forestBreeze),
+        decoration: BoxDecoration(
+          gradient: Theme.of(context).brightness == Brightness.dark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF10131C), Color(0xFF181E29)],
+                )
+              : SisonkeColors.forestBreeze,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -198,25 +211,32 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.surfaceContainerHigh
+                      : Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.outlineVariant
+                        : Colors.white.withValues(alpha: 0.4),
                   ),
                 ),
                 child: TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Reflection Title',
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2F3433),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -225,25 +245,32 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.surfaceContainerHigh
+                        : Colors.white.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.outlineVariant
+                          : Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
                   child: TextField(
                     controller: _contentController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Share your thoughts freely here...',
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                      ),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                     ),
                     maxLines: null,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Color(0xFF2F3433),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     keyboardType: TextInputType.multiline,
                   ),
@@ -256,21 +283,25 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.surfaceContainerHigh
+                      : Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.outlineVariant
+                        : Colors.white.withValues(alpha: 0.4),
                   ),
                 ),
                 child: SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _isLocked,
-                  title: const Text(
+                  title: Text(
                     'Lock with Sisonke PIN?',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2F3433),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   onChanged: (value) => setState(() => _isLocked = value),
@@ -294,11 +325,21 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   // --- 🏺 Gratitude Jar Layout ---
   Widget _buildGratitudeJarLayout() {
     final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Gratitude Jar'),
       body: Container(
-        decoration: const BoxDecoration(gradient: SisonkeColors.forestBreeze),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF10131C), Color(0xFF1E1A29)],
+                )
+              : SisonkeColors.forestBreeze,
+        ),
         child: Column(
           children: [
             if (!isKeyboardVisible)
@@ -313,21 +354,25 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: isDark
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: isDark
+                          ? theme.colorScheme.outlineVariant
+                          : Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         'What is a memory you are grateful for today?',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF2F3433),
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -339,13 +384,21 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                           decoration: InputDecoration(
                             hintText:
                                 'A warm conversation, sunlight on your desk, or a small victory...',
-                            fillColor: Colors.white.withValues(alpha: 0.6),
+                            hintStyle: TextStyle(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                            ),
+                            fillColor: isDark
+                                ? theme.colorScheme.surfaceContainerHighest
+                                : Colors.white.withValues(alpha: 0.6),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
                             ),
                           ),
-                          style: const TextStyle(fontSize: 14),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -372,11 +425,21 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   // --- 📦 Worry Box Layout ---
   Widget _buildWorryBoxLayout() {
     final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Worry Box'),
       body: Container(
-        decoration: const BoxDecoration(gradient: SisonkeColors.pastelSunset),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF10131C), Color(0xFF261820)],
+                )
+              : SisonkeColors.pastelSunset,
+        ),
         child: Column(
           children: [
             if (!isKeyboardVisible)
@@ -391,21 +454,25 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: isDark
+                        ? theme.colorScheme.surfaceContainerHigh
+                        : Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: isDark
+                          ? theme.colorScheme.outlineVariant
+                          : Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         'Empty your mind of worries here.',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF2F3433),
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -413,9 +480,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                         'You can fold them up and drop them away for the night.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: const Color(
-                            0xFF2F3433,
-                          ).withValues(alpha: 0.55),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -430,13 +495,21 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                             decoration: InputDecoration(
                               hintText:
                                   'What is weighing on your chest right now?',
-                              fillColor: Colors.white.withValues(alpha: 0.6),
+                              hintStyle: TextStyle(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                              ),
+                              fillColor: isDark
+                                  ? theme.colorScheme.surfaceContainerHighest
+                                  : Colors.white.withValues(alpha: 0.6),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide: BorderSide.none,
                               ),
                             ),
-                            style: const TextStyle(fontSize: 14),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
                         ),
                       ),

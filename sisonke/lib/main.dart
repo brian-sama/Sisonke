@@ -80,12 +80,12 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isNight = ref.watch(isNightModeProvider);
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: 'Sisonke',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: isNight ? ThemeMode.dark : ThemeMode.system,
+      themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) => OfflineBanner(
         child: PrivacyGuard(child: child ?? const SizedBox.shrink()),

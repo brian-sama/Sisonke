@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sisonke/shared/models/mood.dart';
 import 'package:sisonke/features/checkin/providers/mood_provider.dart';
-import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 
 class MoodCheckinScreen extends ConsumerStatefulWidget {
   const MoodCheckinScreen({super.key});
@@ -24,18 +24,51 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
     super.dispose();
   }
 
-  Gradient get _ambientGradient {
+  Gradient _ambientGradient(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) {
+      switch (_selectedMood) {
+        case MoodType.great:
+        case MoodType.okay:
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF10131C), Color(0xFF162320)],
+          );
+        case MoodType.low:
+        case MoodType.overwhelmed:
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF10131C), Color(0xFF17202B)],
+          );
+        case MoodType.anxious:
+        case MoodType.angry:
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF10131C), Color(0xFF261820)],
+          );
+        case null:
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF10131C), Color(0xFF171B26)],
+          );
+      }
+    }
+
     switch (_selectedMood) {
       case MoodType.great:
-        return SisonkeColors.forestBreeze; // warm sunlight / sage
+        return SisonkeColors.forestBreeze;
       case MoodType.okay:
         return SisonkeColors.forestBreeze;
       case MoodType.low:
       case MoodType.overwhelmed:
-        return SisonkeColors.morningMist; // cool sky blues / mint
+        return SisonkeColors.morningMist;
       case MoodType.anxious:
       case MoodType.angry:
-        return SisonkeColors.pastelSunset; // sunset rose / lavender
+        return SisonkeColors.pastelSunset;
       case null:
         return SisonkeColors.forestBreeze;
     }
@@ -78,11 +111,18 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white.withValues(alpha: 0.7);
+    final cardBorder = isDark ? theme.colorScheme.outlineVariant : Colors.white.withValues(alpha: 0.4);
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = theme.colorScheme.onSurface.withValues(alpha: 0.65);
+
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Daily Reflection'),
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 600),
-        decoration: BoxDecoration(gradient: _ambientGradient),
+        decoration: BoxDecoration(gradient: _ambientGradient(context)),
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
@@ -92,19 +132,19 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.7),
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+                  border: Border.all(color: cardBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'How is your inner season today?',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF2F3433),
+                        color: primaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -112,7 +152,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                       'Select the nature token that closest resembles your emotional environment:',
                       style: TextStyle(
                         fontSize: 13,
-                        color: const Color(0xFF2F3433).withValues(alpha:0.65),
+                        color: secondaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -137,21 +177,23 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                             duration: const Duration(milliseconds: 250),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF2E6F60).withValues(alpha:0.18)
-                                  : Colors.white.withValues(alpha:0.6),
+                                  ? (isDark
+                                      ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                                      : const Color(0xFF2E6F60).withValues(alpha: 0.18))
+                                  : (isDark
+                                      ? theme.colorScheme.surfaceContainerHighest
+                                      : Colors.white.withValues(alpha: 0.6)),
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFF2E6F60)
-                                    : Colors.white.withValues(alpha:0.5),
+                                    ? (isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60))
+                                    : (isDark ? theme.colorScheme.outlineVariant : Colors.white.withValues(alpha: 0.5)),
                                 width: isSelected ? 2.5 : 1,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: const Color(
-                                          0xFF2E6F60,
-                                        ).withValues(alpha:0.15),
+                                        color: (isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60)).withValues(alpha: 0.15),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       ),
@@ -174,7 +216,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                                     fontWeight: isSelected
                                         ? FontWeight.w900
                                         : FontWeight.w700,
-                                    color: const Color(0xFF2F3433),
+                                    color: primaryTextColor,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -184,7 +226,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                                   style: TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF2F3433).withValues(alpha:0.55),
+                                    color: secondaryTextColor,
                                     fontStyle: FontStyle.italic,
                                   ),
                                 ),
@@ -201,9 +243,9 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.7),
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+                  border: Border.all(color: cardBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,30 +253,20 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Energy Presence',
+                        Text(
+                          'Energy Reservoir',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF2F3433),
+                            color: primaryTextColor,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2E6F60).withValues(alpha:0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_energyLevel.toInt()} / 10',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF2E6F60),
-                            ),
+                        Text(
+                          '${_energyLevel.toInt()} / 10',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60),
                           ),
                         ),
                       ],
@@ -242,13 +274,11 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                     const SizedBox(height: 12),
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFF2E6F60),
-                        inactiveTrackColor: const Color(
-                          0xFF2E6F60,
-                        ).withValues(alpha:0.15),
-                        thumbColor: const Color(0xFF2E6F60),
-                        overlayColor: const Color(0xFF2E6F60).withValues(alpha:0.12),
-                        valueIndicatorColor: const Color(0xFF2E6F60),
+                        activeTrackColor: isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60),
+                        inactiveTrackColor: (isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60)).withValues(alpha: 0.15),
+                        thumbColor: isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60),
+                        overlayColor: (isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60)).withValues(alpha: 0.12),
+                        valueIndicatorColor: isDark ? theme.colorScheme.primary : const Color(0xFF2E6F60),
                       ),
                       child: Slider(
                         value: _energyLevel,
@@ -267,32 +297,37 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.7),
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+                  border: Border.all(color: cardBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
+                    Text(
                       'What made today feel this way?',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2F3433),
+                        color: primaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _noteController,
                       maxLines: 4,
-                      style: const TextStyle(fontSize: 14),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: primaryTextColor,
+                      ),
                       decoration: InputDecoration(
-                        fillColor: Colors.white.withValues(alpha:0.85),
+                        fillColor: isDark
+                            ? theme.colorScheme.surfaceContainerHighest
+                            : Colors.white.withValues(alpha: 0.85),
                         hintText:
                             'Take your time, write as little or as much as you need...',
                         hintStyle: TextStyle(
-                          color: const Color(0xFF2F3433).withValues(alpha:0.4),
+                          color: secondaryTextColor,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -310,7 +345,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                 icon: Icons.check_circle_outline_rounded,
                 isFullWidth: true,
               ),
-              const SizedBox(height: 48), // Bottom safe space
+              const SizedBox(height: 48),
             ],
           ),
         ),

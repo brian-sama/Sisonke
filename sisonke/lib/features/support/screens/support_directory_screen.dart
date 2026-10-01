@@ -141,15 +141,18 @@ class _SupportHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FBF7),
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : const Color(0xFFF8FBF7),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outlineVariant.withValues(alpha: 0.55),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
         ),
       ),
       child: Column(
@@ -161,7 +164,9 @@ class _SupportHeader extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE7FAFA),
+                  color: isDark
+                      ? const Color(0xFF00A6A6).withValues(alpha: 0.2)
+                      : const Color(0xFFE7FAFA),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -173,9 +178,10 @@ class _SupportHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Choose the support that fits this moment',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     height: 1.15,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -224,9 +230,30 @@ class _SupportAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : color;
+    final cardBorder = isDark
+        ? Border.all(
+            color: color.withValues(alpha: 0.28),
+            width: 1.2,
+          )
+        : null;
+    final iconColor = isDark
+        ? Color.lerp(color, Colors.white, 0.35) ?? color
+        : const Color(0xFF14213D);
+    final titleColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D);
+    final subtitleColor = isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : const Color(0xFF14213D).withValues(alpha: 0.65);
+
     return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(20),
+      color: cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: cardBorder?.top ?? BorderSide.none,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -235,15 +262,15 @@ class _SupportAction extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: const Color(0xFF14213D)),
+              Icon(icon, color: iconColor),
               const Spacer(),
               Text(
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF14213D),
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -252,7 +279,7 @@ class _SupportAction extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: const Color(0xFF14213D).withValues(alpha: 0.65),
+                  color: subtitleColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -360,8 +387,24 @@ class _UbuntuCirclesBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bannerBg = isDark
+        ? const Color(0xFF261D33)
+        : SisonkeColors.secondaryDim;
+    final iconBg = isDark
+        ? const Color(0xFF3E2C59)
+        : SisonkeColors.lavender;
+    final primaryTextColor = isDark
+        ? const Color(0xFFD6C7FF)
+        : SisonkeColors.secondary;
+    final subtitleTextColor = isDark
+        ? const Color(0xFFD6C7FF).withValues(alpha: 0.75)
+        : SisonkeColors.secondary.withOpacity(0.75);
+
     return Material(
-      color: SisonkeColors.secondaryDim,
+      color: bannerBg,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
@@ -374,12 +417,12 @@ class _UbuntuCirclesBanner extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: SisonkeColors.lavender,
+                  color: iconBg,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.groups_rounded,
-                  color: SisonkeColors.secondary,
+                  color: primaryTextColor,
                 ),
               ),
               const SizedBox(width: 14),
@@ -387,12 +430,12 @@ class _UbuntuCirclesBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Ubuntu Circles',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
-                        color: SisonkeColors.secondary,
+                        color: primaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -401,17 +444,17 @@ class _UbuntuCirclesBanner extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: SisonkeColors.secondary.withOpacity(0.75),
+                        color: subtitleTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: SisonkeColors.secondary,
+                color: primaryTextColor,
               ),
             ],
           ),

@@ -151,18 +151,29 @@ class _SafetyNotice extends StatelessWidget {
   const _SafetyNotice();
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
-      color: Colors.amber.shade50,
+      color: isDark ? const Color(0xFF2C2214) : Colors.amber.shade50,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.security_rounded, size: 16, color: Colors.amber),
-          SizedBox(width: 8),
+          Icon(
+            Icons.security_rounded,
+            size: 16,
+            color: isDark ? const Color(0xFFFFB4AB) : Colors.amber,
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Encrypted live support. Our counselors are here to help.',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? theme.colorScheme.onSurface : Colors.black87,
+              ),
             ),
           ),
         ],
@@ -175,6 +186,7 @@ class _EmptyChat extends StatelessWidget {
   const _EmptyChat();
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -182,12 +194,14 @@ class _EmptyChat extends StatelessWidget {
           Icon(
             Icons.chat_bubble_outline_rounded,
             size: 48,
-            color: Colors.grey.shade300,
+            color: theme.colorScheme.outlineVariant,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Waiting for counselor to join...',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
         ],
       ),
@@ -209,6 +223,8 @@ class _ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -218,7 +234,9 @@ class _ChatBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? theme.colorScheme.primary : Colors.white,
+          color: isMe
+              ? theme.colorScheme.primary
+              : (isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white),
           borderRadius: BorderRadius.circular(18).copyWith(
             bottomRight: isMe
                 ? const Radius.circular(0)
@@ -227,6 +245,13 @@ class _ChatBubble extends StatelessWidget {
                 ? const Radius.circular(18)
                 : const Radius.circular(0),
           ),
+          border: isMe
+              ? null
+              : Border.all(
+                  color: isDark
+                      ? theme.colorScheme.outlineVariant
+                      : Colors.grey.shade200,
+                ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -248,14 +273,17 @@ class _ChatBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
-                    color: theme.colorScheme.secondary,
+                    color: isDark ? theme.colorScheme.secondary : theme.colorScheme.secondary,
                   ),
                 ),
               ),
             Text(
               content,
               style: TextStyle(
-                color: isMe ? Colors.white : Colors.black87,
+                color: isMe
+                    ? (isDark ? const Color(0xFF10131C) : Colors.white)
+                    : (isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D)),
+                fontWeight: FontWeight.w600,
                 height: 1.3,
               ),
             ),
@@ -274,11 +302,18 @@ class _InputArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? theme.colorScheme.outlineVariant : Colors.grey.shade200,
+          ),
+        ),
       ),
       child: SafeArea(
         child: Row(
@@ -286,14 +321,32 @@ class _InputArea extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                style: TextStyle(
+                  color: isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Type your message...',
+                  hintStyle: TextStyle(
+                    color: (isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D)).withValues(alpha: 0.55),
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(
+                      color: isDark ? theme.colorScheme.outlineVariant : const Color(0xFFCCD5D1),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(
+                      color: isDark ? theme.colorScheme.outlineVariant : const Color(0xFFCCD5D1),
+                    ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: isDark
+                      ? theme.colorScheme.surfaceContainerHighest
+                      : Colors.white,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,

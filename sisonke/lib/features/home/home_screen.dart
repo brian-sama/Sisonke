@@ -1,34 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/shared/widgets/sisonke_app_bar.dart';
+import 'package:sisonke/theme/night_mode_provider.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
+import 'package:sisonke/shared/widgets/emergency_help_button.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _nickname = '';
 
   @override
   void initState() {
     super.initState();
-    SharedPreferences.getInstance().then((prefs) {
-      if (mounted) {
-        setState(() => _nickname = prefs.getString('user_nickname') ?? '');
-      }
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _nickname = prefs.getString('user_nickname') ?? '';
     });
   }
 
   String get _greeting {
     final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return 'Mangwanani';   // Good morning — Shona
-    if (hour >= 12 && hour < 17) return 'Good afternoon'; // English
-    return 'Sawubona';                                  // I see you — Ndebele evening greeting
+    if (hour >= 5 && hour < 12) return 'Good morning';
+    if (hour >= 12 && hour < 17) return 'Good afternoon';
+    if (hour >= 17 && hour < 22) return 'Good evening';
+    return 'Still with you';
   }
 
   bool get _isLateNight {
@@ -38,22 +46,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topActionColor =
-        Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final topActionColor = isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : theme.colorScheme.primaryContainer.withValues(alpha: 0.5);
+    final primaryTextColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final secondaryTextColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : SisonkeColors.charcoal.withValues(alpha: 0.6);
 
     return Scaffold(
-      backgroundColor: SisonkeColors.cream,
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : SisonkeColors.cream,
       appBar: SisonkeAppBar(
         title: 'Sisonke',
         showBackButton: false,
-        backgroundColor: SisonkeColors.cream,
-        foregroundColor: SisonkeColors.charcoal,
+        backgroundColor: isDark ? theme.scaffoldBackgroundColor : SisonkeColors.cream,
+        foregroundColor: primaryTextColor,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.notifications_none_rounded),
-              color: SisonkeColors.primary,
+              color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
               tooltip: 'Notifications',
               style: IconButton.styleFrom(
                 backgroundColor: topActionColor,
@@ -69,9 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: CircleAvatar(
                 radius: 18,
                 backgroundColor: topActionColor,
-                child: const Icon(
+                child: Icon(
                   Icons.person_rounded,
-                  color: SisonkeColors.primary,
+                  color: isDark ? theme.colorScheme.primary : SisonkeColors.primary,
                 ),
               ),
               onSelected: (value) => context.push(value),
@@ -106,10 +121,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _isLateNight
                         ? 'Still with you  🌙'
                         : '$_greeting${_nickname.isNotEmpty ? ', $_nickname' : ''}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: SisonkeColors.charcoal,
+                      color: primaryTextColor,
                       height: 1.2,
                     ),
                   ),
@@ -120,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         : 'What do you need today?',
                     style: TextStyle(
                       fontSize: 15,
-                      color: SisonkeColors.charcoal.withValues(alpha: 0.6),
+                      color: secondaryTextColor,
                     ),
                   ),
                 ],
@@ -135,11 +150,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'Want to talk?',
                     sublabel: 'Sisonke Friend is listening',
                     icon: Icons.chat_bubble_rounded,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF2E6F60), Color(0xFF1A3D36)],
-                    ),
+                    gradient: isDark
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF1B4D43), Color(0xFF102E28)],
+                          )
+                        : const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF2E6F60), Color(0xFF1A3D36)],
+                          ),
                     foreground: Colors.white,
                     onTap: () => context.go('/e-friend'),
                   ),
@@ -150,12 +171,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'How are you feeling?',
                     sublabel: 'Check in with yourself',
                     icon: Icons.spa_rounded,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFEBCBD0), Color(0xFFE4DDF6)],
-                    ),
-                    foreground: SisonkeColors.charcoal,
+                    gradient: isDark
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF382942), Color(0xFF252033)],
+                          )
+                        : const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFEBCBD0), Color(0xFFE4DDF6)],
+                          ),
+                    foreground: isDark ? const Color(0xFFEDEBFF) : SisonkeColors.charcoal,
                     onTap: () => context.go('/check-in/mood'),
                   ),
                 ),
@@ -169,7 +196,9 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
-                color: SisonkeColors.charcoal.withValues(alpha: 0.5),
+                color: isDark
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
+                    : SisonkeColors.charcoal.withValues(alpha: 0.5),
                 letterSpacing: 1.2,
               ),
             ),
@@ -300,11 +329,26 @@ class _ToolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : color;
+    final textColor = isDark ? theme.colorScheme.onSurface : SisonkeColors.charcoal;
+    final iconColor = isDark ? theme.colorScheme.primary : SisonkeColors.charcoal;
+
     return SizedBox(
       width: 140,
       child: Material(
-        color: color,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
+        shape: isDark
+            ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: color.withValues(alpha: 0.25),
+                  width: 1.2,
+                ),
+              )
+            : null,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
@@ -313,13 +357,13 @@ class _ToolCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: SisonkeColors.charcoal, size: 22),
+                Icon(icon, color: iconColor, size: 22),
                 const Spacer(),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    color: SisonkeColors.charcoal,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -327,7 +371,7 @@ class _ToolCard extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: SisonkeColors.charcoal.withValues(alpha: 0.6),
+                    color: textColor.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
