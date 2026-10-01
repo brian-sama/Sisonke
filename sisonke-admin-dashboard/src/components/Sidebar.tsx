@@ -54,49 +54,42 @@ export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
   const navGroups: NavGroup[] = [
     {
-      label: 'Core',
+      label: 'Executive & Insights',
       items: [
-        { name: 'Dashboard', path: '/', icon: BarChart },
-        { name: 'Analytics', path: '/analytics', icon: Activity },
-        { name: 'Cohort Trends', path: '/cohort', icon: TrendingUp },
-        { name: 'NGO Report', path: '/ngo-report', icon: FileText },
+        { name: 'Dashboard Overview', path: '/', icon: BarChart },
+        { name: 'Analytics & Traffic', path: '/analytics', icon: Activity },
+        { name: 'Cohort Mood Trends', path: '/cohort', icon: TrendingUp },
+        { name: 'NGO Funder Report', path: '/ngo-report', icon: FileText },
       ],
     },
     {
-      label: 'Safety & Trust',
+      label: 'Clinical Care Portal',
+      items: [
+        { name: 'Support Cases', path: '/cases', icon: UserCheck, roles: ['admin', 'counselor', 'super-admin'] },
+        { name: 'Counselor Workload', path: '/workload', icon: Users, roles: ['admin', 'counselor', 'super-admin'] },
+        { name: 'Crisis Response Log', path: '/crisis-log', icon: AlertTriangle, roles: ['admin', 'counselor', 'super-admin', 'safety-reviewer'] },
+      ],
+    },
+    {
+      label: 'Safety & Content CMS',
       items: [
         { name: 'Emergency Vault', path: '/emergency', icon: Phone },
-        { name: 'Safety Rules', path: '/safety', icon: ShieldAlert, roles: ['admin', 'system-admin', 'super-admin', 'safety-reviewer'] },
-        { name: 'Moderation', path: '/moderation', icon: MessageSquare, roles: ['admin', 'moderator', 'super-admin'] },
-      ],
-    },
-    {
-      label: 'Knowledge',
-      items: [
+        { name: 'Content Moderation', path: '/moderation', icon: MessageSquare, roles: ['admin', 'moderator', 'super-admin'] },
+        { name: 'Chatbot Safety Rules', path: '/safety', icon: ShieldAlert, roles: ['admin', 'system-admin', 'super-admin', 'safety-reviewer'] },
         { name: 'Resources CMS', path: '/resources', icon: BookOpen, roles: ['admin', 'content-admin', 'content-manager', 'super-admin'] },
-        { name: 'FAQ Bank', path: '/faq', icon: HelpCircle, roles: ['admin', 'content-admin', 'content-manager', 'super-admin'] },
+        { name: 'FAQ Knowledge Bank', path: '/faq', icon: HelpCircle, roles: ['admin', 'content-admin', 'content-manager', 'super-admin'] },
+        { name: 'Outreach Campaigns', path: '/outreach', icon: Bell, roles: ['admin', 'content-admin', 'super-admin'] },
       ],
     },
     {
-      label: 'Care Portal',
-      items: [
-        { name: 'People Needing Support', path: '/cases', icon: UserCheck, roles: ['admin', 'counselor', 'super-admin'] },
-        { name: 'Workload', path: '/workload', icon: Users, roles: ['admin', 'counselor', 'super-admin'] },
-        { name: 'Crisis Log', path: '/crisis-log', icon: AlertTriangle, roles: ['admin', 'counselor', 'super-admin', 'safety-reviewer'] },
-      ],
-    },
-    {
-      label: 'Outreach',
-      items: [{ name: 'Campaigns', path: '/outreach', icon: Bell, roles: ['admin', 'content-admin', 'super-admin'] }],
-    },
-    {
-      label: 'System',
+      label: 'Governance & Settings',
       items: [
         { name: 'People & Roles', path: '/users', icon: Users, roles: ['admin', 'system-admin', 'super-admin'] },
-        { name: 'Governance', path: '/settings', icon: SettingsIcon },
+        { name: 'System Settings', path: '/settings', icon: SettingsIcon },
       ],
     },
   ];
+
 
   return (
     <>

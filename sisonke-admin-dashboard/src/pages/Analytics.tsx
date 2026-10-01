@@ -48,21 +48,34 @@ export const Analytics: React.FC = () => {
   }));
 
   return (
-    <div className="p-6 lg:p-10 space-y-10 max-w-7xl mx-auto">
+    <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h3 className="text-3xl font-display font-black text-zinc-900">Health Insights</h3>
-          <p className="text-zinc-500 font-medium">Aggregated behavior analysis & safety metrics</p>
+          <h3 className="text-3xl font-display font-black text-zinc-900">Health & Platform Insights</h3>
+          <p className="text-zinc-600 font-medium">Aggregated behavior analysis, traffic trends & crisis metrics</p>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="px-6 py-3 bg-white border border-zinc-100 rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm"
+        <div className="flex items-center gap-2 p-1.5 bg-zinc-100 rounded-2xl">
+          <a
+            href="/analytics"
+            className="px-4 py-2 bg-white text-primary rounded-xl text-xs font-black uppercase tracking-wider shadow-sm"
           >
-            May 2026
-          </button>
+            Traffic & Activity
+          </a>
+          <a
+            href="/cohort"
+            className="px-4 py-2 text-zinc-600 hover:text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
+          >
+            Cohort Moods
+          </a>
+          <a
+            href="/ngo-report"
+            className="px-4 py-2 text-zinc-600 hover:text-zinc-900 rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
+          >
+            NGO Reports
+          </a>
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <SisonkeCard className="p-10 bg-primary text-white border-none shadow-2xl shadow-primary-mid">
