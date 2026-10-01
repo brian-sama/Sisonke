@@ -7,7 +7,7 @@ class AppTheme {
   static const Color secondary = Color(0xFF7361A9); // Soft muted lavender
   static const Color tertiary = Color(0xFFD68A7F); // Warm soft terracotta-clay
   static const Color calmSurface = SisonkeColors.cream;
-  static const Color ink = SisonkeColors.charcoal;
+  static const Color ink = SisonkeColors.charcoal; // 0xFF2F3433
   static const Color darkSurface = Color(0xFF10131C);
   static const Color darkSurfaceHigh = Color(0xFF1A1D29);
   static const Color darkInk = Color(0xFFEDEBFF);
@@ -23,12 +23,19 @@ class AppTheme {
           tertiary: tertiary,
           surface: Colors.white,
           surfaceContainerHighest: SisonkeColors.mint,
+          onSurface: ink,
+          onSurfaceVariant: ink.withValues(alpha: 0.75),
           error: const Color(0xFFBA1A1A),
         ),
     scaffoldBackgroundColor: calmSurface,
     textTheme: GoogleFonts.nunitoSansTextTheme().apply(
       bodyColor: ink,
       displayColor: ink,
+    ),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: primary,
+      selectionColor: SisonkeColors.mint,
+      selectionHandleColor: primary,
     ),
     useMaterial3: true,
     navigationBarTheme: NavigationBarThemeData(
@@ -83,6 +90,11 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
+      labelStyle: const TextStyle(color: ink, fontWeight: FontWeight.w600),
+      floatingLabelStyle: const TextStyle(color: primary, fontWeight: FontWeight.w700),
+      hintStyle: TextStyle(color: ink.withValues(alpha: 0.55), fontWeight: FontWeight.w500),
+      prefixIconColor: ink.withValues(alpha: 0.75),
+      suffixIconColor: ink.withValues(alpha: 0.75),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),
@@ -108,12 +120,18 @@ class AppTheme {
           surface: darkSurfaceHigh,
           surfaceContainerHighest: const Color(0xFF25293A),
           onSurface: darkInk,
+          onSurfaceVariant: darkInk.withValues(alpha: 0.75),
           error: const Color(0xFFFFB4AB),
         ),
     scaffoldBackgroundColor: darkSurface,
     textTheme: GoogleFonts.nunitoSansTextTheme(
       ThemeData.dark().textTheme,
     ).apply(bodyColor: darkInk, displayColor: darkInk),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: Color(0xFF6DD5F2),
+      selectionColor: Color(0xFF25293A),
+      selectionHandleColor: Color(0xFF6DD5F2),
+    ),
     useMaterial3: true,
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: darkSurfaceHigh,
@@ -167,6 +185,11 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color(0xFF1D2130),
+      labelStyle: const TextStyle(color: darkInk, fontWeight: FontWeight.w600),
+      floatingLabelStyle: const TextStyle(color: Color(0xFF6DD5F2), fontWeight: FontWeight.w700),
+      hintStyle: TextStyle(color: darkInk.withValues(alpha: 0.55), fontWeight: FontWeight.w500),
+      prefixIconColor: darkInk.withValues(alpha: 0.75),
+      suffixIconColor: darkInk.withValues(alpha: 0.75),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),

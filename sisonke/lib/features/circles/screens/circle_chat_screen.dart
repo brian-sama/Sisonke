@@ -181,9 +181,14 @@ class _CircleChatScreenState extends State<CircleChatScreen> {
                         maxLines: 4,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _sendMessage(),
+                        style: const TextStyle(
+                          color: SisonkeColors.charcoal,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Share with the circle...',
-                          fillColor: Colors.white.withValues(alpha:0.85),
+                          fillColor: Colors.white.withValues(alpha: 0.95),
                           prefixIcon: const Icon(
                             Icons.groups_rounded,
                             color: SisonkeColors.secondary,

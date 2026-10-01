@@ -53,6 +53,11 @@ class _SisonkeTextFieldState extends State<SisonkeTextField> {
       maxLines: _obscureText ? 1 : widget.maxLines,
       minLines: widget.minLines,
       validator: widget.validator,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,

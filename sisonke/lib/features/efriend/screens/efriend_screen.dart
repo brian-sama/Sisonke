@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -275,9 +275,14 @@ class _EFriendScreenState extends State<EFriendScreen> {
                         controller: _controller,
                         minLines: 1,
                         maxLines: 4,
+                        style: const TextStyle(
+                          color: SisonkeColors.charcoal,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Share your thoughts...',
-                          fillColor: Colors.white.withOpacity(0.85),
+                          fillColor: Colors.white.withValues(alpha: 0.95),
                           prefixIcon: const Icon(
                             Icons.favorite_outline_rounded,
                             color: Color(0xFF2E6F60),
