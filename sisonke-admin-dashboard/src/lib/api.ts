@@ -1,6 +1,13 @@
 const DASHBOARD_ROLES = [
-  'admin', 'system-admin', 'super-admin', 'counselor',
-  'moderator', 'content-admin', 'content-manager', 'safety-reviewer', 'analyst',
+  'admin',
+  'system-admin',
+  'super-admin',
+  'counselor',
+  'moderator',
+  'content-admin',
+  'content-manager',
+  'safety-reviewer',
+  'analyst',
 ];
 
 export function getToken(): string | null {
@@ -12,9 +19,9 @@ export function clearSession(): void {
   sessionStorage.removeItem('sisonke_admin_user');
 }
 
-export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const token = getToken();
-  return fetch(path, {
+  const res = await fetch(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -22,6 +29,13 @@ export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
       ...(init?.headers ?? {}),
     },
   });
+
+  if (res.status === 401) {
+    clearSession();
+    window.dispatchEvent(new Event('sisonke:session_expired'));
+  }
+
+  return res;
 }
 
 export async function loginUser(
@@ -31,7 +45,7 @@ export async function loginUser(
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Login failed');

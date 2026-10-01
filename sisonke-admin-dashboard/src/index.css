@@ -26,14 +26,19 @@
   --color-charcoal: #2F3433;
 
   /* ── Semantic / risk (cross-platform exact match) ───────────── */
-  --color-risk-high:   #F43F5E;
-  --color-risk-medium: #F59E0B;
-  --color-risk-low:    #10B981;
+  --color-risk-high:   #E11D48;
+  --color-risk-medium: #D97706;
+  --color-risk-low:    #059669;
 }
 
 @layer base {
   body {
-    @apply font-sans text-charcoal bg-cream;
+    @apply font-sans text-charcoal bg-cream antialiased selection:bg-primary-mid selection:text-primary-dark;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white;
   }
 
   /* Thin scrollbar that matches the brand */
@@ -41,3 +46,28 @@
   .custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--color-primary-mid); border-radius: 9999px; }
 }
+
+@layer utilities {
+  /* Screen reader only utility */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
