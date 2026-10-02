@@ -44,8 +44,9 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
     model: process.env.OLLAMA_CHAT_MODEL || defaultModel,
     baseUrl,
     temperature: 0.4,
-    numPredict: 180,
-    numCtx: 4096,
+    numPredict: 120,
+    numCtx: 2048,
+    keepAlive: '24h',
   });
 
   const personaMode = state.personaMode || 'warm_validation';
@@ -64,7 +65,7 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
   });
 
   try {
-    const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 12000);
+    const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 25000);
     const result = await Promise.race([
       llm.invoke(
         [

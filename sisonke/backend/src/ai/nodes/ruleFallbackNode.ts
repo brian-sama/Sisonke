@@ -80,8 +80,8 @@ function contextualResponse(state: SisonkeGraphState) {
     ].filter(Boolean).join(' ');
   }
 
-  if (resourceTitle) {
-    return `I hear you, ${name}. There is an approved Sisonke resource we can ground this in: ${resourceTitle}. ${softQuestion(state)}`;
+  if (resourceTitle && (state.detectedIntent === 'seeking_information' || state.detectedIntent === 'asking_for_resource')) {
+    return `I hear you, ${name}. We have an approved resource on that topic: "${resourceTitle}". Would you like to talk about that?`;
   }
 
   return [

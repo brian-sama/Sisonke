@@ -101,16 +101,21 @@ export class RagService {
 
   private static calculateScore(queryTokens: string[], source: GroundingSource): number {
     let score = 0;
-    const searchArea = `${source.title} ${source.category} ${source.content}`.toLowerCase();
+    const searchArea = ` ${source.title} ${source.category} ${source.content} `.toLowerCase();
+    const titleArea = ` ${source.title} `.toLowerCase();
     
     queryTokens.forEach(token => {
-      if (searchArea.includes(token)) {
+      // Use exact word boundary matching, not substring inclusion!
+      const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const wordRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+      if (wordRegex.test(searchArea)) {
         score += 1;
         // Boost score if token is in title
-        if (source.title.toLowerCase().includes(token)) score += 2;
+        if (wordRegex.test(titleArea)) score += 2;
       }
     });
     
-    return score;
+    // Require a meaningful threshold (at least score >= 3) to prevent accidental hits on casual chat
+    return score >= 3 ? score : 0;
   }
 }
