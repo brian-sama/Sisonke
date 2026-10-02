@@ -35,3 +35,12 @@ replay_pid*.log
 
 # Gradle
 .gradle/
+
+# Large AI Models & Datasets (GitHub 100MB limit)
+*.gguf
+*.bin
+*.safetensors
+ai-training/.venv/
+ai-training/data/raw/
+ai-training/data/processed/
+ai-training/models/*.gguf

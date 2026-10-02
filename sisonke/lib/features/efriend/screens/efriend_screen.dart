@@ -33,7 +33,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTrustedContact();
+    _loadPreferences();
   }
 
   @override
@@ -55,10 +55,14 @@ class _EFriendScreenState extends State<EFriendScreen> {
     });
   }
 
-  Future<void> _loadTrustedContact() async {
+  Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
+    final savedPersona = prefs.getString('user_persona');
     setState(() {
+      if (savedPersona == 'male' || savedPersona == 'female') {
+        _persona = savedPersona!;
+      }
       _trustedContactName = prefs.getString('trusted_contact_name') ?? '';
     });
   }
@@ -99,7 +103,7 @@ class _EFriendScreenState extends State<EFriendScreen> {
 
     return Scaffold(
       appBar: SisonkeAppBar(
-        title: 'Sisonke Friend',
+        title: _persona == 'male' ? 'Brother Companion' : 'Sister Companion',
         fallbackBackLocation: '/home',
         actions: [
           if (_trustedContactName.isNotEmpty)
@@ -125,48 +129,50 @@ class _EFriendScreenState extends State<EFriendScreen> {
         decoration: BoxDecoration(gradient: _ambientBackground(context)),
         child: Column(
           children: [
-            // Compact persona toggle — only visible before conversation starts
+            // Selected companion badge — defaults to onboarding choice with no other gender shown
             if (!isKeyboardVisible && _messages.length <= 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Talk with your',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: (_persona == 'female'
+                            ? const Color(0xFFEBCBD0)
+                            : const Color(0xFFD8EEF8))
+                        .withValues(
+                          alpha: Theme.of(context).brightness == Brightness.dark
+                              ? 0.25
+                              : 0.65,
+                        ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _persona == 'female'
+                            ? Icons.spa_rounded
+                            : Icons.air_rounded,
+                        size: 14,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.onSurface
+                            : SisonkeColors.charcoal,
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    SegmentedButton<String>(
-                      style: const ButtonStyle(
-                        visualDensity: VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
+                      const SizedBox(width: 6),
+                      Text(
+                        _persona == 'female'
+                            ? 'Talking with your Sister'
+                            : 'Talking with your Brother',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.onSurface
+                              : SisonkeColors.charcoal,
                         ),
                       ),
-                      segments: const [
-                        ButtonSegment(
-                          value: 'female',
-                          icon: Icon(Icons.spa_outlined, size: 14),
-                          label: Text('Sister', style: TextStyle(fontSize: 11)),
-                        ),
-                        ButtonSegment(
-                          value: 'male',
-                          icon: Icon(Icons.air_outlined, size: 14),
-                          label: Text(
-                            'Brother',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ],
-                      selected: {_persona},
-                      onSelectionChanged: (value) =>
-                          setState(() => _persona = value.first),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -712,10 +718,10 @@ class _BreathingCompanionState extends State<_BreathingCompanion>
                     height: 90 * _pulseAnimation.value,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: companionColor.withOpacity(0.24),
+                      color: companionColor.withValues(alpha: 0.24),
                       boxShadow: [
                         BoxShadow(
-                          color: companionColor.withOpacity(0.18),
+                          color: companionColor.withValues(alpha: 0.18),
                           blurRadius: 24,
                           spreadRadius: 8,
                         ),
@@ -840,7 +846,7 @@ class _TypingBubbleState extends State<_TypingBubble>
                     color: (isDark
                             ? theme.colorScheme.primary
                             : const Color(0xFF2E6F60))
-                        .withOpacity(0.3 + (value * 0.7)),
+                        .withValues(alpha: 0.3 + (value * 0.7)),
                   ),
                 );
               }),

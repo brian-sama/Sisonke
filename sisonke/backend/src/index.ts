@@ -1,4 +1,11 @@
 import 'dotenv/config';
+import nodeCrypto from 'node:crypto';
+
+// Polyfill webcrypto for LangGraph in Node.js 18
+if (typeof (globalThis as any).crypto === 'undefined') {
+  (globalThis as any).crypto = (nodeCrypto as any).webcrypto || nodeCrypto;
+}
+
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
