@@ -3,11 +3,11 @@ import { SisonkeGraphState, PersonaMode } from '../types';
 
 function inferEmotion(message: string) {
   const text = message.toLowerCase();
-  if (/(ndakaneta|ngikhathele|tired|exhausted|burnt out|burned out)/.test(text)) return 'exhausted';
-  if (/(panic|anxious|anxiety|heart racing|kufungisisa|overwhelmed|spiral)/.test(text)) return 'overwhelmed';
-  if (/(sad|lonely|alone|empty|numb|hopeless)/.test(text)) return 'sad';
-  if (/(angry|furious|mad|frustrated)/.test(text)) return 'frustrated';
-  if (/(thanks|thank you|better now|i need to go|bye)/.test(text)) return 'relieved_or_closing';
+  if (/(ndakaneta|ngikhathele|tired|exhausted|burnt out|burned out|fatigue|sleep|drained|worn out|heavy eyes|no energy)/.test(text)) return 'exhausted';
+  if (/(panic|anxious|anxiety|heart racing|kufungisisa|overwhelmed|spiral|stress|stressed)/.test(text)) return 'overwhelmed';
+  if (/(sad|lonely|alone|empty|numb|hopeless|hurting|crying|pain)/.test(text)) return 'sad';
+  if (/(angry|furious|mad|frustrated|irritated|annoyed)/.test(text)) return 'frustrated';
+  if (/(thanks|thank you|better now|i need to go|bye|goodnight)/.test(text)) return 'relieved_or_closing';
   return 'unclear';
 }
 

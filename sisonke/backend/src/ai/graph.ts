@@ -67,10 +67,10 @@ export const sisonkeGraph = new StateGraph(SisonkeState)
     done: END,
     rag: 'rag',
   })
-  .addEdge('rag', 'localModel')
-  .addEdge('localModel', 'anthropicFallback')
+  .addEdge('rag', 'anthropicFallback')
   .addEdge('anthropicFallback', 'geminiFallback')
-  .addEdge('geminiFallback', 'ruleFallback')
+  .addEdge('geminiFallback', 'localModel')
+  .addEdge('localModel', 'ruleFallback')
   .addEdge('ruleFallback', END)
   .addEdge('escalate', END)
   .compile();

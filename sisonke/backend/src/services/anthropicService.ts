@@ -118,33 +118,50 @@ export async function generateAnthropicFallback(input: {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return undefined;
 
-  const model = process.env.ANTHROPIC_MODEL || 'claude-3.5-mini';
-  const baseUrl = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1';
-  const timeoutMs = Number(process.env.ANTHROPIC_TIMEOUT_MS || 15000);
-  const prompt = `${buildPrompt(input)}\n\nAssistant:`;
+  const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-20241022';
+  const baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1').replace(/\/$/, '');
+  const timeoutMs = Number(process.env.ANTHROPIC_TIMEOUT_MS || 12000);
+
+  const fullPrompt = buildPrompt(input);
 
   try {
-    const response = await fetch(`${baseUrl}/complete`, {
+    const response = await fetch(`${baseUrl}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': apiKey,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
         model,
-        prompt,
-        max_tokens_to_sample: 200,
+        max_tokens: 250,
         temperature: 0.4,
-        stop_sequences: ['\n\nHuman:'],
+        messages: [
+          { role: 'user', content: fullPrompt },
+        ],
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
 
-    if (!response.ok) return undefined;
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn(`[Anthropic] Status ${response.status}: ${errText.slice(0, 300)}`);
+      return undefined;
+    }
 
-    const data = (await response.json()) as AnthropicResponse;
-    return data.completion?.trim() || undefined;
-  } catch {
+    const data = (await response.json()) as {
+      content?: Array<{ type: string; text?: string }>;
+    };
+
+    const text = data.content
+      ?.filter((block) => block.type === 'text')
+      .map((block) => block.text || '')
+      .join('')
+      .trim();
+
+    return text || undefined;
+  } catch (err: any) {
+    console.warn('[Anthropic] Request failed:', err?.message || err);
     return undefined;
   }
 }

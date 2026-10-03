@@ -4,8 +4,9 @@ import { validateModelOutput } from '../validation';
 
 export async function geminiFallbackNode(state: SisonkeGraphState): Promise<Partial<SisonkeGraphState>> {
   if (state.riskLevel === 'high') return {};
-  if (process.env.EXTERNAL_AI_FALLBACK_ENABLED !== 'true') return {};
   if (state.response && !state.fallbackReason) return {};
+  if (process.env.EXTERNAL_AI_FALLBACK_ENABLED === 'false') return {};
+  if (!process.env.GEMINI_API_KEY) return {};
 
   const geminiReply = await generateGeminiFallback({
     message: state.message,

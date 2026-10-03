@@ -65,7 +65,7 @@ export async function localModelNode(state: SisonkeGraphState): Promise<Partial<
   });
 
   try {
-    const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 25000);
+    const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 4000);
     const result = await Promise.race([
       llm.invoke(
         [

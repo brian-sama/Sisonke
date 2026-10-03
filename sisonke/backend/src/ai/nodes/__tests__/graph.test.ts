@@ -1,9 +1,12 @@
 import { invokeSisonkeGraph } from '../../graph';
 import type { SisonkeGraphInput } from '../../types';
 
-// Mock both AI providers so tests never make real network calls.
+// Mock all external AI providers so tests never make real network calls.
 jest.mock('../localModelNode', () => ({
   localModelNode: jest.fn(async () => ({ response: 'mock-local-response', aiProvider: 'ollama' })),
+}));
+jest.mock('../anthropicFallbackNode', () => ({
+  anthropicFallbackNode: jest.fn(async () => ({})),
 }));
 jest.mock('../geminiFallbackNode', () => ({
   geminiFallbackNode: jest.fn(async () => ({})),
@@ -21,15 +24,18 @@ describe('sisonkeGraph — routing invariants', () => {
     expect(result.response).toBeTruthy();
   });
 
-  it('CRITICAL: a suicidal message must never reach localModelNode or geminiFallbackNode', async () => {
+  it('CRITICAL: a suicidal message must never reach any LLM node', async () => {
     const { localModelNode } = require('../localModelNode');
+    const { anthropicFallbackNode } = require('../anthropicFallbackNode');
     const { geminiFallbackNode } = require('../geminiFallbackNode');
     (localModelNode as jest.Mock).mockClear();
+    (anthropicFallbackNode as jest.Mock).mockClear();
     (geminiFallbackNode as jest.Mock).mockClear();
 
     await invokeSisonkeGraph({ ...base, message: 'I want to end my life tonight' });
 
     expect(localModelNode).not.toHaveBeenCalled();
+    expect(anthropicFallbackNode).not.toHaveBeenCalled();
     expect(geminiFallbackNode).not.toHaveBeenCalled();
   });
 
