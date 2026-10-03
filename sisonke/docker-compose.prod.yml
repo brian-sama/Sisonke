@@ -71,7 +71,7 @@ services:
       GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-15000}
       RAG_DB_TIMEOUT_MS: ${RAG_DB_TIMEOUT_MS:-1500}
     ports:
-      - "127.0.0.1:${BACKEND_HOST_PORT:-3001}:3001"
+      - "127.0.0.1:${BACKEND_HOST_PORT:-3017}:3001"
 
   ollama:
     image: ollama/ollama:latest
