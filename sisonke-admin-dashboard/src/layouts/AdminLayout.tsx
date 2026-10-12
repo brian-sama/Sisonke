@@ -18,7 +18,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
   const shouldReduceMotion = useReducedMotion();
 
   React.useEffect(() => {
-    document.title = `${title} | Sisonke Platform`;
+    document.title = `${title} | Serevo Platform`;
   }, [title]);
 
   return (

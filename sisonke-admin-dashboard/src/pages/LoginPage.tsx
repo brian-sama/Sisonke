@@ -21,13 +21,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, loading })
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <SisonkeCard className="w-full max-w-lg p-12 border-none shadow-2xl relative overflow-hidden bg-white/80 backdrop-blur-xl">
           <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-mid group hover:rotate-12 transition-transform">
-              <Shield className="text-white" size={32} />
+            <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20 border border-zinc-100 p-2 group hover:rotate-6 transition-transform">
+              <img src="/logo.png" alt="Serevo Logo" className="w-16 h-16 object-contain" />
             </div>
             <h1 className="text-4xl font-display font-black text-zinc-900 tracking-tight mb-2 uppercase italic">
-              SISONKE
+              SEREVO
             </h1>
-            <p className="text-zinc-500 font-medium tracking-tight">Admin Gateway • Wellness for Youth</p>
+            <p className="text-zinc-500 font-medium tracking-tight">Mental Health Support & Facilitation Portal</p>
           </div>
 
           <form
@@ -49,7 +49,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, loading })
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold focus:ring-4 focus:ring-primary-mid focus:bg-white outline-none transition-all"
-                  placeholder="admin@sisonke.org"
+                  placeholder="admin@serevo.org"
                   autoComplete="email"
                   required
                 />

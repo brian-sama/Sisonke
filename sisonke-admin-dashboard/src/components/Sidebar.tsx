@@ -111,10 +111,13 @@ export const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       >
         <div className="p-8 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20" aria-hidden="true">
-              <Shield className="text-white" size={24} strokeWidth={2.5} />
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-md p-1 border border-zinc-100" aria-hidden="true">
+              <img src="/logo.png" alt="Serevo Logo" className="w-8 h-8 object-contain" />
             </div>
-            <h1 className="text-2xl font-display font-black text-zinc-900 tracking-tight italic uppercase">Sisonke</h1>
+            <div>
+              <h1 className="text-2xl font-display font-black text-zinc-900 tracking-tight italic uppercase">Serevo</h1>
+              <p className="text-[10px] font-bold text-primary tracking-widest uppercase -mt-1">Mental Health</p>
+            </div>
           </div>
           <button
             onClick={onClose}

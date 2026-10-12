@@ -7,23 +7,27 @@
   --font-display: "Outfit", var(--font-sans);
   --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* ── Brand palette ──────────────────────────────────────────── */
-  --color-primary:      #2E6F60;
-  --color-primary-dim:  #E8F2EF;
-  --color-primary-mid:  #D0E8E3;
-  --color-primary-dark: #1A3D36;
+  /* ── Brand palette (Serevo Official Colors) ─────────────────── */
+  --color-primary:      #CA0174; /* Bright Magenta */
+  --color-primary-dim:  #FCE4EC;
+  --color-primary-mid:  #F8BBD0;
+  --color-primary-dark: #870E65; /* Deep Plum */
+  --color-magenta-dark: #921966; /* Dark Magenta */
 
-  --color-secondary:    #7361A9;
-  --color-secondary-dim:#F0EDF8;
+  --color-secondary:    #6F206F; /* Purple Leaf Base */
+  --color-secondary-dim:#F3E5F5;
 
-  --color-accent:       #D68A7F;
+  --color-accent:       #FDA737; /* Sunrise Amber Glow */
+  --color-accent-teal:  #1BB9B9; /* Healing Teal */
+  --color-accent-blue:  #1B75B9; /* Healing Blue */
+  --color-accent-coral: #F7584B;
 
   /* ── Surfaces ───────────────────────────────────────────────── */
-  --color-cream:  #FFFBF2;
-  --color-muted:  #F5F0E8;
+  --color-cream:  #FAF7F2;
+  --color-muted:  #F5EFE6;
 
   /* ── Text ───────────────────────────────────────────────────── */
-  --color-charcoal: #2F3433;
+  --color-charcoal: #24141E;
 
   /* ── Semantic / risk (cross-platform exact match) ───────────── */
   --color-risk-high:   #E11D48;
