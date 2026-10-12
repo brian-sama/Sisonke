@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/core/services/api_service.dart';
 import 'package:sisonke/core/services/security_service.dart';
+import 'package:sisonke/theme/sisonke_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateToHome() async {
     final results = await Future.wait([
       _determineDestination(),
-      Future.delayed(const Duration(milliseconds: 800)),
+      Future.delayed(const Duration(milliseconds: 900)),
     ]);
     if (!mounted) return;
     context.go(results[0] as String);
@@ -46,36 +47,77 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor:
+          isDark ? theme.scaffoldBackgroundColor : SisonkeColors.cream,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Sisonke logo would go here
             Container(
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(60),
+                color: isDark ? const Color(0xFF1F121C) : Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: SisonkeColors.primary.withValues(
+                      alpha: isDark ? 0.3 : 0.12,
+                    ),
+                    blurRadius: 28,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: const Icon(
-                Icons.health_and_safety,
-                size: 60,
-                color: Colors.white,
+              padding: const EdgeInsets.all(12),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.health_and_safety_rounded,
+                    size: 56,
+                    color: SisonkeColors.primary,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            Text('Sisonke', style: Theme.of(context).textTheme.headlineLarge),
+            const SizedBox(height: 28),
+            Text(
+              'Serevo',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+                color: isDark ? Colors.white : SisonkeColors.serevoText,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
-              'Your Wellness Journey',
-              style: Theme.of(context).textTheme.bodyMedium,
+              'Mental Health & Psychosocial Support',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : SisonkeColors.charcoalSoft,
+              ),
             ),
             const SizedBox(height: 48),
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).primaryColor,
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isDark ? theme.colorScheme.primary : SisonkeColors.primary,
+                ),
               ),
             ),
           ],

@@ -11,6 +11,7 @@
         android:icon="@mipmap/launcher_main">
         <activity
             android:name=".MainActivity"
+            android:label="Serevo"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

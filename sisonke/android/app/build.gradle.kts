@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "zw.org.sisonke.app"
+        applicationId = "zw.org.serevo.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -43,7 +43,16 @@ flutter {
     source = "../.."
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.18.0")
+        force("androidx.core:core-ktx:1.18.0")
+    }
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.core:core:1.18.0")
+    implementation("androidx.core:core-ktx:1.18.0")
 }
