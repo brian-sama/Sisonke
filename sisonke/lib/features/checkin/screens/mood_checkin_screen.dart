@@ -17,6 +17,20 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
   MoodType? _selectedMood;
   double _energyLevel = 5.0;
   final _noteController = TextEditingController();
+  final Set<String> _selectedTriggers = {};
+
+  static const List<String> _availableTriggers = [
+    '😴 Sleep',
+    '🎓 Studies',
+    '💼 Work',
+    '👥 Relationships',
+    '🌧️ Loneliness',
+    '🏠 Family',
+    '💰 Finances',
+    '📱 Social Media',
+    '⚡ Sensory/Noise',
+    '🏃 Health',
+  ];
 
   @override
   void dispose() {
@@ -93,15 +107,16 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
           mood: _selectedMood!,
           energyLevel: _energyLevel.toInt(),
           note: _noteController.text,
+          tags: _selectedTriggers.toList(),
         );
 
     if (mounted) {
       context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          backgroundColor: Color(0xFF2E6F60),
+          backgroundColor: Color(0xFF921966),
           content: Text(
-            'Your organic mood reflection is saved safely inside Sisonke.',
+            'Your reflection and triggers are saved safely inside Serevo.',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -305,7 +320,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'What made today feel this way?',
+                      'What contributed to this feeling?',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -334,6 +349,88 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
                           borderSide: BorderSide.none,
                         ),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // ── Recognise Triggers Section ─────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: cardBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.radar_rounded,
+                          size: 18,
+                          color: Color(0xFFCA0174),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Recognise Triggers & Influences',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: primaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tap tags that may have influenced your mood to help identify patterns:',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _availableTriggers.map((trigger) {
+                        final isSelected = _selectedTriggers.contains(trigger);
+                        return FilterChip(
+                          label: Text(trigger),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedTriggers.add(trigger);
+                              } else {
+                                _selectedTriggers.remove(trigger);
+                              }
+                            });
+                          },
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : primaryTextColor,
+                          ),
+                          backgroundColor: isDark
+                              ? theme.colorScheme.surfaceContainerHighest
+                              : Colors.white.withValues(alpha: 0.8),
+                          selectedColor: const Color(0xFFCA0174),
+                          checkmarkColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? const Color(0xFFCA0174)
+                                  : (isDark ? theme.colorScheme.outlineVariant : Colors.black12),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),

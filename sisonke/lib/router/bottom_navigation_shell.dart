@@ -14,6 +14,8 @@ class BottomNavigationShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return PopScope(
@@ -36,50 +38,60 @@ class BottomNavigationShell extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           child: isKeyboardVisible
               ? const SizedBox.shrink(key: ValueKey('keyboard-hidden-nav'))
-              : DecoratedBox(
+              : Container(
                   key: const ValueKey('bottom-nav'),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).navigationBarTheme.backgroundColor,
+                    color: isDark ? const Color(0xFF1E1916) : Colors.white,
                     border: Border(
                       top: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outlineVariant.withValues(alpha: 0.7),
+                        color: isDark
+                            ? const Color(0xFF332A24)
+                            : const Color(0xFFF2E7DC),
+                        width: 1.1,
                       ),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
                   ),
                   child: SafeArea(
                     top: false,
                     child: NavigationBar(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      height: 68,
                       selectedIndex: navigationShell.currentIndex,
-                      labelBehavior:
-                          NavigationDestinationLabelBehavior.alwaysShow,
+                      indicatorColor: const Color(0xFFFF7A3D).withValues(alpha: 0.16),
+                      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                       onDestinationSelected: (int index) {
                         navigationShell.goBranch(
                           index,
-                          initialLocation:
-                              index == navigationShell.currentIndex,
+                          initialLocation: index == navigationShell.currentIndex,
                         );
                       },
                       destinations: const [
                         NavigationDestination(
                           icon: Icon(Icons.home_outlined),
-                          selectedIcon: Icon(Icons.home_rounded),
+                          selectedIcon: Icon(Icons.home_rounded, color: Color(0xFFFF7A3D)),
                           label: 'Home',
                         ),
                         NavigationDestination(
                           icon: Icon(Icons.chat_bubble_outline_rounded),
-                          selectedIcon: Icon(Icons.chat_bubble_rounded),
+                          selectedIcon: Icon(Icons.chat_bubble_rounded, color: Color(0xFFFF7A3D)),
                           label: 'Talk',
                         ),
                         NavigationDestination(
                           icon: Icon(Icons.spa_outlined),
-                          selectedIcon: Icon(Icons.spa_rounded),
+                          selectedIcon: Icon(Icons.spa_rounded, color: Color(0xFFFF7A3D)),
                           label: 'Check-in',
                         ),
                         NavigationDestination(
                           icon: Icon(Icons.diversity_3_outlined),
-                          selectedIcon: Icon(Icons.diversity_3_rounded),
+                          selectedIcon: Icon(Icons.diversity_3_rounded, color: Color(0xFFFF7A3D)),
                           label: 'Support',
                         ),
                       ],

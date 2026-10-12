@@ -1,27 +1,52 @@
 import 'package:flutter/material.dart';
 
 class SisonkeColors {
-  // ── Brand palette ────────────────────────────────────────────────────────────
-  static const primary      = Color(0xFF2E6F60); // sage teal — matches dashboard --color-primary
-  static const primaryDim   = Color(0xFFE8F2EF); // teal 8%   — matches --color-primary-dim
-  static const primaryMid   = Color(0xFFD0E8E3); // teal 15%  — matches --color-primary-mid
-  static const primaryDark  = Color(0xFF1A3D36); // dark teal  — matches --color-primary-dark
+  // ── Official Serevo Brand Palette ─────────────────────────────────────────
+  static const primary      = Color(0xFFCA0174); // Serevo Bright Magenta
+  static const primaryDim   = Color(0xFFFDF2F8); // Magenta 8% tint
+  static const primaryMid   = Color(0xFFFBCFE8); // Soft Magenta 20%
+  static const primaryDark  = Color(0xFF921966); // Dark Serevo Magenta / Plum
 
-  static const secondary    = Color(0xFF7361A9); // lavender   — matches --color-secondary
-  static const secondaryDim = Color(0xFFF0EDF8); // lavender 6%
+  static const secondary    = Color(0xFF6F206F); // Deep Purple Leaf & Base
+  static const secondaryDim = Color(0xFFFAF5FF); // Purple 6% tint
+  static const secondaryMid = Color(0xFFE9D5FF); // Soft Purple
 
-  static const accent       = Color(0xFFD68A7F); // terracotta
+  static const accent       = Color(0xFFFDA737); // Sunrise Yellow / Forehead Glow
 
-  // ── Surfaces ─────────────────────────────────────────────────────────────────
-  static const cream        = Color(0xFFFFFBF2); // page background — matches --color-cream
-  static const muted        = Color(0xFFF5F0E8); // warm gray inputs — matches --color-muted
-  static const card         = Color(0xFFFFFFFF); // card surface
+  // ── Exact Logo Colors ─────────────────────────────────────────────────────
+  // Figure and Base
+  static const figureHead   = Color(0xFFC20677); // Figure's head circle
+  static const figureBody   = Color(0xFFCA0174); // Bright magenta of figure's body
+  static const figurePlum   = Color(0xFF870E65); // Deep plum shading on body
+  static const purpleLeaf   = Color(0xFF6F206F); // Purple of leaf & base
+  static const purpleBase   = Color(0xFF5E2366); // Deep purple base
 
-  // ── Text ─────────────────────────────────────────────────────────────────────
-  static const charcoal     = Color(0xFF2F3433); // primary text — matches --color-charcoal
+  // Healing Plus Signs
+  static const plusTeal     = Color(0xFF1BB9B9); // Teal at the top of each plus
+  static const plusBlue     = Color(0xFF1B75B9); // Blue at the bottom of each plus
 
-  // ── Semantic / risk (exact cross-platform values) ────────────────────────────
-  // These hex values MUST stay in sync with index.css --color-risk-* tokens
+  // Head Profile Gradient stops
+  static const headYellow   = Color(0xFFFDA737); // Yellow glow near forehead
+  static const headOrange   = Color(0xFFF76844); // Orange
+  static const headCoral    = Color(0xFFF7584B); // Coral
+  static const headHotPink  = Color(0xFFEE2B5E); // Hot pink
+  static const headDeepPink = Color(0xFFEA1567); // Deep pink at bottom
+
+  // Text Branding
+  static const serevoText   = Color(0xFF921966); // Dark magenta ("SEREVO")
+  static const healthText   = Color(0xFFD3155F); // Pink ("MENTAL HEALTH")
+
+  // ── Surfaces ─────────────────────────────────────────────────────────────
+  static const cream        = Color(0xFFFAF7F5); // Warm paper page background
+  static const creamSoft    = Color(0xFFFFFFFF); // Elevated card background
+  static const muted        = Color(0xFFF5EFEF); // Warm input background
+  static const card         = Color(0xFFFFFFFF); // Card surface
+
+  // ── Text ─────────────────────────────────────────────────────────────────
+  static const charcoal     = Color(0xFF24141E); // Deep plum espresso text
+  static const charcoalSoft = Color(0xFF5A4452); // Secondary subtle text
+
+  // ── Semantic / risk (exact cross-platform values) ────────────────────────
   static const riskHigh     = Color(0xFFF43F5E); // rose-500
   static const riskMedium   = Color(0xFFF59E0B); // amber-500
   static const riskLow      = Color(0xFF10B981); // emerald-500
@@ -29,34 +54,69 @@ class SisonkeColors {
   static const success      = Color(0xFF10B981);
   static const warning      = Color(0xFFF59E0B);
   static const danger       = Color(0xFFF43F5E);
-  static const info         = Color(0xFF3B82F6);
+  static const info         = Color(0xFF1B75B9);
 
-  // ── Ambient tones (kept for gradient system) ─────────────────────────────────
-  static const sage         = Color(0xFFCFE6D2);
-  static const mint         = Color(0xFFDDF3EA);
-  static const sky          = Color(0xFFD8EEF8);
-  static const blush        = Color(0xFFEBCBD0);
-  static const lemon        = Color(0xFFF7E8B5);
-  static const lavender     = Color(0xFFE4DDF6);
-  static const forest       = Color(0xFF315F46);
-  static const clay         = Color(0xFFE8B9A2);
+  // ── Ambient tones (legacy compatible & gradient accents) ─────────────────
+  static const sage         = Color(0xFFD1FAE5);
+  static const mint         = Color(0xFFCCFBF1);
+  static const sky          = Color(0xFFE0F2FE);
+  static const blush        = Color(0xFFFCE7F3);
+  static const lemon        = Color(0xFFFEF3C7);
+  static const lavender     = Color(0xFFF3E8FF);
+  static const forest       = Color(0xFF1BB9B9);
+  static const clay         = Color(0xFFF7584B);
 
-  // ── Named gradients ───────────────────────────────────────────────────────────
+  // ── Serevo Brand Gradients ────────────────────────────────────────────────
+  // Head Profile Gradient
+  static const Gradient serevoHeadProfile = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [headYellow, headOrange, headCoral, headHotPink, headDeepPink],
+  );
+
+  // Magenta Figure Gradient
+  static const Gradient serevoFigureGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [figureBody, figurePlum],
+  );
+
+  // Plus Sign Healing Gradient
+  static const Gradient serevoPlusCross = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [plusTeal, plusBlue],
+  );
+
+  // Purple Leaf & Base
+  static const Gradient serevoBaseGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [purpleBase, purpleLeaf],
+  );
+
+  // Soft Ambient Background Gradients
+  static const Gradient softPeachGlow = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFFFF7ED), Color(0xFFFDF2F8)],
+  );
+
   static const Gradient pastelSunset = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [blush, lavender],
+    colors: [Color(0xFFFFEDD5), Color(0xFFFCE7F3)],
   );
 
   static const Gradient morningMist = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [sky, mint],
+    colors: [Color(0xFFFAF5FF), Color(0xFFFFF7ED)],
   );
 
   static const Gradient forestBreeze = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [sage, cream],
+    colors: [Color(0xFFFFF1F2), Color(0xFFFAF7F5)],
   );
 }

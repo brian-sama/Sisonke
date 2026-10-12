@@ -25,20 +25,30 @@ ai-training/
 
 ## 🚀 Execution Steps
 
-### 1. Download & Curate Data (Local Machine)
-Run inside the virtual environment:
+### 1. Build the datasets (Local Machine)
 ```powershell
-ai-training\.venv\Scripts\python ai-training\scripts\download_datasets.py
-ai-training\.venv\Scripts\python ai-training\scripts\prepare_training_data.py
+ai-training\.venv\Scripts\python ai-training\scripts\generate_synthetic_data.py   # synthetic SFT/DPO + held-out eval prompts
+ai-training\.venv\Scripts\python ai-training\scripts\build_dataset.py             # merges all sources + filters
 ```
-This generates `ai-training/data/processed/sisonke_train.jsonl`.
+Outputs in `ai-training/data/processed/`: `sisonke_train.jsonl`, `sisonke_val.jsonl`, `sisonke_dpo.jsonl`, `build_report.json`.
+Held-out test prompts live in `ai-training/data/eval/` and are never trained on. Add your own reviewed conversations as ChatML `.jsonl` in `ai-training/data/custom/`.
 
-### 2. Fine-Tune on Google Colab (Free T4 GPU - ~20 mins)
+> Synthetic data and Shona/Ndebele phrases must be reviewed by native speakers and a clinician before training.
+
+### 2. Fine-Tune on Google Colab (Free T4 GPU)
 1. Go to [Google Colab](https://colab.research.google.com/) and click **Upload Notebook**.
-2. Select `ai-training/notebooks/sisonke_efriend_qlora_colab.ipynb`.
-3. Set runtime to **T4 GPU** (`Runtime > Change runtime type > T4 GPU`).
-4. Run all cells. When prompted, upload `sisonke_train.jsonl`.
-5. Colab will fine-tune the model with Unsloth and download the resulting `sisonke-efriend-1.5b-Q4_K_M.gguf` file to your PC.
+2. Select `ai-training/notebooks/sisonke_efriend_qlora_colab.ipynb` (regenerate with `scripts/build_notebook.py`).
+3. Set runtime to **T4 GPU**.
+4. Run all cells. Upload `sisonke_train.jsonl`, `sisonke_val.jsonl` and `sisonke_dpo.jsonl` when prompted.
+5. Set `RUN_DPO = False` in Step 0 to export an SFT-only model for A/B comparison.
+6. Colab exports a `.gguf` and downloads it.
+
+### 2b. Evaluate on held-out prompts
+```powershell
+ai-training\.venv\Scripts\python ai-training\scripts\evaluate_model.py --model qwen2.5:1.5b --out base
+ai-training\.venv\Scripts\python ai-training\scripts\evaluate_model.py --model sisonke-friend
+```
+Automatic checks only (length, no diagnosis, crisis hand-off, no invented numbers). Any failing crisis prompt blocks release.
 
 ### 3. Test Locally in Ollama
 1. Move the downloaded `.gguf` file into `ai-training/models/`.

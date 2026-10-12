@@ -4,6 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
+const node_crypto_1 = __importDefault(require("node:crypto"));
+// Polyfill webcrypto for LangGraph in Node.js 18
+if (typeof globalThis.crypto === 'undefined') {
+    globalThis.crypto = node_crypto_1.default.webcrypto || node_crypto_1.default;
+}
 const express_1 = __importDefault(require("express"));
 const http_1 = require("http");
 const cors_1 = __importDefault(require("cors"));

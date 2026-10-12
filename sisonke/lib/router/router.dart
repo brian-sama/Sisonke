@@ -38,6 +38,7 @@ import 'package:sisonke/features/crisis/screens/crisis_pathway_screen.dart';
 import 'package:sisonke/features/circles/screens/circles_screen.dart';
 import 'package:sisonke/features/circles/screens/circle_chat_screen.dart';
 import 'package:sisonke/features/journal/screens/voice_journal_screen.dart';
+import 'package:sisonke/features/community/screens/more_than_words_screen.dart';
 
 // Placeholder imports for remaining deleted all_screens.dart members
 // I will create these files next if they don't exist.
@@ -138,7 +139,7 @@ final GoRouter router = GoRouter(
           ],
         ),
 
-        /// ========== Tab 1: Talk (SisonkeFriend AI) ==========
+        /// ========== Tab 1: Talk (Feelix & Felicia AI) ==========
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -376,6 +377,12 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/voice-journal',
       builder: (context, state) => const VoiceJournalScreen(),
+    ),
+
+    /// ==================== More Than Words (Non-verbal) ====================
+    GoRoute(
+      path: '/more-than-words',
+      builder: (context, state) => const MoreThanWordsScreen(),
     ),
   ],
 );

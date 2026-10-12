@@ -226,7 +226,7 @@ class _NicknamePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sisonke',
+            'Serevo',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,
@@ -325,16 +325,16 @@ class _CompanionPage extends StatelessWidget {
     const companions = [
       _Companion(
         id: 'female',
-        name: 'Sister',
-        quote: '"I\'m here with you. We can take this one breath at a time."',
+        name: 'Felicia',
+        quote: '"I\'m Felicia. I\'m right here with you, and we can take this one breath at a time."',
         icon: Icons.spa_rounded,
         color: Color(0xFFEBCBD0),
       ),
       _Companion(
         id: 'male',
-        name: 'Brother',
+        name: 'Feelix',
         quote:
-            '"Your thoughts are safe here. I am listening whenever you are ready."',
+            '"I\'m Feelix. Your thoughts are always safe here, and I\'m listening whenever you\'re ready."',
         icon: Icons.air_rounded,
         color: Color(0xFFD8EEF8),
       ),
@@ -346,7 +346,7 @@ class _CompanionPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sisonke',
+            'Serevo',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,
@@ -513,7 +513,7 @@ class _ConsentPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sisonke',
+            'Serevo',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,

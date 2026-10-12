@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Sisonke</string>
+	<string>Serevo</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>sisonke</string>
+	<string>serevo</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,7 +27,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Sisonke uses Face ID to protect private spaces like your journal and counseling history.</string>
+	<string>Serevo uses Face ID to protect private spaces like your journal and counseling history.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Serevo allows you to post pictures or videos to express feelings non-verbally in More Than Words.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Serevo allows you to capture photos or videos to express feelings non-verbally in More Than Words.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Serevo allows you to record voice notes and audio for video feelings and counselor support.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

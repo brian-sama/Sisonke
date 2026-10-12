@@ -85,7 +85,7 @@ async function generateGeminiFallback(input) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey)
         return undefined;
-    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     const baseUrl = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
     const prompt = buildPrompt(input);
     try {
@@ -99,17 +99,21 @@ async function generateGeminiFallback(input) {
                     maxOutputTokens: 200,
                 },
             }),
-            signal: AbortSignal.timeout(Number(process.env.GEMINI_TIMEOUT_MS || 15000)),
+            signal: AbortSignal.timeout(Number(process.env.GEMINI_TIMEOUT_MS || 10000)),
         });
-        if (!response.ok)
+        if (!response.ok) {
+            const errText = await response.text();
+            console.warn(`[Gemini] Status ${response.status}: ${errText.slice(0, 300)}`);
             return undefined;
+        }
         const data = (await response.json());
         return (data.candidates?.[0]?.content?.parts
             ?.map((part) => part.text || '')
             .join('')
             .trim() || undefined);
     }
-    catch {
+    catch (err) {
+        console.warn('[Gemini] Request failed:', err?.message || err);
         return undefined;
     }
 }

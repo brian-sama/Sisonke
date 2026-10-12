@@ -4,10 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sisonke/shared/models/mood.dart';
 import 'package:sisonke/features/checkin/providers/mood_provider.dart';
-import 'package:sisonke/features/checkin/screens/mood_checkin_screen.dart';
 import 'package:sisonke/core/services/providers.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
 import 'package:sisonke/shared/widgets/index.dart';
+
+import 'package:sisonke/features/checkin/services/trigger_pattern_service.dart';
 
 // ─── Mood insights helpers ────────────────────────────────────────────────────
 
@@ -37,8 +38,6 @@ class _MoodInsights {
 }
 
 _MoodInsights _computeInsights(List<MoodEntry> entries) {
-  // ── Day of week analysis ─────────────────────────────────────────────────
-  // dayPositive[weekday] = count of positive entries on that day (1=Mon…7=Sun)
   final dayPositive = <int, int>{};
   final dayDifficult = <int, int>{};
   for (final e in entries) {
@@ -65,7 +64,6 @@ _MoodInsights _computeInsights(List<MoodEntry> entries) {
     }
   }
 
-  // ── 7-day trend: compare first 3 vs last 3 by ordinal ────────────────────
   final sorted = [...entries]
     ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   double firstAvg = 0;
@@ -76,7 +74,6 @@ _MoodInsights _computeInsights(List<MoodEntry> entries) {
     firstAvg = first3.reduce((a, b) => a + b) / 3;
     lastAvg = last3.reduce((a, b) => a + b) / 3;
   }
-  // Lower ordinal = better mood, so lastAvg < firstAvg means improving
   String trend;
   if (lastAvg < firstAvg - 0.4) {
     trend = 'improving';
@@ -97,12 +94,14 @@ class _InsightsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insights = _computeInsights(entries);
+    final analysis = TriggerPatternService.analyze(entries);
+
     final trendIcon =
         insights.trend == 'improving' ? '↑' : (insights.trend == 'declining' ? '↓' : '→');
     final trendLabel =
         insights.trend == 'improving'
             ? 'Improving'
-            : (insights.trend == 'declining' ? 'Watch this' : 'Stable');
+            : (insights.trend == 'declining' ? 'Needs Care' : 'Stable');
     final trendColor =
         insights.trend == 'improving'
             ? SisonkeColors.riskLow
@@ -111,16 +110,16 @@ class _InsightsPanel extends StatelessWidget {
                 : SisonkeColors.riskMedium);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha:0.8),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha:0.55)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.04),
-            blurRadius: 14,
+            color: const Color(0xFFCA0174).withValues(alpha: 0.06),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
@@ -128,26 +127,66 @@ class _InsightsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Your patterns',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: const Color(0xFF2F3433).withValues(alpha:0.5),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCA0174).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.radar_rounded,
+                      size: 18,
+                      color: Color(0xFFCA0174),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Recognised Triggers & Patterns',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2F3433),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF921966).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Serevo AI',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF921966),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+
+          const SizedBox(height: 14),
+
+          // Overview 3 Stat Chips
           Row(
             children: [
               _StatChip(
-                label: 'Best',
+                label: 'Best Day',
                 value: insights.bestDay,
                 color: SisonkeColors.riskLow,
               ),
               const SizedBox(width: 8),
               _StatChip(
-                label: 'Needs care',
+                label: 'Heaviest Day',
                 value: insights.worstDay,
                 color: SisonkeColors.riskMedium,
               ),
@@ -158,6 +197,158 @@ class _InsightsPanel extends StatelessWidget {
                 color: trendColor,
               ),
             ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Recognised Triggers breakdown ──
+          if (analysis.topTriggers.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAF7F2),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFFCA0174)),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Detected Triggers',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF2F3433),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: analysis.topTriggers.take(4).map((trig) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: trig.difficultCount > 0
+                                ? const Color(0xFFCA0174).withValues(alpha: 0.3)
+                                : Colors.black12,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              trig.tag,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF2F3433),
+                              ),
+                            ),
+                            if (trig.totalCount > 0) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: trig.difficultCount > 0
+                                      ? const Color(0xFFCA0174).withValues(alpha: 0.15)
+                                      : const Color(0xFF1BB9B9).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${trig.totalCount}x',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: trig.difficultCount > 0
+                                        ? const Color(0xFFCA0174)
+                                        : const Color(0xFF1B75B9),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  if (analysis.topTriggers.first.suggestion.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '💡 Serevo recommendation: ${analysis.topTriggers.first.suggestion}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: const Color(0xFF2F3433).withValues(alpha: 0.75),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // ── Cyclical Patterns (Time of Day & Day of Week) ──
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAF7F2),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.schedule_rounded, size: 16, color: Color(0xFF1B75B9)),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Cyclical Rhythms',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2F3433),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '• ${analysis.timeOfDayInsight}',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: const Color(0xFF2F3433).withValues(alpha: 0.75),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '• ${analysis.dayOfWeekInsight}',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: const Color(0xFF2F3433).withValues(alpha: 0.75),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '• ${analysis.energyInsight}',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: const Color(0xFF2F3433).withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -294,14 +485,13 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: moods.length + (moods.length >= 7 ? 1 : 0),
+                itemCount: moods.length + 1,
                 itemBuilder: (context, index) {
-                  // Slot 0: insights panel when 7+ entries exist
-                  if (moods.length >= 7 && index == 0) {
+                  // Slot 0: insights & trigger patterns panel
+                  if (index == 0) {
                     return _InsightsPanel(entries: moods);
                   }
-                  final entryIndex = moods.length >= 7 ? index - 1 : index;
-                  final entry = moods[entryIndex];
+                  final entry = moods[index - 1];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
@@ -362,6 +552,31 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                                     ),
                                   ],
                                 ),
+                                if (entry.tags.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
+                                    children: entry.tags.map((t) => Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFCA0174).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFFCA0174).withValues(alpha: 0.25),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        t,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFFCA0174),
+                                        ),
+                                      ),
+                                    )).toList(),
+                                  ),
+                                ],
                                 if (entry.note != null && entry.note!.trim().isNotEmpty) ...[
                                   const SizedBox(height: 10),
                                   Container(
