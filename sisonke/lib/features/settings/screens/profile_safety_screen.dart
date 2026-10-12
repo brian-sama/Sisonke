@@ -12,13 +12,14 @@ class ProfileSafetyScreen extends ConsumerStatefulWidget {
   const ProfileSafetyScreen({super.key});
 
   @override
-  ConsumerState<ProfileSafetyScreen> createState() => _ProfileSafetyScreenState();
+  ConsumerState<ProfileSafetyScreen> createState() =>
+      _ProfileSafetyScreenState();
 }
 
 class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
   final _api = ApiService();
   final _securityService = SecurityService();
-  
+
   var _pinEnabled = true;
   var _biometricEnabled = false;
   var _biometricAvailable = false;
@@ -43,14 +44,18 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text('Create a Security PIN'),
           content: Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Choose a memorable 4-digit PIN to secure your safe space.'),
+                const Text(
+                  'Choose a memorable 4-digit PIN to secure your safe space.',
+                ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: pinController,
@@ -71,7 +76,11 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                     counterText: '',
                     prefixIcon: Icon(Icons.lock_rounded),
                   ),
-                  style: const TextStyle(letterSpacing: 10, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    letterSpacing: 10,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -124,7 +133,10 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
             Card(
               elevation: isDark ? 0 : 1,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -132,7 +144,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                       children: [
                         Icon(
                           Icons.palette_rounded,
-                          color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+                          color: isDark
+                              ? theme.colorScheme.primary
+                              : SisonkeColors.forest,
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -149,7 +163,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                               Text(
                                 'Switch between Light and Dark mode',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                               ),
                             ],
@@ -159,10 +175,14 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                           value: ref.watch(themeModeProvider),
                           onChanged: (mode) {
                             if (mode != null) {
-                              ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                              ref
+                                  .read(themeModeProvider.notifier)
+                                  .setThemeMode(mode);
                             }
                           },
-                          dropdownColor: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+                          dropdownColor: isDark
+                              ? theme.colorScheme.surfaceContainerHigh
+                              : Colors.white,
                           underline: const SizedBox.shrink(),
                           items: const [
                             DropdownMenuItem(
@@ -215,17 +235,22 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                   ? (value) => setState(() => _biometricEnabled = value)
                   : null,
             ),
-            
+
             // Premium auto-lock selector
             Card(
               elevation: isDark ? 0 : 1,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.timer_outlined,
-                      color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+                      color: isDark
+                          ? theme.colorScheme.primary
+                          : SisonkeColors.forest,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -242,7 +267,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                           Text(
                             'Timeout duration before locking',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                           ),
                         ],
@@ -255,7 +282,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                           setState(() => _autoLockSeconds = value);
                         }
                       },
-                      dropdownColor: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+                      dropdownColor: isDark
+                          ? theme.colorScheme.surfaceContainerHigh
+                          : Colors.white,
                       underline: const SizedBox.shrink(),
                       items: const [
                         DropdownMenuItem(value: 0, child: Text('Immediately')),
@@ -282,7 +311,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
               child: ListTile(
                 leading: Icon(
                   Icons.enhanced_encryption_rounded,
-                  color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+                  color: isDark
+                      ? theme.colorScheme.primary
+                      : SisonkeColors.forest,
                 ),
                 title: const Text('Encrypted storage'),
                 subtitle: const Text(
@@ -301,7 +332,10 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.save_rounded),
               label: const Text('Save safety settings'),
@@ -311,17 +345,23 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? theme.colorScheme.surfaceContainer : SisonkeColors.mint.withValues(alpha: 0.5),
+                  color: isDark
+                      ? theme.colorScheme.surfaceContainer
+                      : SisonkeColors.mint.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? theme.colorScheme.primary.withValues(alpha: 0.3) : SisonkeColors.sage,
+                    color: isDark
+                        ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                        : SisonkeColors.sage,
                   ),
                 ),
                 child: Text(
                   _notice!,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
+                    color: isDark
+                        ? theme.colorScheme.primary
+                        : SisonkeColors.forest,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -356,10 +396,10 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
             profile?['hideJournalPreview'] as bool? ??
             profile?['hide_journal_preview'] as bool? ??
             true;
-        
+
         // Load custom auto-lock timeout duration (default: 30s)
         _autoLockSeconds = prefs.getInt('auto_lock_duration_seconds') ?? 30;
-        
+
         _loading = false;
       });
     } catch (_) {
@@ -380,7 +420,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
     });
     try {
       // Convert auto lock seconds to backend minutes parameter (for database compatibility)
-      final backendMinutes = _autoLockSeconds == -1 ? 999 : (_autoLockSeconds / 60).round().clamp(1, 30);
+      final backendMinutes = _autoLockSeconds == -1
+          ? 999
+          : (_autoLockSeconds / 60).round().clamp(1, 30);
 
       try {
         await _api.updateSafetySettings(
@@ -390,7 +432,9 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
           hideJournalPreview: _hideJournalPreview,
         );
       } catch (e) {
-        debugPrint('Backend safety settings update skipped: $e. Saved locally instead.');
+        debugPrint(
+          'Backend safety settings update skipped: $e. Saved locally instead.',
+        );
       }
 
       final prefs = await SharedPreferences.getInstance();
@@ -404,7 +448,7 @@ class _ProfileSafetyScreenState extends ConsumerState<ProfileSafetyScreen> {
       if (!_pinEnabled) {
         await _securityService.clearPIN();
       }
-      
+
       if (!mounted) return;
       setState(() {
         _saving = false;
@@ -447,15 +491,12 @@ class _SettingsTile extends StatelessWidget {
           icon,
           color: isDark ? theme.colorScheme.primary : SisonkeColors.forest,
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle),
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: theme.colorScheme.primary,
+          activeThumbColor: theme.colorScheme.primary,
         ),
       ),
     );

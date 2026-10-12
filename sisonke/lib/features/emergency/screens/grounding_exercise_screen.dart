@@ -5,7 +5,8 @@ class GroundingExerciseScreen extends StatefulWidget {
   const GroundingExerciseScreen({super.key});
 
   @override
-  State<GroundingExerciseScreen> createState() => _GroundingExerciseScreenState();
+  State<GroundingExerciseScreen> createState() =>
+      _GroundingExerciseScreenState();
 }
 
 class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
@@ -60,9 +61,9 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
           children: [
             Text(
               '5-4-3-2-1 Grounding',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppConstants.spacingMedium),
             Text(
@@ -94,7 +95,9 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingMedium),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppConstants.spacingMedium,
+                        ),
                       ),
                       child: const Text('Start Exercise'),
                     ),
@@ -110,7 +113,9 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
                     // Progress indicator
                     LinearProgressIndicator(
                       value: (_currentStep + 1) / _steps.length,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         Theme.of(context).colorScheme.primary,
                       ),
@@ -141,9 +146,8 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
                     // Step text
                     Text(
                       _steps[_currentStep],
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppConstants.spacingLarge),
@@ -152,8 +156,12 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
                     Container(
                       padding: const EdgeInsets.all(AppConstants.spacingMedium),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusMedium,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -187,10 +195,16 @@ class _GroundingExerciseScreenState extends State<GroundingExerciseScreen> {
                           child: ElevatedButton(
                             onPressed: _nextStep,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                               foregroundColor: Colors.white,
                             ),
-                            child: Text(_currentStep == _steps.length - 1 ? 'Complete' : 'Next'),
+                            child: Text(
+                              _currentStep == _steps.length - 1
+                                  ? 'Complete'
+                                  : 'Next',
+                            ),
                           ),
                         ),
                       ],

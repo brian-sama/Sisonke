@@ -8,6 +8,11 @@ class LocalDatabaseService {
   late Isar _isar;
 
   Future<void> init() async {
+    final existing = Isar.getInstance();
+    if (existing != null) {
+      _isar = existing;
+      return;
+    }
     final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open(
       [MoodEntrySchema, JournalEntrySchema, RecoveryEntrySchema],

@@ -18,9 +18,9 @@ class SafetyPlanScreen extends StatelessWidget {
           children: [
             Text(
               'Your Safety Plan',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppConstants.spacingMedium),
             Text(
@@ -28,7 +28,7 @@ class SafetyPlanScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: AppConstants.spacingLarge),
-            
+
             _buildSection(
               context,
               'Warning Signs',
@@ -41,7 +41,7 @@ class SafetyPlanScreen extends StatelessWidget {
                 'Difficulty sleeping',
               ],
             ),
-            
+
             _buildSection(
               context,
               'Coping Strategies',
@@ -54,7 +54,7 @@ class SafetyPlanScreen extends StatelessWidget {
                 'Go for a walk',
               ],
             ),
-            
+
             _buildSection(
               context,
               'Trusted Contacts',
@@ -66,7 +66,7 @@ class SafetyPlanScreen extends StatelessWidget {
                 'Counselor: +263 555 123 456',
               ],
             ),
-            
+
             _buildSection(
               context,
               'Professional Help',
@@ -78,7 +78,7 @@ class SafetyPlanScreen extends StatelessWidget {
                 'Mental Health: +263 772 161 918',
               ],
             ),
-            
+
             _buildSection(
               context,
               'Safe Places',
@@ -121,9 +121,9 @@ class SafetyPlanScreen extends StatelessWidget {
                 const SizedBox(width: AppConstants.spacingSmall),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -131,29 +131,35 @@ class SafetyPlanScreen extends StatelessWidget {
             Text(
               description,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: AppConstants.spacingMedium),
-            ...items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: AppConstants.spacingXSmall),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: AppConstants.spacingSmall),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: Theme.of(context).textTheme.bodyMedium,
+            ...items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(
+                  bottom: AppConstants.spacingXSmall,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: AppConstants.spacingSmall),
+                    Expanded(
+                      child: Text(
+                        item,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            )).toList(),
+            ),
           ],
         ),
       ),

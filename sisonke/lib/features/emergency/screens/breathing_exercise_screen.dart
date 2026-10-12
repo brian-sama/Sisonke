@@ -8,7 +8,8 @@ class BreathingExerciseScreen extends StatefulWidget {
   const BreathingExerciseScreen({super.key});
 
   @override
-  State<BreathingExerciseScreen> createState() => _BreathingExerciseScreenState();
+  State<BreathingExerciseScreen> createState() =>
+      _BreathingExerciseScreenState();
 }
 
 class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
@@ -18,7 +19,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
   late Animation<double> _rotationAnimation;
   bool _isExercising = false;
   int _currentCycle = 0;
-  int _totalCycles = 4;
+  final int _totalCycles = 4;
   String _currentPhase = 'Ready';
 
   // Ambient sound states
@@ -35,13 +36,15 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.4).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.4,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.08).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -106,24 +109,24 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SisonkeAppBar(
-        title: 'Breathing Companion',
-      ),
+      appBar: const SisonkeAppBar(title: 'Breathing Companion'),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: SisonkeColors.morningMist,
-        ),
+        decoration: const BoxDecoration(gradient: SisonkeColors.morningMist),
         child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Column(
                   children: [
                     const SizedBox(height: 12),
                     Text(
                       'Box Breathing Rhythm',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFF2F3433),
                           ),
@@ -135,7 +138,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                         'A natural 4-4-4-4 cycle that anchors your awareness and stabilizes tension.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: const Color(0xFF2F3433).withOpacity(0.6),
+                          color: const Color(0xFF2F3433).withValues(alpha: 0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -143,14 +146,13 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                     const SizedBox(height: 36),
 
                     // --- Ready and Default Layout ---
-                    if (_currentPhase == 'Ready' || _currentPhase == 'Complete') ...[
+                    if (_currentPhase == 'Ready' ||
+                        _currentPhase == 'Complete') ...[
                       _buildStaticLeafView(),
                     ],
 
                     // --- Interactive Exercise Loop ---
-                    if (_isExercising) ...[
-                      _buildBreathingAnimationView(),
-                    ],
+                    if (_isExercising) ...[_buildBreathingAnimationView()],
                   ],
                 ),
               ),
@@ -179,7 +181,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFCFE6D2).withOpacity(0.35),
+                    color: const Color(0xFFCFE6D2).withValues(alpha: 0.35),
                     blurRadius: 40,
                   ),
                 ],
@@ -204,7 +206,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                       color: Colors.black12,
                       blurRadius: 10,
                       offset: Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: const Icon(
@@ -221,9 +223,9 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.4)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
             ),
             child: Column(
               children: [
@@ -234,7 +236,11 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                     SizedBox(width: 8),
                     Text(
                       'Rhythm Complete',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2F3433)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF2F3433),
+                      ),
                     ),
                   ],
                 ),
@@ -242,7 +248,10 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                 Text(
                   'Your heart rate and body thank you. Keep this peacefulness as you continue your day.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: const Color(0xFF2F3433).withOpacity(0.6)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: const Color(0xFF2F3433).withValues(alpha: 0.6),
+                  ),
                 ),
               ],
             ),
@@ -288,16 +297,16 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                   height: 170 * scaleValue,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: glowOn 
-                        ? const Color(0xFFFFC857).withOpacity(0.24) 
-                        : const Color(0xFFCFE6D2).withOpacity(0.3),
+                    color: glowOn
+                        ? const Color(0xFFFFC857).withValues(alpha: 0.24)
+                        : const Color(0xFFCFE6D2).withValues(alpha: 0.3),
                     boxShadow: glowOn
                         ? [
                             const BoxShadow(
                               color: Color(0xFFFFC857),
                               blurRadius: 36,
                               spreadRadius: 8,
-                            )
+                            ),
                           ]
                         : null,
                   ),
@@ -323,7 +332,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                             color: Colors.black12,
                             blurRadius: 8,
                             offset: Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       child: const Icon(
@@ -359,12 +368,27 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
         // Quiet Cancel
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            side: BorderSide(color: const Color(0xFF2E6F60).withOpacity(0.3)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            side: BorderSide(
+              color: const Color(0xFF2E6F60).withValues(alpha: 0.3),
+            ),
           ),
           onPressed: _resetExercise,
-          icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF2E6F60)),
-          label: const Text('End Rhythm', style: TextStyle(color: Color(0xFF2F3433), fontSize: 13, fontWeight: FontWeight.bold)),
+          icon: const Icon(
+            Icons.close_rounded,
+            size: 16,
+            color: Color(0xFF2E6F60),
+          ),
+          label: const Text(
+            'End Rhythm',
+            style: TextStyle(
+              color: Color(0xFF2F3433),
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ],
     );
@@ -390,7 +414,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: const Color(0xFF2F3433).withOpacity(0.6),
+          color: const Color(0xFF2F3433).withValues(alpha: 0.6),
         ),
       ),
     );
@@ -400,12 +424,12 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.75),
+        color: Colors.white.withValues(alpha: 0.75),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(32),
           topRight: Radius.circular(32),
         ),
-        border: Border.all(color: Colors.white.withOpacity(0.5)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -415,20 +439,31 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
             children: [
               const Text(
                 'Ambient Soundscapes',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2F3433)),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF2F3433),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E6F60).withOpacity(0.1),
+                  color: const Color(0xFF2E6F60).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('Visualizers active', style: TextStyle(fontSize: 10, color: Color(0xFF2E6F60), fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Visualizers active',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF2E6F60),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Soundscapes selection row
           Row(
             children: [
@@ -457,7 +492,9 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
           SisonkeButton(
             onPressed: _startExercise,
             isEnabled: !_isExercising,
-            label: _isExercising ? 'Breathing in rhythm...' : 'Begin 1-Minute Breath',
+            label: _isExercising
+                ? 'Breathing in rhythm...'
+                : 'Begin 1-Minute Breath',
             icon: Icons.self_improvement_rounded,
             isFullWidth: true,
           ),
@@ -475,10 +512,14 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
           duration: const Duration(milliseconds: 250),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: active ? const Color(0xFF2E6F60).withOpacity(0.12) : Colors.white60,
+            color: active
+                ? const Color(0xFF2E6F60).withValues(alpha: 0.12)
+                : Colors.white60,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: active ? const Color(0xFF2E6F60) : Colors.white.withOpacity(0.4),
+              color: active
+                  ? const Color(0xFF2E6F60)
+                  : Colors.white.withValues(alpha: 0.4),
               width: 1.5,
             ),
           ),

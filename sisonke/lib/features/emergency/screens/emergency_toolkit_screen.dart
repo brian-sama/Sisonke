@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sisonke/core/constants/app_constants.dart';
 import 'package:sisonke/features/emergency/providers/emergency_provider.dart';
 import 'package:sisonke/shared/widgets/index.dart';
 import 'package:sisonke/theme/sisonke_colors.dart';
@@ -19,9 +18,7 @@ class EmergencyToolkitScreen extends ConsumerWidget {
         fallbackBackLocation: '/home',
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: SisonkeColors.forestBreeze,
-        ),
+        decoration: const BoxDecoration(gradient: SisonkeColors.forestBreeze),
         child: toolkitAsync.when(
           data: (_) => ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -74,7 +71,9 @@ class EmergencyToolkitScreen extends ConsumerWidget {
                             'Open our step-by-step calming crisis pathway.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: const Color(0xFF991B1B).withValues(alpha: 0.8),
+                              color: const Color(
+                                0xFF991B1B,
+                              ).withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -85,13 +84,22 @@ class EmergencyToolkitScreen extends ConsumerWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFFF43F5E),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       onPressed: () => context.push('/crisis-pathway'),
-                      child: const Text('Open', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: const Text(
+                        'Open',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -99,7 +107,8 @@ class EmergencyToolkitScreen extends ConsumerWidget {
 
               const SoftSectionHeader(
                 title: 'Self-Help Tools',
-                subtitle: 'Gentle, scientifically proven techniques to calm your mind and body.',
+                subtitle:
+                    'Gentle, scientifically proven techniques to calm your mind and body.',
               ),
               const SizedBox(height: 14),
 
@@ -156,7 +165,11 @@ class EmergencyToolkitScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFD68A7F)),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: Color(0xFFD68A7F),
+                  ),
                   const SizedBox(height: 14),
                   const Text(
                     'Failed to load emergency tools',

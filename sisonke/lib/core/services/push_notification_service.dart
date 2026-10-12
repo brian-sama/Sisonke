@@ -27,51 +27,51 @@ class PushNotificationService {
     try {
       await Firebase.initializeApp();
       _messaging = FirebaseMessaging.instance;
-    } catch (e) {
-      if (kDebugMode) debugPrint('Push notifications not configured yet: $e');
-      return;
-    }
 
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    await _localNotifications.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-        iOS: DarwinInitializationSettings(),
-      ),
-    );
-
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: true,
-    );
-
-    if (settings.authorizationStatus == AuthorizationStatus.denied) return;
-
-    await _syncToken();
-    _messaging.onTokenRefresh.listen((token) => _registerToken(token));
-
-    FirebaseMessaging.onMessage.listen((message) {
-      final notification = message.notification;
-      if (notification == null) return;
-      _localNotifications.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'sisonke_support',
-            'Sisonke support',
-            channelDescription: 'Counselor case and safety support updates',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(),
+      await _localNotifications.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          iOS: DarwinInitializationSettings(),
         ),
       );
-    });
+
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+
+      await _syncToken();
+      _messaging.onTokenRefresh.listen((token) => _registerToken(token));
+
+      FirebaseMessaging.onMessage.listen((message) {
+        final notification = message.notification;
+        if (notification == null) return;
+        _localNotifications.show(
+          id: notification.hashCode,
+          title: notification.title,
+          body: notification.body,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'sisonke_support',
+              'Sisonke support',
+              channelDescription: 'Counselor case and safety support updates',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(),
+          ),
+        );
+      });
+    } catch (e) {
+      if (kDebugMode) debugPrint('Push notifications setup skipped: $e');
+      return;
+    }
   }
 
   Future<void> _syncToken() async {

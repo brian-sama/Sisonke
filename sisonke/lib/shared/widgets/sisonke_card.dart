@@ -13,7 +13,7 @@ class SisonkeCard extends StatelessWidget {
   final BoxShadow? boxShadow;
 
   const SisonkeCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -22,7 +22,7 @@ class SisonkeCard extends StatelessWidget {
     this.borderRadius = 12,
     this.border,
     this.boxShadow,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +45,7 @@ class SisonkeCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(borderRadius),
                   boxShadow: [boxShadow!],
                 ),
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );
@@ -65,14 +62,14 @@ class ResourceCard extends StatelessWidget {
   final bool isSaved;
 
   const ResourceCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.category,
     this.imageUrl,
     this.onTap,
     this.onSave,
     this.isSaved = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +115,18 @@ class ResourceCard extends StatelessWidget {
               children: [
                 Chip(
                   label: Text(category),
-                  avatar: const Icon(Icons.label, size: 16, semanticLabel: 'Category'),
+                  avatar: const Icon(
+                    Icons.label,
+                    size: 16,
+                    semanticLabel: 'Category',
+                  ),
                 ),
                 IconButton(
                   icon: Icon(
                     isSaved ? Icons.bookmark : Icons.bookmark_border,
-                    semanticLabel: isSaved ? 'Remove from bookmarks' : 'Add to bookmarks',
+                    semanticLabel: isSaved
+                        ? 'Remove from bookmarks'
+                        : 'Add to bookmarks',
                   ),
                   onPressed: onSave,
                 ),
@@ -135,4 +138,3 @@ class ResourceCard extends StatelessWidget {
     );
   }
 }
-

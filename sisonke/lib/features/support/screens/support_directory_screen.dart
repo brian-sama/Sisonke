@@ -235,15 +235,14 @@ class _SupportAction extends StatelessWidget {
 
     final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : color;
     final cardBorder = isDark
-        ? Border.all(
-            color: color.withValues(alpha: 0.28),
-            width: 1.2,
-          )
+        ? Border.all(color: color.withValues(alpha: 0.28), width: 1.2)
         : null;
     final iconColor = isDark
         ? Color.lerp(color, Colors.white, 0.35) ?? color
         : const Color(0xFF14213D);
-    final titleColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D);
+    final titleColor = isDark
+        ? theme.colorScheme.onSurface
+        : const Color(0xFF14213D);
     final subtitleColor = isDark
         ? theme.colorScheme.onSurfaceVariant
         : const Color(0xFF14213D).withValues(alpha: 0.65);
@@ -336,7 +335,7 @@ class _ContactGroup extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -393,15 +392,13 @@ class _UbuntuCirclesBanner extends StatelessWidget {
     final bannerBg = isDark
         ? const Color(0xFF261D33)
         : SisonkeColors.secondaryDim;
-    final iconBg = isDark
-        ? const Color(0xFF3E2C59)
-        : SisonkeColors.lavender;
+    final iconBg = isDark ? const Color(0xFF3E2C59) : SisonkeColors.lavender;
     final primaryTextColor = isDark
         ? const Color(0xFFD6C7FF)
         : SisonkeColors.secondary;
     final subtitleTextColor = isDark
         ? const Color(0xFFD6C7FF).withValues(alpha: 0.75)
-        : SisonkeColors.secondary.withOpacity(0.75);
+        : SisonkeColors.secondary.withValues(alpha: 0.75);
 
     return Material(
       color: bannerBg,
@@ -420,10 +417,7 @@ class _UbuntuCirclesBanner extends StatelessWidget {
                   color: iconBg,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  Icons.groups_rounded,
-                  color: primaryTextColor,
-                ),
+                child: Icon(Icons.groups_rounded, color: primaryTextColor),
               ),
               const SizedBox(width: 14),
               Expanded(

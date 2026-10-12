@@ -12,7 +12,7 @@ class SisonkeButton extends StatelessWidget {
   final bool isFullWidth;
 
   const SisonkeButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.onPressed,
     this.buttonType = ButtonType.primary,
@@ -21,7 +21,7 @@ class SisonkeButton extends StatelessWidget {
     this.isEnabled = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     this.isFullWidth = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +38,7 @@ class SisonkeButton extends StatelessWidget {
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
-                Icon(icon),
-                const SizedBox(width: 8),
-              ],
+              if (icon != null) ...[Icon(icon), const SizedBox(width: 8)],
               Text(label),
             ],
           );
@@ -50,9 +47,7 @@ class SisonkeButton extends StatelessWidget {
       case ButtonType.primary:
         button = FilledButton(
           onPressed: isEnabled && !isLoading ? onPressed : null,
-          style: FilledButton.styleFrom(
-            padding: padding,
-          ),
+          style: FilledButton.styleFrom(padding: padding),
           child: buttonContent,
         );
         break;
@@ -68,9 +63,7 @@ class SisonkeButton extends StatelessWidget {
       case ButtonType.text:
         button = TextButton(
           onPressed: isEnabled && !isLoading ? onPressed : null,
-          style: TextButton.styleFrom(
-            padding: padding,
-          ),
+          style: TextButton.styleFrom(padding: padding),
           child: buttonContent,
         );
         break;
@@ -88,14 +81,10 @@ class SisonkeButton extends StatelessWidget {
         break;
     }
 
-    return isFullWidth ? SizedBox(width: double.infinity, child: button) : button;
+    return isFullWidth
+        ? SizedBox(width: double.infinity, child: button)
+        : button;
   }
 }
 
-enum ButtonType {
-  primary,
-  secondary,
-  text,
-  danger,
-}
-
+enum ButtonType { primary, secondary, text, danger }

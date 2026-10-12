@@ -20,6 +20,7 @@ import 'package:sisonke/shared/widgets/offline_banner.dart';
 import 'package:sisonke/l10n/app_localizations.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await SentryFlutter.init(
     (options) {
       const dsn = String.fromEnvironment('SENTRY_DSN');
@@ -27,7 +28,6 @@ void main() async {
       options.tracesSampleRate = kReleaseMode ? 0.1 : 1.0;
     },
     appRunner: () async {
-      WidgetsFlutterBinding.ensureInitialized();
       await WidgetService.setup();
 
       final sharedPreferences = await SharedPreferences.getInstance();

@@ -16,7 +16,7 @@ class SisonkeTextField extends StatefulWidget {
   final bool isMultiline;
 
   const SisonkeTextField({
-    Key? key,
+    super.key,
     required this.label,
     this.hint,
     this.controller,
@@ -29,7 +29,7 @@ class SisonkeTextField extends StatefulWidget {
     this.maxLines = 1,
     this.minLines = 1,
     this.isMultiline = false,
-  }) : super(key: key);
+  });
 
   @override
   State<SisonkeTextField> createState() => _SisonkeTextFieldState();
@@ -65,7 +65,8 @@ class _SisonkeTextFieldState extends State<SisonkeTextField> {
         suffixIcon: widget.suffixIcon != null
             ? IconButton(
                 icon: Icon(widget.suffixIcon),
-                onPressed: widget.onSuffixIconPressed ??
+                onPressed:
+                    widget.onSuffixIconPressed ??
                     (widget.obscureText
                         ? () {
                             setState(() {
@@ -75,15 +76,14 @@ class _SisonkeTextFieldState extends State<SisonkeTextField> {
                         : null),
               )
             : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
 }
-

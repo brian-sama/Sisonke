@@ -90,7 +90,9 @@ class _CrisisPathwayScreenState extends State<CrisisPathwayScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.65,
+                        ),
                       ),
                     ),
                   ],
@@ -170,7 +172,7 @@ class _CrisisPathwayScreenState extends State<CrisisPathwayScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: SisonkeColors.charcoal.withOpacity(0.5),
+                    color: SisonkeColors.charcoal.withValues(alpha: 0.5),
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -224,22 +226,30 @@ class _StepCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _isActive
             ? (isDark
-                ? theme.colorScheme.surfaceContainerHigh
-                : Colors.white.withOpacity(0.92))
+                  ? theme.colorScheme.surfaceContainerHigh
+                  : Colors.white.withValues(alpha: 0.92))
             : (isDark
-                ? theme.colorScheme.surfaceContainer
-                : Colors.white.withOpacity(0.55)),
+                  ? theme.colorScheme.surfaceContainer
+                  : Colors.white.withValues(alpha: 0.55)),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: _isActive
-              ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary.withOpacity(0.3))
-              : (isDark ? theme.colorScheme.outlineVariant : Colors.white.withOpacity(0.4)),
+              ? (isDark
+                    ? theme.colorScheme.primary
+                    : SisonkeColors.primary.withValues(alpha: 0.3))
+              : (isDark
+                    ? theme.colorScheme.outlineVariant
+                    : Colors.white.withValues(alpha: 0.4)),
           width: 1.5,
         ),
         boxShadow: _isActive
             ? [
                 BoxShadow(
-                  color: (isDark ? theme.colorScheme.primary : SisonkeColors.primary).withOpacity(0.12),
+                  color:
+                      (isDark
+                              ? theme.colorScheme.primary
+                              : SisonkeColors.primary)
+                          .withValues(alpha: 0.12),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -266,8 +276,12 @@ class _StepCard extends StatelessWidget {
                       color: _isCompleted
                           ? SisonkeColors.success
                           : _isActive
-                              ? (isDark ? theme.colorScheme.primary : SisonkeColors.primary)
-                              : (isDark ? theme.colorScheme.surfaceContainerHighest : SisonkeColors.primaryDim),
+                          ? (isDark
+                                ? theme.colorScheme.primary
+                                : SisonkeColors.primary)
+                          : (isDark
+                                ? theme.colorScheme.surfaceContainerHighest
+                                : SisonkeColors.primaryDim),
                     ),
                     child: Center(
                       child: _isCompleted
@@ -282,8 +296,12 @@ class _StepCard extends StatelessWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: _isActive
-                                    ? (isDark ? const Color(0xFF10131C) : Colors.white)
-                                    : (isDark ? theme.colorScheme.primary : SisonkeColors.primary),
+                                    ? (isDark
+                                          ? const Color(0xFF10131C)
+                                          : Colors.white)
+                                    : (isDark
+                                          ? theme.colorScheme.primary
+                                          : SisonkeColors.primary),
                               ),
                             ),
                     ),
@@ -297,14 +315,18 @@ class _StepCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: _isActive
                             ? theme.colorScheme.onSurface
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.55,
+                              ),
                       ),
                     ),
                   ),
                   if (!_isActive)
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.35,
+                      ),
                     ),
                 ],
               ),
@@ -320,7 +342,9 @@ class _StepCard extends StatelessWidget {
                       description,
                       style: TextStyle(
                         fontSize: 14.5,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.75,
+                        ),
                         height: 1.45,
                       ),
                     ),

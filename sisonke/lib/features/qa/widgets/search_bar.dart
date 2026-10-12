@@ -27,18 +27,22 @@ class _QASearchBarState extends State<QASearchBar> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: _isFocused 
+          color: _isFocused
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: _isFocused ? 2 : 1,
         ),
-        boxShadow: _isFocused ? [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
+        boxShadow: _isFocused
+            ? [
+                BoxShadow(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: TextField(
         controller: widget.controller,
@@ -50,7 +54,9 @@ class _QASearchBarState extends State<QASearchBar> {
           hintText: 'Search questions...',
           prefixIcon: Icon(
             Icons.search,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
           suffixIcon: widget.controller.text.isNotEmpty
               ? IconButton(
@@ -60,7 +66,9 @@ class _QASearchBarState extends State<QASearchBar> {
                   },
                   icon: Icon(
                     Icons.clear,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 )
               : null,
@@ -70,7 +78,9 @@ class _QASearchBarState extends State<QASearchBar> {
             vertical: AppConstants.spacingMedium,
           ),
           hintStyle: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),

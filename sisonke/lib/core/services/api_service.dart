@@ -358,7 +358,7 @@ class ApiService {
           'title': title,
           'description': description,
           'category': category,
-          if (deviceId != null) 'deviceId': deviceId,
+          'deviceId': ?deviceId,
         },
       );
 
@@ -453,11 +453,11 @@ class ApiService {
         '/analytics/events',
         data: {
           'event': event,
-          if (resourceId != null) 'resourceId': resourceId,
-          if (category != null) 'category': category,
+          'resourceId': ?resourceId,
+          'category': ?category,
           'platform': 'flutter',
           'appVersion': AppConstants.appVersion,
-          if (metadata != null) 'metadata': metadata,
+          'metadata': ?metadata,
         },
       );
     } on DioException {
@@ -552,7 +552,8 @@ class ApiService {
             'location': prefs.getString('user_location') ?? '',
             'chatbotPersona': prefs.getString('user_persona') ?? 'female',
             'pinEnabled': prefs.getBool(AppConstants.pinEnabledKey) ?? false,
-            'biometricEnabled': prefs.getBool(AppConstants.biometricEnabledKey) ?? false,
+            'biometricEnabled':
+                prefs.getBool(AppConstants.biometricEnabledKey) ?? false,
             'screeningAnswers': jsonDecode(screeningStr),
           };
         }
@@ -664,7 +665,7 @@ class ApiService {
         data: {
           'content': content,
           'messageType': messageType,
-          if (mediaUrl != null) 'mediaUrl': mediaUrl,
+          'mediaUrl': ?mediaUrl,
         },
       );
       if (response.data['success']) {
@@ -681,16 +682,10 @@ class ApiService {
     try {
       final fileName = path.basename(filePath);
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-        ),
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
       });
 
-      final response = await _dio.post(
-        '/upload',
-        data: formData,
-      );
+      final response = await _dio.post('/upload', data: formData);
 
       if (response.data['success']) {
         return response.data['data']['url'] as String;
@@ -873,7 +868,10 @@ class ApiService {
     }
   }
 
-  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
+  Future<dynamic> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     await ensureGuestSession();
     try {
       final response = await _dio.get(path, queryParameters: queryParameters);

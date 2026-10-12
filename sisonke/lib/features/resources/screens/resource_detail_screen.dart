@@ -8,13 +8,11 @@ import '../../../core/constants/app_constants.dart';
 class ResourceDetailScreen extends ConsumerStatefulWidget {
   final String resourceId;
 
-  const ResourceDetailScreen({
-    super.key,
-    required this.resourceId,
-  });
+  const ResourceDetailScreen({super.key, required this.resourceId});
 
   @override
-  ConsumerState<ResourceDetailScreen> createState() => _ResourceDetailScreenState();
+  ConsumerState<ResourceDetailScreen> createState() =>
+      _ResourceDetailScreenState();
 }
 
 class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
@@ -22,7 +20,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(resourceProvider(widget.resourceId).notifier).loadResource(widget.resourceId);
+      ref
+          .read(resourceProvider(widget.resourceId).notifier)
+          .loadResource(widget.resourceId);
     });
   }
 
@@ -42,7 +42,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
           if (resourceState.resource != null)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
-              onSelected: (value) => _handleMenuAction(value, resourceState.resource!),
+              onSelected: (value) =>
+                  _handleMenuAction(value, resourceState.resource!),
               itemBuilder: (context) => [
                 if (resourceState.resource!.isOfflineAvailable)
                   PopupMenuItem(
@@ -83,10 +84,10 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
       body: resourceState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : resourceState.error != null
-              ? _buildErrorState(resourceState.error!)
-              : resourceState.resource != null
-                  ? _buildResourceBody(resourceState.resource!)
-                  : const Center(child: Text('Resource not found')),
+          ? _buildErrorState(resourceState.error!)
+          : resourceState.resource != null
+          ? _buildResourceBody(resourceState.resource!)
+          : const Center(child: Text('Resource not found')),
     );
   }
 
@@ -118,7 +119,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
             const SizedBox(height: AppConstants.spacingLarge),
             ElevatedButton(
               onPressed: () {
-                ref.read(resourceProvider(widget.resourceId).notifier).loadResource(widget.resourceId);
+                ref
+                    .read(resourceProvider(widget.resourceId).notifier)
+                    .loadResource(widget.resourceId);
               },
               child: const Text('Try Again'),
             ),
@@ -168,7 +171,8 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
             borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
           ),
           child: Text(
-            AppConstants.categoryDisplayNames[resource.category.name] ?? resource.category.label,
+            AppConstants.categoryDisplayNames[resource.category.name] ??
+                resource.category.label,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onPrimaryContainer,
               fontSize: AppConstants.textSmall,
@@ -186,13 +190,17 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
               Icon(
                 Icons.schedule,
                 size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 4),
               Text(
                 '${resource.readingTimeMinutes} min read',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(width: AppConstants.spacingMedium),
@@ -200,13 +208,17 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
             Icon(
               Icons.visibility_outlined,
               size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 4),
             Text(
               '${resource.viewCount} views',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -218,7 +230,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         Text(
           'Published on ${_formatDate(resource.createdAt)}',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -232,9 +246,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         // Title
         Text(
           resource.title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppConstants.spacingMedium),
 
@@ -242,24 +256,21 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
         Container(
           padding: const EdgeInsets.all(AppConstants.spacingMedium),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
           ),
           child: Text(
             resource.description,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontStyle: FontStyle.italic,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic),
           ),
         ),
         const SizedBox(height: AppConstants.spacingLarge),
 
         // Full content
         if (resource.content != null) ...[
-          Text(
-            resource.content!,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          Text(resource.content!, style: Theme.of(context).textTheme.bodyLarge),
         ],
       ],
     );
@@ -271,31 +282,39 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
       children: [
         Text(
           'Tags',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppConstants.spacingSmall),
         Wrap(
           spacing: AppConstants.spacingXSmall,
           runSpacing: AppConstants.spacingXSmall,
-          children: tags.map((tag) => Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.spacingSmall,
-              vertical: AppConstants.spacingXSmall,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
-            ),
-            child: Text(
-              tag,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: AppConstants.textSmall,
-              ),
-            ),
-          )).toList(),
+          children: tags
+              .map(
+                (tag) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacingSmall,
+                    vertical: AppConstants.spacingXSmall,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusSmall,
+                    ),
+                  ),
+                  child: Text(
+                    tag,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: AppConstants.textSmall,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
         ),
       ],
     );
@@ -305,7 +324,7 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.spacingMedium),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         border: Border.all(color: Colors.green),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
@@ -331,7 +350,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
     switch (action) {
       case 'download_offline':
         try {
-          await ref.read(resourceProvider(widget.resourceId).notifier).downloadForOffline(resource.id);
+          await ref
+              .read(resourceProvider(widget.resourceId).notifier)
+              .downloadForOffline(resource.id);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -354,7 +375,9 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 
       case 'remove_offline':
         try {
-          await ref.read(resourceProvider(widget.resourceId).notifier).removeFromOffline(resource.id);
+          await ref
+              .read(resourceProvider(widget.resourceId).notifier)
+              .removeFromOffline(resource.id);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -396,8 +419,18 @@ class _ResourceDetailScreenState extends ConsumerState<ResourceDetailScreen> {
 
   String _getMonthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }

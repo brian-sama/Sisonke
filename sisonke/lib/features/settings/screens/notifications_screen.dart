@@ -27,11 +27,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 48,
+                      color: Colors.redAccent,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'Failed to load notifications',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -41,7 +48,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => setState(() => _future = _api.getNotifications()),
+                      onPressed: () =>
+                          setState(() => _future = _api.getNotifications()),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -62,11 +70,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.notifications_none_rounded, size: 64, color: Colors.grey.withOpacity(0.5)),
+                    Icon(
+                      Icons.notifications_none_rounded,
+                      size: 64,
+                      color: Colors.grey.withValues(alpha: 0.5),
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'All quiet here',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -95,15 +110,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 final isRead = item['readAt'] != null;
                 return Card(
                   elevation: isRead ? 0 : 2,
-                  color: isRead ? Colors.white.withOpacity(0.7) : Colors.white,
+                  color: isRead
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: isRead ? BorderSide(color: Colors.grey.withOpacity(0.1)) : BorderSide.none,
+                    side: isRead
+                        ? BorderSide(color: Colors.grey.withValues(alpha: 0.1))
+                        : BorderSide.none,
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     leading: CircleAvatar(
-                      backgroundColor: isRead ? Colors.grey.shade100 : const Color(0xFF2E6F60).withOpacity(0.1),
+                      backgroundColor: isRead
+                          ? Colors.grey.shade100
+                          : const Color(0xFF2E6F60).withValues(alpha: 0.1),
                       child: Icon(
                         Icons.notifications_rounded,
                         color: isRead ? Colors.grey : const Color(0xFF2E6F60),
@@ -112,7 +136,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     title: Text(
                       '${item['title']}',
                       style: TextStyle(
-                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                        fontWeight: isRead
+                            ? FontWeight.normal
+                            : FontWeight.bold,
                         color: isRead ? Colors.grey.shade800 : Colors.black,
                       ),
                     ),
@@ -128,7 +154,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           const SizedBox(height: 8),
                           Text(
                             _formatTimestamp(item['createdAt']),
-                            style: TextStyle(fontSize: 10, color: Colors.grey.shade400, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ],

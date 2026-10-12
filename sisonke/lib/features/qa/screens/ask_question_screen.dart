@@ -90,7 +90,7 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: AppConstants.spacingLarge),
@@ -104,7 +104,7 @@ class _AskQuestionScreenState extends ConsumerState<AskQuestionScreen> {
                 ),
                 const SizedBox(height: AppConstants.spacingSmall),
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Select a category',

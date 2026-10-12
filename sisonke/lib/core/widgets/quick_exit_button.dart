@@ -127,7 +127,7 @@ class QuickExitAppBar extends StatelessWidget {
       actions: [
         if (onExit != null)
           QuickExitButton(onExit: onExit, size: 36, showTooltip: false),
-        if (actions != null) ...actions!,
+        ...?actions,
         const SizedBox(width: 8),
       ],
     );
@@ -276,11 +276,13 @@ class _QuickExitScreenState extends State<QuickExitScreen> {
     super.initState();
     final rawNotes = widget.content['notes'] as List? ?? [];
     _notes = rawNotes
-        .map<Map<String, String>>((n) => {
-              'title': n['title']?.toString() ?? '',
-              'content': n['content']?.toString() ?? '',
-              'date': n['date']?.toString() ?? '',
-            })
+        .map<Map<String, String>>(
+          (n) => {
+            'title': n['title']?.toString() ?? '',
+            'content': n['content']?.toString() ?? '',
+            'date': n['date']?.toString() ?? '',
+          },
+        )
         .toList();
     _controllers = _notes
         .map((n) => TextEditingController(text: n['content']))

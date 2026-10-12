@@ -31,18 +31,16 @@ class _CategoryFilterState extends State<CategoryFilter> {
             scrollDirection: Axis.horizontal,
             children: [
               // "All" option
-              _buildCategoryChip(
-                id: null,
-                name: 'All',
-                icon: Icons.apps,
-              ),
+              _buildCategoryChip(id: null, name: 'All', icon: Icons.apps),
               const SizedBox(width: AppConstants.spacingSmall),
               // Category chips
-              ...widget.categories.map((category) => _buildCategoryChip(
-                id: category.id,
-                name: category.label,
-                icon: _getCategoryIcon(category.id),
-              )).toList(),
+              ...widget.categories.map(
+                (category) => _buildCategoryChip(
+                  id: category.id,
+                  name: category.label,
+                  icon: _getCategoryIcon(category.id),
+                ),
+              ),
             ],
           ),
         ),
@@ -57,7 +55,7 @@ class _CategoryFilterState extends State<CategoryFilter> {
     required IconData icon,
   }) {
     final isSelected = _selectedCategory == id;
-    
+
     return FilterChip(
       selected: isSelected,
       label: Row(
@@ -66,9 +64,11 @@ class _CategoryFilterState extends State<CategoryFilter> {
           Icon(
             icon,
             size: 16,
-            color: isSelected 
+            color: isSelected
                 ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
           const SizedBox(width: AppConstants.spacingXSmall),
           Text(name),
@@ -84,15 +84,15 @@ class _CategoryFilterState extends State<CategoryFilter> {
       selectedColor: Theme.of(context).colorScheme.primary,
       checkmarkColor: Theme.of(context).colorScheme.onPrimary,
       labelStyle: TextStyle(
-        color: isSelected 
+        color: isSelected
             ? Theme.of(context).colorScheme.onPrimary
             : Theme.of(context).colorScheme.onSurface,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       side: BorderSide(
-        color: isSelected 
+        color: isSelected
             ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
       ),
     );
   }

@@ -11,9 +11,7 @@ class TalkToCounselorScreen extends StatelessWidget {
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Talk to Someone'),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: SisonkeColors.forestBreeze,
-        ),
+        decoration: const BoxDecoration(gradient: SisonkeColors.forestBreeze),
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
@@ -22,38 +20,41 @@ class TalkToCounselorScreen extends StatelessWidget {
             Text(
               'Choose the safest way to reach a supportive counselor.',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF2F3433),
-                  ),
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF2F3433),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Sisonke is a completely secure, private, and non-judgmental space.',
               style: TextStyle(
                 fontSize: 13,
-                color: const Color(0xFF2F3433).withOpacity(0.55),
+                color: const Color(0xFF2F3433).withValues(alpha: 0.55),
               ),
             ),
             const SizedBox(height: 20),
-            
+
             _SupportOption(
               icon: Icons.support_agent_rounded,
               title: 'Start counselor request',
-              body: 'Choose a category, share what’s on your mind, and create a private case.',
+              body:
+                  'Choose a category, share what’s on your mind, and create a private case.',
               color: const Color(0xFF2E6F60), // Calm Sage-Teal
               onTap: () => context.push('/counselor-request?method=live_chat'),
             ),
             _SupportOption(
               icon: Icons.call_rounded,
               title: 'Request callback',
-              body: 'Have a counselor call you securely at a safe telephone number.',
+              body:
+                  'Have a counselor call you securely at a safe telephone number.',
               color: const Color(0xFFFFC857), // Amber Warmth
               onTap: () => context.push('/counselor-request?method=callback'),
             ),
             _SupportOption(
               icon: Icons.mic_rounded,
               title: 'Send voice note',
-              body: 'If writing feels too heavy, leave a secure audio recording instead.',
+              body:
+                  'If writing feels too heavy, leave a secure audio recording instead.',
               color: const Color(0xFF7361A9), // Royal Lavender
               onTap: () => context.push('/counselor-request?method=voice_note'),
             ),
@@ -67,7 +68,8 @@ class TalkToCounselorScreen extends StatelessWidget {
             _SupportOption(
               icon: Icons.health_and_safety_rounded,
               title: 'Emergency escalation',
-              body: 'Safety cannot wait. Access urgent local helplines instantly.',
+              body:
+                  'Safety cannot wait. Access urgent local helplines instantly.',
               color: const Color(0xFFE07A5F), // Coral Earth
               onTap: () => context.push('/emergency'),
             ),
@@ -99,15 +101,15 @@ class _SupportOption extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.75),
+        color: Colors.white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.4)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Material(
@@ -124,7 +126,7 @@ class _SupportOption extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(icon, color: color, size: 24),
@@ -147,7 +149,7 @@ class _SupportOption extends StatelessWidget {
                         body,
                         style: TextStyle(
                           fontSize: 12,
-                          color: const Color(0xFF2F3433).withOpacity(0.6),
+                          color: const Color(0xFF2F3433).withValues(alpha: 0.6),
                           height: 1.3,
                         ),
                       ),
@@ -158,7 +160,7 @@ class _SupportOption extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
-                  color: const Color(0xFF2F3433).withOpacity(0.3),
+                  color: const Color(0xFF2F3433).withValues(alpha: 0.3),
                 ),
               ],
             ),

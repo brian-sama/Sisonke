@@ -78,7 +78,7 @@ class _QuickExitScreenState extends State<QuickExitScreen> {
             subtitle: const Text('No haptic feedback when activating'),
             value: _stealthMode,
             onChanged: (val) => setState(() => _stealthMode = val),
-            activeColor: colorScheme.primary,
+            activeThumbColor: colorScheme.primary,
           ),
           const SizedBox(height: 40),
           SisonkeButton(

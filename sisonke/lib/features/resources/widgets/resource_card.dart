@@ -48,7 +48,9 @@ class ResourceCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: Colors.green,
-                        borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusSmall,
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
@@ -61,10 +63,7 @@ class ResourceCard extends StatelessWidget {
                           SizedBox(width: 2),
                           Text(
                             'Offline',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 10),
                           ),
                         ],
                       ),
@@ -85,7 +84,7 @@ class ResourceCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
                 ),
                 child: Text(
-                  AppConstants.categoryDisplayNames[resource.category.name] ?? 
+                  AppConstants.categoryDisplayNames[resource.category.name] ??
                       resource.category.label,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -101,7 +100,9 @@ class ResourceCard extends StatelessWidget {
               Text(
                 resource.description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -113,23 +114,34 @@ class ResourceCard extends StatelessWidget {
                 Wrap(
                   spacing: AppConstants.spacingXSmall,
                   runSpacing: AppConstants.spacingXSmall,
-                  children: resource.tags.take(3).map((tag) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.spacingSmall,
-                      vertical: AppConstants.spacingXSmall / 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
-                    ),
-                    child: Text(
-                      tag,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: AppConstants.textXSmall,
-                      ),
-                    ),
-                  )).toList(),
+                  children: resource.tags
+                      .take(3)
+                      .map(
+                        (tag) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppConstants.spacingSmall,
+                            vertical: AppConstants.spacingXSmall / 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusSmall,
+                            ),
+                          ),
+                          child: Text(
+                            tag,
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontSize: AppConstants.textXSmall,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ],
 
@@ -142,13 +154,17 @@ class ResourceCard extends StatelessWidget {
                     Icon(
                       Icons.schedule,
                       size: 16,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${resource.readingTimeMinutes} min read',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(width: AppConstants.spacingMedium),
@@ -156,20 +172,26 @@ class ResourceCard extends StatelessWidget {
                   Icon(
                     Icons.visibility_outlined,
                     size: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '${resource.viewCount} views',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const Spacer(),
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ],
               ),

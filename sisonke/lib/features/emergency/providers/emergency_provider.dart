@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/emergency_model.dart';
 import '../services/emergency_service.dart';
-import '../../../core/services/api_service.dart';
 import '../../../core/providers/app_providers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Providers
 final emergencyServiceProvider = Provider<EmergencyService>((ref) {
@@ -13,7 +11,9 @@ final emergencyServiceProvider = Provider<EmergencyService>((ref) {
 });
 
 // Emergency Contacts Provider
-final emergencyContactsProvider = FutureProvider<EmergencyContactsResponse>((ref) async {
+final emergencyContactsProvider = FutureProvider<EmergencyContactsResponse>((
+  ref,
+) async {
   final service = ref.watch(emergencyServiceProvider);
   return service.getEmergencyContacts();
 });
@@ -31,7 +31,8 @@ final quickExitContentProvider = FutureProvider<QuickExitContent>((ref) async {
 });
 
 // Trusted Contacts Notifier
-class TrustedContactsNotifier extends StateNotifier<AsyncValue<List<TrustedContact>>> {
+class TrustedContactsNotifier
+    extends StateNotifier<AsyncValue<List<TrustedContact>>> {
   final EmergencyService _service;
 
   TrustedContactsNotifier(this._service) : super(const AsyncValue.loading()) {
@@ -67,10 +68,14 @@ class TrustedContactsNotifier extends StateNotifier<AsyncValue<List<TrustedConta
   }
 }
 
-final trustedContactsProvider = StateNotifierProvider<TrustedContactsNotifier, AsyncValue<List<TrustedContact>>>((ref) {
-  final service = ref.watch(emergencyServiceProvider);
-  return TrustedContactsNotifier(service);
-});
+final trustedContactsProvider =
+    StateNotifierProvider<
+      TrustedContactsNotifier,
+      AsyncValue<List<TrustedContact>>
+    >((ref) {
+      final service = ref.watch(emergencyServiceProvider);
+      return TrustedContactsNotifier(service);
+    });
 
 // Safety Plan Notifier
 class SafetyPlanNotifier extends StateNotifier<AsyncValue<SafetyPlan?>> {
@@ -100,7 +105,8 @@ class SafetyPlanNotifier extends StateNotifier<AsyncValue<SafetyPlan?>> {
   }
 }
 
-final safetyPlanProvider = StateNotifierProvider<SafetyPlanNotifier, AsyncValue<SafetyPlan?>>((ref) {
-  final service = ref.watch(emergencyServiceProvider);
-  return SafetyPlanNotifier(service);
-});
+final safetyPlanProvider =
+    StateNotifierProvider<SafetyPlanNotifier, AsyncValue<SafetyPlan?>>((ref) {
+      final service = ref.watch(emergencyServiceProvider);
+      return SafetyPlanNotifier(service);
+    });
