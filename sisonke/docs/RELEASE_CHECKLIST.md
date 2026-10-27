@@ -19,12 +19,13 @@
 - [x] Ndebele (nd) support (placeholders added).
 
 ## 📱 App Store Prep (Android)
-- [x] Application ID set to `zw.org.sisonke.app`.
-- [ ] Create signing key (Keystore).
-- [ ] Update `android/app/build.gradle.kts` with signing config.
+- [x] Application ID set to `zw.org.serevo.app`.
+- [x] Android release signing configured with `android/key.properties` support.
+- [x] ProGuard/R8 protection rules configured (`android/app/proguard-rules.pro`).
+- [ ] Create signing key (`upload-keystore.jks`) via keytool.
 - [ ] Prepare Store listing:
-    - [ ] App Name: Sisonke Wellness
-    - [ ] Short Description: Mental Health & SRHR support for Zimbabwean youth.
+    - [ ] App Name: Serevo
+    - [ ] Short Description: Safe, private mental health support and youth mutual aid community.
     - [ ] Privacy Policy URL.
 
 ## 🌐 Backend Deployment

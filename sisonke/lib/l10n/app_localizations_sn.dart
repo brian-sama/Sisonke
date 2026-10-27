@@ -9,7 +9,7 @@ class AppLocalizationsSn extends AppLocalizations {
   AppLocalizationsSn([String locale = 'sn']) : super(locale);
 
   @override
-  String get appTitle => 'Sisonke';
+  String get appTitle => 'Serevo';
 
   @override
   String get resources => 'Zviwanikwa';

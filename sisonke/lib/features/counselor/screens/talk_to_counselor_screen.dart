@@ -8,10 +8,18 @@ class TalkToCounselorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: const SisonkeAppBar(title: 'Talk to Someone'),
+      appBar: const SisonkeAppBar(
+        title: 'Talk to Someone',
+        fallbackBackLocation: '/home',
+      ),
       body: Container(
-        decoration: const BoxDecoration(gradient: SisonkeColors.forestBreeze),
+        decoration: isDark
+            ? const BoxDecoration(color: Color(0xFF14110E))
+            : const BoxDecoration(gradient: SisonkeColors.forestBreeze),
         child: ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
@@ -19,9 +27,9 @@ class TalkToCounselorScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Choose the safest way to reach a supportive counselor.',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: const Color(0xFF2F3433),
+                color: isDark ? Colors.white : const Color(0xFF2F3433),
               ),
             ),
             const SizedBox(height: 4),
@@ -29,7 +37,9 @@ class TalkToCounselorScreen extends StatelessWidget {
               'Sisonke is a completely secure, private, and non-judgmental space.',
               style: TextStyle(
                 fontSize: 13,
-                color: const Color(0xFF2F3433).withValues(alpha: 0.55),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : const Color(0xFF2F3433).withValues(alpha: 0.55),
               ),
             ),
             const SizedBox(height: 20),
@@ -98,15 +108,36 @@ class _SupportOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : Colors.white.withValues(alpha: 0.85);
+    final cardBorder = isDark
+        ? Border.all(color: const Color(0xFF382E28), width: 1.2)
+        : Border.all(color: Colors.white.withValues(alpha: 0.6));
+    final iconBg = color.withValues(alpha: isDark ? 0.22 : 0.12);
+    final iconColor = isDark
+        ? (Color.lerp(color, Colors.white, 0.4) ?? color)
+        : color;
+    final textColor = isDark ? Colors.white : const Color(0xFF2F3433);
+    final bodyColor = isDark
+        ? Colors.white.withValues(alpha: 0.72)
+        : const Color(0xFF2F3433).withValues(alpha: 0.6);
+    final arrowColor = isDark
+        ? Colors.white38
+        : const Color(0xFF2F3433).withValues(alpha: 0.3);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.75),
+        color: cardBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+        border: cardBorder,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -126,10 +157,10 @@ class _SupportOption extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
+                    color: iconBg,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(icon, color: color, size: 24),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -138,10 +169,10 @@ class _SupportOption extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF2F3433),
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -149,7 +180,7 @@ class _SupportOption extends StatelessWidget {
                         body,
                         style: TextStyle(
                           fontSize: 12,
-                          color: const Color(0xFF2F3433).withValues(alpha: 0.6),
+                          color: bodyColor,
                           height: 1.3,
                         ),
                       ),
@@ -160,7 +191,7 @@ class _SupportOption extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
-                  color: const Color(0xFF2F3433).withValues(alpha: 0.3),
+                  color: arrowColor,
                 ),
               ],
             ),

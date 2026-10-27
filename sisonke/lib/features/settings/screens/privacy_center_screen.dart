@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sisonke/shared/widgets/index.dart';
 import '../../../core/constants/app_constants.dart';
 
 class PrivacyCenterScreen extends StatelessWidget {
@@ -7,11 +8,7 @@ class PrivacyCenterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Privacy Center'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const SisonkeAppBar(title: 'Privacy Center'),
       body: Padding(
         padding: const EdgeInsets.all(AppConstants.spacingMedium),
         child: ListView(

@@ -110,60 +110,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Left: Avatar + "Hello, Name"
-        Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFCA0174).withValues(alpha: 0.18),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Text('🌸', style: TextStyle(fontSize: 22)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        // Left: Avatar + "Hello, Name" (tap to open Profile & Safety)
+        InkWell(
+          onTap: () => context.push('/profile-safety'),
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            child: Row(
               children: [
-                Text(
-                  'Hello,',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: primaryTextColor.withValues(alpha: 0.6),
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFCA0174).withValues(alpha: 0.18),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Text('🌸', style: TextStyle(fontSize: 22)),
+                      ),
+                    ),
                   ),
                 ),
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                    color: primaryTextColor,
-                  ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hello,',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: primaryTextColor.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.3,
+                        color: primaryTextColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
 
-        // Right: Notification Bell & Calendar Buttons
+        // Right: Notification Bell, Calendar & Settings Buttons
         Row(
           children: [
             _buildRoundHeaderButton(
@@ -179,6 +186,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               bg: buttonBg,
               border: buttonBorder,
               onTap: () => context.push('/check-in/mood'),
+            ),
+            const SizedBox(width: 8),
+            _buildRoundHeaderButton(
+              icon: Icons.settings_outlined,
+              bg: buttonBg,
+              border: buttonBorder,
+              onTap: () => context.push('/settings'),
             ),
           ],
         ),
@@ -631,15 +645,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           const SizedBox(height: 18),
 
-          // Big Inspiring Question
-          Text(
-            'How do I stop overthinking at night?',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.4,
-              height: 1.2,
-              color: textDark,
+          // Big Inspiring Question (tap to open Resources Library)
+          InkWell(
+            onTap: () => context.push('/resources'),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'How do I stop overthinking at night?',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
+                        height: 1.2,
+                        color: textDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: textDark.withValues(alpha: 0.4),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -658,10 +691,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     style: TextStyle(fontSize: 12, color: textDark.withValues(alpha: 0.6)),
                   ),
                   const SizedBox(width: 14),
-                  Icon(Icons.people_outline_rounded, size: 14, color: textDark.withValues(alpha: 0.5)),
+                  Icon(Icons.menu_book_rounded, size: 14, color: textDark.withValues(alpha: 0.5)),
                   const SizedBox(width: 4),
                   Text(
-                    '1.2K Users',
+                    'Library',
                     style: TextStyle(fontSize: 12, color: textDark.withValues(alpha: 0.6)),
                   ),
                 ],
@@ -669,8 +702,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 children: [
                   _buildCircleAction(
-                    icon: Icons.star_border_rounded,
-                    onTap: () {},
+                    icon: Icons.bookmark_border_rounded,
+                    onTap: () => context.push('/bookmarks'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildCircleAction(
+                    icon: Icons.question_answer_outlined,
+                    onTap: () => context.push('/qa'),
                     isDark: isDark,
                   ),
                   const SizedBox(width: 8),
@@ -797,6 +836,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         icon: Icons.shield_outlined,
         onTap: () => context.push('/emergency'),
+      ),
+      _ActionCardData(
+        title: 'Settings & Security',
+        subtitle: 'Biometrics & lock PIN',
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF64748B), Color(0xFF475569)],
+        ),
+        icon: Icons.fingerprint_rounded,
+        onTap: () => context.push('/profile-safety'),
       ),
     ];
 
@@ -1025,11 +1075,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               spacing: 6,
               runSpacing: 6,
               children: [
-                _buildCircleTopicChip('🕊️ Grief & Loss'),
-                _buildCircleTopicChip('🎓 Exam Stress'),
-                _buildCircleTopicChip('⛈️ Anxiety'),
-                _buildCircleTopicChip('🌱 Sobriety'),
-                _buildCircleTopicChip('🫂 Loneliness'),
+                _buildCircleTopicChip('🕊️ Grief & Loss', isDark),
+                _buildCircleTopicChip('🎓 Exam Stress', isDark),
+                _buildCircleTopicChip('⛈️ Anxiety', isDark),
+                _buildCircleTopicChip('🌱 Sobriety', isDark),
+                _buildCircleTopicChip('🫂 Loneliness', isDark),
               ],
             ),
 
@@ -1063,20 +1113,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildCircleTopicChip(String label) {
+  Widget _buildCircleTopicChip(String label, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F2),
+        color: isDark ? const Color(0xFF2E2421) : const Color(0xFFFAF7F2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF453630) : Colors.black.withValues(alpha: 0.06),
+        ),
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF2F3433),
+          color: isDark ? const Color(0xFFF0E5DF) : const Color(0xFF2F3433),
         ),
       ),
     );
@@ -1194,11 +1246,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             Row(
               children: [
-                _buildTagPill(icon: Icons.image_outlined, label: 'Photos'),
+                _buildTagPill(icon: Icons.image_outlined, label: 'Photos', isDark: isDark),
                 const SizedBox(width: 8),
-                _buildTagPill(icon: Icons.videocam_outlined, label: 'Videos (50MB)'),
+                _buildTagPill(icon: Icons.videocam_outlined, label: 'Videos (50MB)', isDark: isDark),
                 const SizedBox(width: 8),
-                _buildTagPill(icon: Icons.favorite_border_rounded, label: 'Holding Space'),
+                _buildTagPill(icon: Icons.favorite_border_rounded, label: 'Holding Space', isDark: isDark),
               ],
             ),
 
@@ -1231,13 +1283,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTagPill({required IconData icon, required String label}) {
+  Widget _buildTagPill({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F2),
+        color: isDark ? const Color(0xFF1E2833) : const Color(0xFFFAF7F2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2A3A4D) : Colors.black.withValues(alpha: 0.06),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1246,10 +1304,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2F3433),
+              color: isDark ? const Color(0xFFE2EAF2) : const Color(0xFF2F3433),
             ),
           ),
         ],
@@ -1378,12 +1436,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFAF7F2),
+                    color: isDark ? const Color(0xFF2E221A) : const Color(0xFFFAF7F2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: trig.difficultCount > 0
                           ? const Color(0xFFCA0174).withValues(alpha: 0.3)
-                          : Colors.black12,
+                          : (isDark ? const Color(0xFF45352A) : Colors.black12),
                     ),
                   ),
                   child: Row(
@@ -1391,10 +1449,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         trig.tag,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF2F3433),
+                          color: isDark ? const Color(0xFFF5E7DF) : const Color(0xFF2F3433),
                         ),
                       ),
                       if (trig.totalCount > 0) ...[
@@ -1420,9 +1478,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFAF7F2),
+                color: isDark ? const Color(0xFF2A2019) : const Color(0xFFFAF7F2),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF3D2F25) : Colors.black.withValues(alpha: 0.05),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

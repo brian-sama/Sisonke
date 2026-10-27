@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sisonke/features/journal/providers/journal_provider.dart';
@@ -98,7 +99,16 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
     final securityService = ref.read(securityServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Journal')),
+      appBar: AppBar(
+        title: const Text('Journal'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.mic_rounded),
+            tooltip: 'Voice Journal',
+            onPressed: () => context.push('/voice-journal'),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // ── Gratitude streak banner ────────────────────────────────────
@@ -299,6 +309,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen> {
   }
 
   void _openEntry(BuildContext context, {String? mode}) async {
+    if (mode == 'voice') {
+      context.push('/voice-journal');
+      return;
+    }
     if (mode == 'gratitude') {
       await _recordStreakEntry();
     }

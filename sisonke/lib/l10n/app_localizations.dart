@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// The title of the application
   ///
   /// In en, this message translates to:
-  /// **'Sisonke'**
+  /// **'Serevo'**
   String get appTitle;
 
   /// No description provided for @resources.

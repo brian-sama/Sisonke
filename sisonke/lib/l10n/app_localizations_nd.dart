@@ -9,7 +9,7 @@ class AppLocalizationsNd extends AppLocalizations {
   AppLocalizationsNd([String locale = 'nd']) : super(locale);
 
   @override
-  String get appTitle => 'Sisonke';
+  String get appTitle => 'Serevo';
 
   @override
   String get resources => 'Izinsiza';

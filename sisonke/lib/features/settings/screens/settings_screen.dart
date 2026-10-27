@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sisonke/shared/widgets/index.dart';
+import 'package:sisonke/theme/night_mode_provider.dart';
 import '../../../core/constants/app_constants.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -113,12 +115,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final currentThemeMode = ref.watch(themeModeProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: const SisonkeAppBar(
+        title: 'Settings',
+        fallbackBackLocation: '/home',
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingMedium),
         children: [
+          _buildSettingsSection(context, 'Appearance & Theme', [
+            ListTile(
+              leading: Icon(
+                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Theme Mode'),
+              subtitle: Text(
+                currentThemeMode == ThemeMode.dark
+                    ? 'Dark mode'
+                    : (currentThemeMode == ThemeMode.light
+                        ? 'Light mode'
+                        : 'System default'),
+              ),
+              trailing: DropdownButton<ThemeMode>(
+                value: currentThemeMode,
+                onChanged: (mode) {
+                  if (mode != null) {
+                    ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                  }
+                },
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(
+                    value: ThemeMode.system,
+                    child: Text('System'),
+                  ),
+                  DropdownMenuItem(
+                    value: ThemeMode.light,
+                    child: Text('Light'),
+                  ),
+                  DropdownMenuItem(
+                    value: ThemeMode.dark,
+                    child: Text('Dark'),
+                  ),
+                ],
+              ),
+            ),
+            _buildSettingsItem(
+              context,
+              'Language (English, chiShona, isiNdebele)',
+              Icons.language_rounded,
+              () => context.push('/language'),
+            ),
+          ]),
           _buildSettingsSection(context, 'Privacy & Security', [
+            _buildSettingsItem(
+              context,
+              'Security & Biometrics',
+              Icons.fingerprint_rounded,
+              () => context.push('/profile-safety'),
+            ),
             _buildSettingsItem(
               context,
               'Privacy Center',
@@ -192,6 +252,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
           _buildSettingsSection(context, 'Data & Controls', [
+            _buildSettingsItem(
+              context,
+              'Saved Bookmarks',
+              Icons.bookmark_border_rounded,
+              () => context.push('/bookmarks'),
+            ),
+            _buildSettingsItem(
+              context,
+              'Facilitator & Counselor Login',
+              Icons.admin_panel_settings_outlined,
+              () => context.push('/auth'),
+            ),
             _buildSettingsItem(
               context,
               'Delete personal records',

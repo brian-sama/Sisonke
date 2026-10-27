@@ -17,9 +17,16 @@ class SupportDirectoryScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: const SisonkeAppBar(
+      appBar: SisonkeAppBar(
         title: 'Support',
         fallbackBackLocation: '/home',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
@@ -86,6 +93,52 @@ class SupportDirectoryScreen extends ConsumerWidget {
             onPressed: () => context.push('/case-history'),
             icon: const Icon(Icons.folder_shared_rounded),
             label: const Text('View case status and history'),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Community & Knowledge',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.15,
+            children: [
+              _SupportAction(
+                icon: Icons.menu_book_rounded,
+                title: 'Resource Library',
+                subtitle: 'Articles & self-care',
+                color: const Color(0xFFE8F5E9),
+                onTap: () => context.push('/resources'),
+              ),
+              _SupportAction(
+                icon: Icons.question_answer_rounded,
+                title: 'Community Q&A',
+                subtitle: 'Ask verified facilitators',
+                color: const Color(0xFFF3E5F5),
+                onTap: () => context.push('/qa'),
+              ),
+              _SupportAction(
+                icon: Icons.forum_rounded,
+                title: 'Community Stories',
+                subtitle: 'Solidarity & experiences',
+                color: const Color(0xFFFFF3E0),
+                onTap: () => context.push('/community'),
+              ),
+              _SupportAction(
+                icon: Icons.bookmark_rounded,
+                title: 'Saved Bookmarks',
+                subtitle: 'Saved resources & tips',
+                color: const Color(0xFFE1F5FE),
+                onTap: () => context.push('/bookmarks'),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           Text(

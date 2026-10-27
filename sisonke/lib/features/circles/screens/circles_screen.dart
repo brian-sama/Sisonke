@@ -48,6 +48,8 @@ class CirclesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: const SisonkeAppBar(title: 'Ubuntu Circles'),
       body: ListView(
@@ -57,10 +59,12 @@ class CirclesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: SisonkeColors.secondaryDim,
+              color: isDark ? const Color(0xFF261D33) : SisonkeColors.secondaryDim,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: SisonkeColors.secondary.withValues(alpha:0.18),
+                color: isDark
+                    ? const Color(0xFF4B3463)
+                    : SisonkeColors.secondary.withValues(alpha: 0.18),
               ),
             ),
             child: Row(
@@ -69,12 +73,12 @@ class CirclesScreen extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: SisonkeColors.lavender,
+                    color: isDark ? const Color(0xFF3E2856) : SisonkeColors.lavender,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.groups_rounded,
-                    color: SisonkeColors.secondary,
+                    color: isDark ? const Color(0xFFC4B5FD) : SisonkeColors.secondary,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -87,13 +91,16 @@ class CirclesScreen extends StatelessWidget {
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w900,
                           height: 1.2,
+                          color: isDark ? Colors.white : theme.textTheme.titleMedium?.color,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         'for shared journeys',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: SisonkeColors.secondary.withValues(alpha:0.8),
+                          color: isDark
+                              ? const Color(0xFFC4B5FD)
+                              : SisonkeColors.secondary.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -132,16 +139,19 @@ class CirclesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: SisonkeColors.primaryDim,
+              color: isDark ? const Color(0xFF2A1523) : SisonkeColors.primaryDim,
               borderRadius: BorderRadius.circular(20),
+              border: isDark
+                  ? Border.all(color: SisonkeColors.primary.withValues(alpha: 0.3))
+                  : null,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.shield_outlined,
                   size: 18,
-                  color: SisonkeColors.primary,
+                  color: isDark ? const Color(0xFFEE2B5E) : SisonkeColors.primary,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -149,7 +159,9 @@ class CirclesScreen extends StatelessWidget {
                     'All messages are anonymous. Groups have a maximum of 8 members.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: SisonkeColors.primary.withValues(alpha:0.85),
+                      color: isDark
+                          ? const Color(0xFFFAD1E6)
+                          : SisonkeColors.primary.withValues(alpha: 0.85),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -187,9 +199,30 @@ class _CircleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardBg = isDark ? theme.colorScheme.surfaceContainerHigh : circle.color;
+    final cardBorder = isDark
+        ? Border.all(color: circle.color.withValues(alpha: 0.35), width: 1.2)
+        : null;
+    final iconBg = isDark
+        ? circle.color.withValues(alpha: 0.22)
+        : Colors.white.withValues(alpha: 0.65);
+    final iconColor = isDark
+        ? (Color.lerp(circle.color, Colors.white, 0.45) ?? circle.color)
+        : const Color(0xFF14213D);
+    final textColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF14213D);
+    final subtitleColor = isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : const Color(0xFF14213D).withValues(alpha: 0.55);
+
     return Material(
-      color: circle.color,
-      borderRadius: BorderRadius.circular(28),
+      color: cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: cardBorder?.top ?? BorderSide.none,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(28),
@@ -201,20 +234,20 @@ class _CircleCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.6),
+                  color: iconBg,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(circle.icon, size: 22, color: const Color(0xFF14213D)),
+                child: Icon(circle.icon, size: 22, color: iconColor),
               ),
               const Spacer(),
               Text(
                 circle.label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 14,
-                  color: Color(0xFF14213D),
+                  color: textColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -223,7 +256,7 @@ class _CircleCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF14213D).withValues(alpha:0.55),
+                  color: subtitleColor,
                 ),
               ),
             ],
