@@ -116,7 +116,7 @@ class _MoodCheckinScreenState extends ConsumerState<MoodCheckinScreen> {
         const SnackBar(
           backgroundColor: Color(0xFF921966),
           content: Text(
-            'Your reflection and triggers are saved safely inside Serevo.',
+            'Your reflection and triggers are saved safely inside Sisonke.',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),

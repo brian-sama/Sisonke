@@ -15,13 +15,24 @@ async function main() {
   if (!email || !password) {
     throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required.');
   }
+  if (password.length < 14) {
+    throw new Error('ADMIN_PASSWORD must be at least 14 characters.');
+  }
 
   const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
+    // Never silently take over an existing account: promotion must be an explicit,
+    // deliberate act by whoever runs the bootstrap.
+    if (process.env.ADMIN_ALLOW_EXISTING !== 'true') {
+      throw new Error(
+        `User ${email} already exists. Set ADMIN_ALLOW_EXISTING=true to promote it and reset its password.`,
+      );
+    }
     const passwordHash = await bcrypt.hash(password, 12);
     await db.update(users).set({ 
       passwordHash, 
       isGuest: false, 
+      mustChangePassword: true,
       updatedAt: new Date() 
     }).where(eq(users.id, existing[0].id));
     
@@ -29,7 +40,7 @@ async function main() {
     await AuthService.assignRole(existing[0].id, 'SUPER_ADMIN');
     await AuthService.assignRole(existing[0].id, 'ADMIN');
     
-    console.log(`Promoted existing user ${email} to super admin and updated password.`);
+    console.log(`[audit] ${new Date().toISOString()} Promoted existing user ${email} to super admin; password change required at next login.`);
     return;
   }
 
@@ -38,6 +49,7 @@ async function main() {
     email,
     passwordHash,
     isGuest: false,
+    mustChangePassword: true,
     updatedAt: new Date(),
   }).returning();
 
@@ -45,7 +57,7 @@ async function main() {
   await AuthService.assignRole(newUser.id, 'SUPER_ADMIN');
   await AuthService.assignRole(newUser.id, 'ADMIN');
   
-  console.log(`Created admin user ${email}.`);
+  console.log(`[audit] ${new Date().toISOString()} Created super admin ${email}; password change required at first login.`);
 }
 
 main().catch((error) => {

@@ -52,19 +52,35 @@ class PushNotificationService {
       FirebaseMessaging.onMessage.listen((message) {
         final notification = message.notification;
         if (notification == null) return;
+        // Lock-screen privacy (audit §3.1 C & §5.5): never expose counselling,
+        // journal, or mental-health details on a locked screen. Use neutral
+        // copy and Android NotificationVisibility.private.
+        final isSensitive = message.data['sensitive'] != 'false';
+        final safeTitle = isSensitive
+            ? 'Sisonke'
+            : (notification.title ?? 'Sisonke');
+        final safeBody = isSensitive
+            ? 'You have a new update. Open the app to view.'
+            : (notification.body ?? 'Open Sisonke to view.');
+
         _localNotifications.show(
           id: notification.hashCode,
-          title: notification.title,
-          body: notification.body,
+          title: safeTitle,
+          body: safeBody,
           notificationDetails: const NotificationDetails(
             android: AndroidNotificationDetails(
-              'sisonke_support',
-              'Sisonke support',
-              channelDescription: 'Counselor case and safety support updates',
+              'sisonke_updates',
+              'Sisonke updates',
+              channelDescription: 'App updates and reminders',
               importance: Importance.high,
               priority: Priority.high,
+              visibility: NotificationVisibility.private,
             ),
-            iOS: DarwinNotificationDetails(),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
           ),
         );
       });

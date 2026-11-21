@@ -87,7 +87,7 @@ class TriggerPatternService {
         dayOfWeekInsight: 'Midweek dips often emerge around Wednesday afternoons.',
         dayOfWeekSuggestion: 'Plan micro-breaks to preserve emotional reserves.',
         energyInsight: 'Energy levels below 4/10 correlate with heightened emotional vulnerability.',
-        overallSummary: 'Log your reflections to help Serevo uncover your personal emotional rhythms.',
+        overallSummary: 'Log your reflections to help Sisonke uncover your personal emotional rhythms.',
         hasSufficientData: false,
       );
     }

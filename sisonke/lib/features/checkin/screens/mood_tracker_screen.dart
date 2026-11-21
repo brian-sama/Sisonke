@@ -163,7 +163,7 @@ class _InsightsPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
-                  'Serevo AI',
+                  'Sisonke AI',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -284,7 +284,7 @@ class _InsightsPanel extends StatelessWidget {
                   if (analysis.topTriggers.first.suggestion.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
-                      '💡 Serevo recommendation: ${analysis.topTriggers.first.suggestion}',
+                      '💡 Sisonke recommendation: ${analysis.topTriggers.first.suggestion}',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: const Color(0xFF2F3433).withValues(alpha: 0.75),

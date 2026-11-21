@@ -7,14 +7,85 @@ type RiskDetection = {
   route?: SafetyRoute;
 };
 
+const LEET_MAP: Record<string, string> = {
+  '0': 'o',
+  '1': 'i',
+  '3': 'e',
+  '4': 'a',
+  '5': 's',
+  '7': 't',
+  '@': 'a',
+  '$': 's',
+};
+
+/**
+ * Normalizes slang, leetspeak, punctuation obfuscation, and repeated letters
+ * so safety rules catch spelling variations across English, Shona, and Ndebele
+ * (audit §3.1 B).
+ */
+export function normalizeSafetyText(message: string): string {
+  const lowered = message.toLowerCase();
+  const deleeted = lowered.replace(/[013457@$]/g, (ch) => LEET_MAP[ch] ?? ch);
+  return deleeted
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/([a-z])\1{2,}/g, '$1$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const MULTILINGUAL_RED_PATTERNS: Array<{ route: SafetyRoute; pattern: RegExp }> = [
+  // English slang / obfuscated / indirect self-harm & suicide
+  {
+    route: 'self_harm',
+    pattern:
+      /\b(k\s*y\s*s|unalive\s+myself|end\s+my\s+life|want\s+to\s+die|wanna\s+die|take\s+my\s+own\s+life|kill\s+myself|hang\s+myself|cut\s+myself|cutting\s+myself|overdose\s+on\s+pills)\b/,
+  },
+  // Shona crisis & self-harm phrases (including common spelling variants)
+  {
+    route: 'self_harm',
+    pattern:
+      /\b(kuzviuraya|ndoda\s+kufa|ndirikuda\s+kufa|ndiri\s+kuda\s+kufa|ndoda\s+kuzviuraya|ndiri\s+kuda\s+kuzviuraya|ndichazviuraya|handichadi\s+kurarama|zviri\s+nani\s+ndife|ndinoda\s+kufa)\b/,
+  },
+  // Ndebele crisis & self-harm phrases
+  {
+    route: 'self_harm',
+    pattern:
+      /\b(ukuzibulala|ngifuna\s+ukufa|ngizozibulala|ngizibulale|angisafuni\s+ukuphila|ngifuna\s+ukuzibulala|kungcono\s+ngife)\b/,
+  },
+  // English, Shona & Ndebele sexual assault / abuse disclosures
+  {
+    route: 'sexual_assault',
+    pattern:
+      /\b(raped|rape|sexually\s+assaulted|sexual\s+assault|molested|akandibata\s+chibharo|ndakabatwa\s+chibharo|wandibata\s+chibharo|wangidlwengula|ngadlwengulwa|forced\s+himself\s+on\s+me)\b/,
+  },
+];
+
+export const AI_CLINICAL_DISCLAIMER =
+  'Sisonke AI provides supportive information and is not a substitute for professional medical diagnosis or emergency care.';
+
 export function detectRisk(message: string): RiskDetection {
-  const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+  const rawNormalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+  const normalized = normalizeSafetyText(message);
 
-  const redRule = safetyRules.find((rule) => rule.risk === 'red' && rule.terms.some((term) => normalized.includes(term)));
-  if (redRule) return { level: 'high', route: redRule.route };
+  for (const candidate of [rawNormalized, normalized]) {
+    const redRule = safetyRules.find(
+      (rule) => rule.risk === 'red' && rule.terms.some((term) => candidate.includes(term)),
+    );
+    if (redRule) return { level: 'high', route: redRule.route };
+  }
 
-  const amberRule = safetyRules.find((rule) => rule.risk === 'amber' && rule.terms.some((term) => normalized.includes(term)));
-  if (amberRule) return { level: 'medium', route: amberRule.route };
+  for (const extra of MULTILINGUAL_RED_PATTERNS) {
+    if (extra.pattern.test(normalized)) {
+      return { level: 'high', route: extra.route };
+    }
+  }
+
+  for (const candidate of [rawNormalized, normalized]) {
+    const amberRule = safetyRules.find(
+      (rule) => rule.risk === 'amber' && rule.terms.some((term) => candidate.includes(term)),
+    );
+    if (amberRule) return { level: 'medium', route: amberRule.route };
+  }
 
   return { level: 'low' };
 }
@@ -73,6 +144,7 @@ export function safeBotReply(message: string, riskLevel: RiskLevel, persona: 'ma
     return {
       text: highRiskReply(detection.route),
       shouldEscalate: true,
+      disclaimer: AI_CLINICAL_DISCLAIMER,
     };
   }
 
@@ -80,11 +152,13 @@ export function safeBotReply(message: string, riskLevel: RiskLevel, persona: 'ma
     return {
       text: `Thank you for opening up. I can stay with you for simple grounding, but a human supporter may help too. Try one slow breath now, then tell me one thing making today feel heavy.`,
       shouldEscalate: false,
+      disclaimer: AI_CLINICAL_DISCLAIMER,
     };
   }
 
   return {
     text: `I hear you, ${friend}. I can help with general support, self-care ideas, and approved Zimbabwe resources. Tell me a little more about what you need today.`,
     shouldEscalate: false,
+    disclaimer: AI_CLINICAL_DISCLAIMER,
   };
 }

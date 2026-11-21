@@ -6,12 +6,12 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <application
-        android:label="Serevo"
+        android:label="Sisonke"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_main">
         <activity
             android:name=".MainActivity"
-            android:label="Serevo"
+            android:label="Sisonke"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

@@ -58,6 +58,26 @@ class JournalEncryptionService {
     return encrypter.decrypt64(base64Text, iv: _legacyIv);
   }
 
+  Future<String> encryptField(String text) => encrypt(text);
+
+  /// Decrypts a v2-encrypted metadata field; returns legacy plaintext values
+  /// untouched so older entries remain readable until re-saved.
+  Future<String> decryptField(String value) async {
+    if (!value.startsWith('$_version.')) return value;
+    return decrypt(value);
+  }
+
+  /// Deterministic, non-reversible owner tag for account-scoping local Isar
+  /// journal records on shared devices without exposing raw user IDs (audit §3.1 A).
+  Future<String> ownerTag(String ownerId) async {
+    await _initKey();
+    final digest = Hmac(
+      sha256,
+      _key!.bytes,
+    ).convert(utf8.encode('owner:${ownerId.trim()}'));
+    return 'owner:${base64UrlEncode(digest.bytes).substring(0, 24)}';
+  }
+
   List<int> _mac(String payload) {
     final macKey = sha256.convert([
       ..._key!.bytes,

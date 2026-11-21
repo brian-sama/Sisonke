@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Serevo</string>
+	<string>Sisonke</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>serevo</string>
+	<string>sisonke</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Serevo uses Face ID to protect private spaces like your journal and counseling history.</string>
+	<string>Sisonke uses Face ID to protect private spaces like your journal and counseling history.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Serevo allows you to post pictures or videos to express feelings non-verbally in More Than Words.</string>
 	<key>NSCameraUsageDescription</key>
