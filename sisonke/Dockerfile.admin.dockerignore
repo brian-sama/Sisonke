@@ -1,0 +1,5 @@
+*
+!sisonke-admin-dashboard/
+sisonke-admin-dashboard/node_modules
+sisonke-admin-dashboard/dist
+sisonke-admin-dashboard/.env*
